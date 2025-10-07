@@ -1,0 +1,12 @@
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
+Metal = "dde4c033-4e86-420c-a63e-0dd931031962"
+Observables = "510215fc-4207-5dde-b226-833fc4488ee2"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+Term = "22787eb5-b846-44ae-b979-8e399b8463ab"
+VideoIO = "d6d074c3-1acf-5d4c-9a43-ef38773959a2"
