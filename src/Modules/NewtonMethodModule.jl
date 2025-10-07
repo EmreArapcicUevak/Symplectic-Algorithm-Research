@@ -1,7 +1,6 @@
 module NewtonMethodModule
-        using LinearAlgebra, Metal
+        using LinearAlgebra, Metal, Base.Threads
         export NewtonMethod, QuasiNewtonMethod, MultiDimentionalNewtonMethod, AproximateJacobian, AproximateJacobianCentral
-        using Term.Progress
     
         function NewtonMethod(f :: Function, f_prime :: Function, x₀ :: Real; δ = 1e-15, ϵ = 1e-15, maxIterations = 1000)
             for i ∈ 1:maxIterations
@@ -65,14 +64,13 @@ module NewtonMethodModule
         end
 
         function AproximateJacobian(F :: Function, x₀ :: Vector{T}; t = 1e-6 :: Float64) where T <: Real
-            local N = length(x₀)
-            local J = zeros(T, N, N)
-
             Fx₀ = F(x₀)
-            for i ∈ 1:N
+            local J = zeros(T, length(Fx₀), length(x₀))
+
+            Threads.@threads for i ∈ 1:length(x₀)
                 local x = copy(x₀)
                 x[i] += t
-                J[:,i] = (F(x) - Fx₀) / t
+                @inbounds  J[:,i] .= (F(x) .- Fx₀) ./ t
             end
 
             return J
@@ -88,7 +86,7 @@ module NewtonMethodModule
                 local x_minus = copy(x₀)
                 x_plus[i] += t
                 x_minus[i] -= t
-                J[:,i] = (F(x_plus) - F(x_minus)) / (2 * t)
+                @inbounds J[:,i] = (F(x_plus) - F(x_minus)) / (2 * t)
             end
 
             return J
