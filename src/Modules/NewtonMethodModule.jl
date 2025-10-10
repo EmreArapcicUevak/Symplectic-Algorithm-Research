@@ -35,7 +35,7 @@ module NewtonMethodModule
             
         end
 
-        function MultiDimentionalNewtonMethod(F :: Function, J :: Function, x₀ :: Vector{T}; δ = 1e-10, ϵ = 1e-10, maxIterations = 1000, history::Union{Vector{Float64}, Nothing} = nothing, iteration_points :: Union{Vector{Vector{T}}, Nothing} = nothing) where T <: Real
+        function MultiDimentionalNewtonMethod(F :: Function, J :: Function, x₀ :: Vector{Float64}; δ = 1e-10, ϵ = 1e-10, maxIterations = 1000, history::Union{Vector{Float64}, Nothing} = nothing, iteration_points :: Union{Vector{Vector{Float64}}, Nothing} = nothing)
             for i ∈ 1:maxIterations
                 local J_x₀, F_x₀ = J(x₀), F(x₀)
                 local Δ = - J_x₀ \ F_x₀
@@ -86,7 +86,7 @@ module NewtonMethodModule
 
         function AproximateJacobian(F :: Function, x₀ :: Vector{Float64}; t = 1e-6 :: Float64) 
             Fx₀ = F(x₀)
-            local J = zeros(T, length(Fx₀), length(x₀))
+            local J = zeros(Float64, length(Fx₀), length(x₀))
 
             Threads.@threads for i ∈ 1:length(x₀)
                 local x = copy(x₀)
