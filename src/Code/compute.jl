@@ -1,7 +1,7 @@
 include("../Modules/NewtonMethodModule.jl")
 include("../Modules/Systems.jl")
 
-using Revise, MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools
+using Revise, MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, Serialization
 const record_type = Tuple{Int,Float64,String}
 const name_to_func = Dict(
   "SE1" => Systems.SE1,
@@ -11,14 +11,13 @@ const name_to_func = Dict(
 )
 const func_names = keys(name_to_func)
 
-
 function get_initial_guess(N :: Integer, α :: Float64, x₀ :: Vector{Float64}, l₀ :: Float64) :: Vector{Float64}
-  file_name = "../EducatedGuesses/zN$(N)_alpha$(α)_x0$(x₀)_l0$(round(l₀, digits=2)).mat"
+  file_name = "src/EducatedGuesses/zN$(N)_alpha$(α)_x0$(x₀)_l0$(round(l₀, digits=2)).mat"
   x₀ = nothing
   if isfile(file_name)
     mat_data = matread(file_name)
     x₀ = mat_data["z"]
-    x₀ = [x₀[Systems.N+1:end]..., 0.0 ,x₀[begin:Systems.N]...]
+    x₀ = [x₀[N+1:end]..., 0.0 ,x₀[begin:N]...]
   else
     println("Did not find file $file_name, generating random initial guess")
     x₀ = randn(Float64, 9 * N + 1)
@@ -30,7 +29,7 @@ end
 
 initial_guesses = Dict{Tuple{Integer, Float64, Vector{Float64}, Float64}, Vector{Float64}}()
 wanted_x₀, wanted_l₀ = Float64[1,1], √2
-N_values, α_values = Int[100], Float64[10.0,5.0,1.0,0.5]
+N_values, α_values = Int[100,400,800], Float64[10.0,5.0,1.0,0.5]
 
 func_number_of_iterations = Dict{record_type, Int}()
 func_results = Dict{record_type, Vector{Float64}}()
@@ -67,15 +66,17 @@ Base.Threads.@threads for i ∈ eachindex(prod)
           func_number_of_iterations[(N₀, α₀, method_name)] = -1
           func_results[(N₀, α₀, method_name)] = []
       else
-          func_number_of_iterations[(N₀, α₀, method_name)] = res.iterations
-          func_results[(N₀, α₀, method_name)] = res.c
+          func_number_of_iterations[(N₀, α₀, method_name)] = results.iterations
+          func_results[(N₀, α₀, method_name)] = results.c
       end
   end
 
   # Progress bar update (serialize UI-ish calls)
   lock(progress_bar_lock) do
-      TP.update!(comp_job)
-      TP.render(pbar)
+      update!(comp_job); render(pbar)
   end
 end
-TP.stop!(pbar)
+stop!(pbar)
+
+save_file_name = "results_x0$(wanted_x₀)_l0$(round(wanted_l₀, digits=2)).jls"
+println("Saving results to $save_file_name"); serialize(save_file_name, (func_number_of_iterations, func_results))
