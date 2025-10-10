@@ -1,0 +1,127 @@
+include("../Modules/Systems.jl")
+using GLMakie, VideoIO, Serialization, Base.Threads, ColorSchemes, LinearAlgebra
+wanted_l₀ = √2
+wanted_x_d = Float64[0, 4]
+wanted_x₀ = Float64[1, 1]
+wanted_a = Float64[0, 1]
+
+# Load data
+func_number_of_iterations, func_results = deserialize("results_x0[1.0, 1.0]_l01.41_ultra.jls")
+function spring_points(A::Point2f, B::Point2f; coils=12, amp=0.08f0, n=200, straight_frac=0.10f0)
+    v   = B - A
+    L   = LinearAlgebra.norm(v)
+    dir = v / L
+    perp = Point2f(-dir[2], dir[1])
+
+    t0 = straight_frac * L
+    t1 = L - straight_frac * L
+    ts = range(0f0, L; length=n)
+
+    pts = Point2f[]
+    for t in ts
+        base = A + dir * t
+        if t < t0 || t > t1
+            push!(pts, base)                      # straight ends
+        else
+            ϕ = 2f0 * π * coils * (t - t0) / (t1 - t0)
+            push!(pts, base + perp * (amp * sin(ϕ)))
+        end
+    end
+    return pts
+end
+
+# --- 2) Color mapping from stretch/energy to a single color ---
+stress_color(ℓ; max_stretch=0.5) = get(ColorSchemes.plasma, clamp(abs(ℓ - √2)/max_stretch, 0, 1))
+
+
+for (meta_data, func_result) ∈ func_results
+  if length(func_result) == 0 continue end
+
+  i = Observable(1)
+  playing = Observable(false)
+  choosen_N = Observable(meta_data[1])
+  choosen_α = Observable(meta_data[2])
+  choosen_method = Observable(meta_data[3])
+
+  T = Observable(60.0)
+  t₀ = Observable(0.0)
+  h = @lift(($T - $t₀)/$choosen_N)
+
+  pendulum_positions = @lift([Point2f(pos) for pos ∈ [Systems.x(func_results[($choosen_N, $choosen_α, $choosen_method)], i, $choosen_N) for i ∈ 0:$choosen_N-1]])
+  cart_positions = @lift([Point2f(u, 0) for u ∈ [Systems.u(func_results[($choosen_N, $choosen_α, $choosen_method)], i, $choosen_N) for i ∈ 0:$choosen_N-1]])
+  Xᵢ = @lift($pendulum_positions[$i])
+  Uᵢ = @lift($cart_positions[$i])
+
+  spring_pts = @lift(spring_points($Uᵢ, $Xᵢ))
+  curr_len = @lift(LinearAlgebra.norm($Xᵢ - $Uᵢ))
+
+
+  R = @lift(maximum(norm, $pendulum_positions))
+  max_cart_pos = @lift(maximum(norm, $cart_positions))
+
+  spring_color = @lift(stress_color($curr_len; max_stretch=$R))
+
+  f = Figure(size = (1000,700))
+
+  main_axis = Axis(f[1,1], title = "Inverted Pendulum Simulation", xlabel = "X", ylabel = "Y")
+  xlims!(main_axis, -R[] - 2, R[] + 2)
+  ylims!(main_axis, -R[] - 2, R[] + 2)
+  hidespines!(main_axis)
+
+  scatter!(main_axis, [wanted_x_d[1]], [wanted_x_d[2]], label = "Desired Position", markersize = 5, color = :blue)
+  hlines!(main_axis, [0.0], color = (:black, 0.4))
+
+
+  # draw pendulum spring
+  lines!(main_axis, spring_pts, color = spring_color, linewidth = 3)
+  # draw pendulum bob
+  scatter!(main_axis, @lift([$Xᵢ]), markersize = 20, color = :orange)
+  # draw desired position
+  scatter!(main_axis, Point2f[wanted_x_d], markersize = 14, color = :red, marker=:xcross)
+  # draw cart
+  poly!(
+    main_axis,
+    @lift(Point2f[
+      ($Uᵢ[1] - 1, 0),
+      ($Uᵢ[1] + 1, 0),
+      ($Uᵢ[1] + 1, -0.2),
+      ($Uᵢ[1] - 1, -0.2)
+    ]),
+    color = :green,
+    strokecolor = :blue,
+    strokewidth = 1
+  )
+
+
+  time_label = Label(f[1,1],
+    @lift("Time: $(round($t₀ + $h * ($i - 1), digits=2)) s"),
+    halign = :left,
+    valign = :top,
+    padding = (10,10,10,10),
+    fontsize = 25,
+    color = :black,
+    tellwidth = false,
+    tellheight = false
+  )
+
+  meta_data_label = Label(f[1,1],
+    @lift("N = $($choosen_N)\nα = $($choosen_α)\nMethod = $($choosen_method)\nx₀ = [$(round(wanted_x₀[1], digits = 2)), $(round(wanted_x₀[2], digits = 2))]\nl₀ = $(round(wanted_l₀, digits = 2))\na = [$(round(wanted_a[1], digits = 2)), $(round(wanted_a[2], digits = 2))]"),
+    halign = :right,
+    valign = :top,
+    padding = (10,10,10,10),
+    fontsize = 12,
+    color = :firebrick,
+    tellwidth = false,
+    tellheight = false,
+    lineheight = 1.2
+  )
+
+  framerate = choosen_N[]/(T[] - t₀[])          # fps you want
+  simulation_file_name = "pendulumx0=$(wanted_x₀)l0=$(round(wanted_l₀, digits=2))N=$(choosen_N[])α=$(choosen_α[])method=$(choosen_method[]).mp4"
+  record(f, "Simulations/$simulation_file_name", 1:choosen_N[]; framerate = framerate) do frame
+      i[] = frame
+      nothing  # block must return nothing
+  end
+
+  println("Saved Simulations/$simulation_file_name")
+end
