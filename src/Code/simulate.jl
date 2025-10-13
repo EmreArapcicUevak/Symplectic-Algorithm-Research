@@ -1,9 +1,9 @@
 include("../Modules/Systems.jl")
 using GLMakie, VideoIO, Serialization, Base.Threads, ColorSchemes, LinearAlgebra
-wanted_l₀ = √2
+wanted_l₀ = 1.0
 wanted_x_d = Float64[0, 4]
-wanted_x₀ = Float64[1, 1]
-wanted_a = Float64[0, 1]
+wanted_x₀ = Float64[0, 1]
+wanted_a = Float64[0, -1]
 
 # Load data
 func_number_of_iterations, func_results = deserialize("results_x0[1.0, 1.0]_l01.41_ultra.jls")
@@ -31,7 +31,7 @@ function spring_points(A::Point2f, B::Point2f; coils=12, amp=0.08f0, n=200, stra
 end
 
 # --- 2) Color mapping from stretch/energy to a single color ---
-stress_color(ℓ; max_stretch=0.5) = get(ColorSchemes.plasma, clamp(abs(ℓ - √2)/max_stretch, 0, 1))
+stress_color(ℓ; max_stretch=0.5) = get(ColorSchemes.plasma, clamp(abs(ℓ - wanted_l₀)/max_stretch, 0, 1))
 
 
 for (meta_data, func_result) ∈ func_results
@@ -43,7 +43,7 @@ for (meta_data, func_result) ∈ func_results
   choosen_α = Observable(meta_data[2])
   choosen_method = Observable(meta_data[3])
 
-  T = Observable(60.0)
+  T = Observable(10.0)
   t₀ = Observable(0.0)
   h = @lift(($T - $t₀)/$choosen_N)
 
@@ -78,20 +78,42 @@ for (meta_data, func_result) ∈ func_results
   scatter!(main_axis, @lift([$Xᵢ]), markersize = 20, color = :orange)
   # draw desired position
   scatter!(main_axis, Point2f[wanted_x_d], markersize = 14, color = :red, marker=:xcross)
-  # draw cart
-  poly!(
-    main_axis,
-    @lift(Point2f[
-      ($Uᵢ[1] - 1, 0),
-      ($Uᵢ[1] + 1, 0),
-      ($Uᵢ[1] + 1, -0.2),
-      ($Uᵢ[1] - 1, -0.2)
-    ]),
-    color = :green,
-    strokecolor = :blue,
-    strokewidth = 1
+  # draw pivot
+  scatter!(main_axis, @lift([$Uᵢ]), markersize = 20, color = :gray, marker = :circle)
+  scatter!(main_axis, @lift([$Uᵢ]), markersize = 10, color = :white, marker = :xcross)
+
+  # Stress colorbar
+  Colorbar(
+    f[1, 2],
+    colormap = ColorSchemes.plasma,
+    limits = (0, 0.5),  # your max_stretch value
+    label = "|ℓ - l₀| / max_stretch"
   )
 
+  # Draw lenght of spring arrow
+  L = @lift(norm($Xᵢ - $Uᵢ))
+  L_vec = @lift(($Xᵢ - $Uᵢ))
+  P_vec = @lift(Point2f(-$L_vec[2], $L_vec[1]) / norm($L_vec))
+  lenght_offset_amount = 0.2f0
+
+  arrows2d!(main_axis,
+    @lift[$Uᵢ + $P_vec * lenght_offset_amount, $Xᵢ + $P_vec * lenght_offset_amount],
+    @lift([$L_vec, -$L_vec]),
+    color = :red
+  )
+
+
+  lenght_text_label_pos = @lift(($Uᵢ + $Xᵢ)/2 + ($P_vec * (lenght_offset_amount + 0.2f0)))
+  lenght_text_label_rotation_angle = @lift(atan($L_vec[2], $L_vec[1]))
+
+  lenght_text_label = textlabel!(main_axis,
+    lenght_text_label_pos,
+    text = @lift("L = $(round($L, digits=2))"),
+    text_rotation = lenght_text_label_rotation_angle,
+    fontsize = 14,
+    alpha = 0.0,
+    text_color = :red
+  )
 
   time_label = Label(f[1,1],
     @lift("Time: $(round($t₀ + $h * ($i - 1), digits=2)) s"),
@@ -114,6 +136,16 @@ for (meta_data, func_result) ∈ func_results
     tellwidth = false,
     tellheight = false,
     lineheight = 1.2
+  )
+
+  pivot_position_label = textlabel!(main_axis,
+    @lift($Uᵢ - Point2f(0, 0.5)),
+    text = @lift("($(round($Uᵢ[1], digits=2)), $(round($Uᵢ[2], digits=2)))"),
+  )
+
+  pendulum_positions_label = textlabel!(main_axis,
+    @lift($Xᵢ + Point2f(0.7, 0)),
+    text = @lift("($(round($Xᵢ[1], digits=2)), $(round($Xᵢ[2], digits=2)))"),
   )
 
   framerate = choosen_N[]/(T[] - t₀[])          # fps you want
