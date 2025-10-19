@@ -1,0 +1,1301 @@
+\documentclass[a4paper, 10pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{bm}
+
+\usepackage[margin = 1in]{geometry} % for spacing around
+\usepackage{tabularx}
+\usepackage{graphicx} % for including images in your pdfs
+\usepackage{xcolor} % for including colors in your pdf
+\usepackage{soul} % for text decoration
+\usepackage[utf8]{inputenc} % for encoded text
+\usepackage[T1]{fontenc}
+\usepackage{setspace} % for setting different line spacings between paragrafs.
+
+\usepackage{enumerate} % for letting us get more detailed enumerate lists
+\usepackage{multirow} % to let us combine more rows together
+\usepackage{colortbl} % for decorating tables
+\usepackage{amsmath} % used for representing more complicated math displays
+\usepackage{supertabular}
+\usepackage{longtable} % both of these packages are used to making really big tables
+\usepackage{wrapfig} % allows us to wrap text around figures
+\usepackage{fancyhdr} % for making fancy headers
+%\usepackage{bibtex} % for making better bibliographies
+\usepackage[pdftex]{hyperref} % for letting us make links
+\usepackage{lscape} % Allows us to flip from portrait to landspace
+\usepackage{tikz} % for high detailed drawing
+\usepackage{multicol} % To put things side by side
+\usepackage{rotating} % For rotating objects
+% \usepackage{draftwatermark} % For adding watermarks
+\usepackage{MnSymbol} % for using multiple symbols
+\usepackage{mathtools} % Used for more math symbols
+\usepackage{xfrac} % For more complciated fractions and to add derivitives
+\usepackage{hyperref} % for hyper links
+\usepackage{enumitem} % for better enum lists
+\usepackage{tcolorbox} % for adding colored text boxes
+\usepackage{bm} % Adding bold text to math inputs
+\usepackage{pgfplots} % Used for plotting functions
+\usepackage{pgfplotstable} % Used for plotting tables
+\usepackage{booktabs} % for nicer tables
+\usepackage{longtable} % for long tables that can span multiple pages
+\usepackage[toc,page]{appendix} % for adding appendices
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{minted}
+\usepackage{listings}
+\usepackage{media9}
+\usepackage{qrcode}
+\usepackage{float}
+%%%%%%%%%%%%%%%%%%%%5
+
+
+\graphicspath{Images/}
+
+\begin{document}
+
+\section{Introduction}
+In this study, we numerically address an optimal control problem employing the Hamiltonian framework to derive the necessary conditions for optimality. The Hamiltonian formulation provides a systematic approach for deriving the governing equations.
+
+Consider the following optimal control problem:
+\begin{equation}
+	\begin{aligned}
+		\min \quad & J(v,u) = \int_{0}^{T} \left( \frac{v^2}{2} + \frac{\alpha}{2}u^2 \right) dt, \\
+		 & \dot{v} = g + \frac{u}{m} - \frac{k}{m}v, \\
+		& v(0) = v_{0}.
+	\end{aligned}
+	\label{eq:optimal_problem}
+\end{equation}
+ The Hamiltonian, defined as
+\[
+\mathcal{H}(v,u,\lambda)  = \frac{v^2}{2} + \frac{\alpha}{2}u^2 + \lambda \left( g + \frac{u}{m} - \frac{k}{m}v \right),
+\]
+   is utilized to write the necessary optimality  conditions for the above optimal control problem  as follows:
+\begin{equation}
+	\begin{aligned}
+		& \dot{v} = \frac{\partial \mathcal{H}}{\partial \lambda} (v,u,\lambda) =  g + \frac{u}{m} - \frac{k}{m}v, \\ &
+		\dot{\lambda} = - \frac{\partial \mathcal{H}}{\partial v} (v,u,\lambda) = -v + \frac{k}{m} \lambda, \\ &
+		0 =  \frac{\partial \mathcal{H}}{\partial u} (v,u,\lambda) = \alpha u + \frac{k}{m}\lambda \\ &
+		v(0) = v_{0}, \; \lambda(T) = 0.
+		\label{eq:necessary_coditions}
+	\end{aligned}
+\end{equation} 
+To solve the resulting system of equations, we apply four numerical techniques, specifically the $SE1_1, SE1_2, SE2_1$ and $SE2_2$  methods. Each method begins with three initial points $\mathbf{z}_1 = (v_1(0),\lambda_1(0)), \mathbf{z}_2 =(v_2(0),\lambda_2(0))$ and $\mathbf{z}_3 = (v_3(0),\lambda_3(0))$, which form a triangle in the phase space. The area of this triangle is computed at the initial time $t = 0$, and the methods are applied, respectively, to determine the area of the triangle at the final time $t = T$. So, it allows us to identify which method effectively preserves the geometric properties of the triangle, particularly its area. 
+
+Preserving the triangle's area is important in this context, as it serves as a test for identifying symplectic algorithms. Symplectic algorithms are numerical methods designed to preserve the symplectic structure of Hamiltonian systems, which is directly related to the conservation of geometric properties like area in phase space. 
+
+By applying the $SE1_1, SE1_2, SE2_1$ and $SE2_2$ methods to   \eqref{eq:necessary_coditions}, respectively,  the resulting  equations  are as follows: 
+\begin{equation}
+	\begin{aligned}
+		& SE1_1 = \begin{cases}
+			\frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n+1},u_{n},\lambda_{n}) \\
+			\frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v}  (v_{n+1},u_{n},\lambda_{n}) \\ 
+			0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\ 
+			v(0) = v_0,\; \lambda(0) = \lambda_0. 
+		\end{cases} \\ &
+		SE1_2 =  \begin{cases}
+			  \frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n+1},u_{n+1},\lambda_{n}) \\
+			  \frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v} (v_{n+1},u_{n+1},\lambda_{n})  \\ 
+			  	0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\ 
+			  v(0) = v_0,\; \lambda(0) = \lambda_0. 
+		       	\end{cases} \\ &
+		       	SE2_1 = \begin{cases}
+		       		\frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n},u_{n+1},\lambda_{n+1}) \\
+		       		\frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v} (v_{n},u_{n+1},\lambda_{n+1}) \\ 
+		       			0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\ 
+		       		v(0) = v_0,\; \lambda(0) = \lambda_0. 
+		       	\end{cases} \\&
+		       	SE2_2 = \begin{cases}
+		       			\frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n},u_{n},\lambda_{n+1}) \\
+		       		\frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v} (v_{n},u_{n},\lambda_{n+1}) \\ 
+		       			0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\ 
+		       		v(0) = v_0,\; \lambda(0) = \lambda_0. 
+		       	\end{cases}
+	\end{aligned}
+\end{equation}
+Before presenting numerical results, we first demonstrate that the numerical methods $SE1_1$ and $SE2_2$ are symplectic integrators, which means that they exactly preserve the symplectic condition. In contrast, $SE1_2$ and $SE2_2$ are not symplectic integrators.
+
+$\mathbf{SE1_1:}$
+\begin{align}
+&	v_{n+1} = v_{v} +\Delta{t} g + \frac{\Delta t}{m} u_{n} - \frac{k\Delta t}{m}v_{n+1} \Rightarrow 
+\frac{m+ k \Delta t}{m} v_{n+1} = v_{n} + \Delta{t}g +  \frac{\Delta t}{m} u_{n} \Rightarrow  \nonumber \\ &
+\boxed{v_{n+1} = \frac{m}{m + k\Delta{t}} v_{n}  + \frac{m\Delta{t}}{m + k\Delta{t}}g + \frac{-k\Delta{t}}{m\alpha (m+k\Delta{t})} \lambda_{n}.}  \label{eq:boxed1}\\ &
+\lambda_{n+1} = \lambda_{n} - \Delta{t}v_{n+1} + \frac{k\Delta{t}}{m}\lambda_{n} \Rightarrow  
+\boxed{\lambda_{n+1} =\frac{m+k\Delta{t}}{m}\lambda_{n} - \Delta{t} v_{n+1}.} \label{eq:boxed2}
+\end{align}
+Taking differentials of both sides of equations \eqref{eq:boxed1} and \eqref{eq:boxed2} and using the linearity of wedge product,  we have
+\begin{align*}
+&	dv_{n+1} = \frac{m}{m + k\Delta{t}} dv_{n} + \frac{-k\Delta{t}}{m\alpha (m+k\Delta{t})} d\lambda_{n}, \\ &
+d\lambda_{n+1} =\frac{m+k\Delta{t}}{m} d\lambda_{n} - \Delta{t} d v_{n+1}, \\ &
+d\lambda_{n+1} \wedge dv_{n+1} = \frac{m + k\Delta{t}}{m} d\lambda_{n} \wedge dv_{n+1} =  \frac{m+k\Delta{t}}{m} d\lambda_{n}  \wedge \left( 
+ \frac{m}{m + k\Delta{t}} dv_{n} + \frac{-k\Delta{t}}{m\alpha (m+k\Delta{t})} d\lambda_{n} \right) \Rightarrow   \\ &
+\boxed{ d\lambda_{n+1} \wedge dv_{n+1} =  \frac{m+k\Delta{t}}{m} d\lambda_{n}  \wedge  \frac{m}{m + k\Delta{t}} dv_{n} 
+ =  d\lambda_{n} \wedge dv_{n}}.
+\end{align*}
+$\mathbf{SE2_1}:$ 
+\begin{align}
+&	v_{n+1} = \frac{m-k\Delta{t}}{m} v_{n} + \Delta{t}g + \frac{\Delta{t}}{m} u_{n+1} \Rightarrow \nonumber \\ &
+	\boxed{v_{n+1} = \frac{m-k\Delta{t}}{m} v_{n}  + \Delta{t}g + \frac{-k\Delta{t}}{m^2\alpha} \lambda_{n+1}.}  \label{eq:boxed3}\\ &
+	\boxed{\lambda_{n+1} = \frac{m}{m-\Delta{t}k}(-\Delta{t})v_{n} + \frac{m}{m-\Delta{t}k}\lambda_{n}.}  \label{eq:boxed4}
+\end{align}
+Similar to $SE1_1$, by taking differentials of both sides of equations \eqref{eq:boxed3} and \eqref{eq:boxed4} and using wedge product,  we have
+\begin{align*}
+& dv_{n+1} = \frac{m-k\Delta{t}}{m} dv_{n} + \frac{-k\Delta{t}}{m^2\alpha} d\lambda_{n+1},	 \\ &
+d\lambda_{n+1} = \frac{m}{m-\Delta{t}k}(-\Delta{t}) dv_{n} + \frac{m}{m-\Delta{t}k} d\lambda_{n}, \\ &
+\boxed{dv_{n+1} \wedge d\lambda_{n+1} = \frac{m-k\Delta{t}}{m} dv_{n} \wedge d\lambda_{n+1} = dv_{n} \wedge d\lambda_{n}.}
+\end{align*}
+
+$\mathbf{SE1_2}:$
+\begin{align}
+&	v_{n+1} = \frac{m}{m + k\Delta{t}} v_{n} +  \frac{m}{m + k\Delta{t}}\Delta{t}g + \frac{\Delta{t}}{m + k\Delta{t}} u_{n+1} \Rightarrow  \nonumber \\ &
+\boxed{v_{n+1}  = \frac{m}{m + k\Delta{t}} v_{n} + \frac{m}{m + k\Delta{t}}\Delta{t}g + \frac{-k\Delta{t}}{m\alpha(m + k\Delta{t})} \lambda_{n+1}.} \label{eq:boxed5} \\ &
+\boxed{\lambda_{n+1} = \frac{m+k\Delta{t}}{m} \lambda_{n} + (-\Delta{t})v_{n+1}.} \label{eq:boxed6}
+\end{align}
+Now by taking  differentials of both sides of equations \eqref{eq:boxed5} and \eqref{eq:boxed6}, we have 
+\begin{align}
+	&	dv_{n+1}  = \frac{m}{m + k\Delta{t}} dv_{n}  + \frac{-k\Delta{t}}{m\alpha(m + k\Delta{t})} d\lambda_{n+1} \label{eq:boxed7}, \\ &
+	d\lambda_{n+1} = \frac{m+k\Delta{t}}{m} d\lambda_{n} + (-\Delta{t}) dv_{n+1}. \label{eq:boxed8}
+\end{align}
+From equations \eqref{eq:boxed7} and \eqref{eq:boxed8}, $dv_{n+1}$ and $d\lambda_{n+1}$ can be expressed in terms of $dv_{n}$ and $d\lambda_{n}$ so we have:
+\begin{align}
+	&	dv_{n+1}  = \frac{m^2\alpha}{m\alpha(m + k\Delta{t})-k(\Delta{t})^2} dv_{n}  +  \frac{-k\Delta{t}(m+k\Delta{t})}{m^2\alpha(m+k\Delta{t})-km(\Delta{t})^2}d\lambda_{n} \label{eq_9} \\ &
+	d\lambda_{n+1} = \frac{\alpha(m+k\Delta{t})^2}{m\alpha(m+k\Delta{t})-k(\Delta{t})^2}d\lambda_{n} + \frac{-m^2\alpha\Delta{t}}{m\alpha(m+k\Delta{t})-k(\Delta{t})^2} dv_{n} \label{eq_10}
+\end{align}
+If we take the wedge product of \eqref{eq_9} with \eqref{eq_10},  we get 
+\begin{align}
+	\boxed{dv_{n+1} \wedge d\lambda_{n+1} = \left(1 + \frac{k(\Delta{t})^2}{m\alpha(m+k\Delta{t})-k(\Delta{t})^2}\right) dv_{n} \wedge d\lambda_{n}. }
+\end{align}
+
+$\mathbf{SE2_2:}$
+\begin{align}
+  &	v_{n+1} = g\Delta{t} + (\frac{m-k\Delta{t}}{m}) v_{n} + (\frac{-k\Delta{t}}{m^2\alpha})\lambda_{n}, \label{eq:se2_2_11} \\ &
+  \lambda_{n+1} = (\frac{-m\Delta{t}}{m-k\Delta{t}})v_{n} + (\frac{m}{m-k\Delta{t}})\lambda_{n}  \label{eq:se2_2_12}.
+\end{align}
+
+Taking differentials of both sides of equations \eqref{eq:se2_2_11} and \eqref{eq:se2_2_12} and using wedge product,  we have
+\begin{equation}
+	dv_{n+1} \wedge d\lambda_{n+1} = \left(1 - \frac{k(\Delta{t})^2}{m\alpha(m-k\Delta{t})}\right) dv_{n} \wedge d\lambda_{n}.
+\end{equation}
+\subsection{Linear optimal control problem}
+Let us consider the following linear optimal control problem:
+
+\begin{equation}\label{eq_18}
+\begin{aligned}
+	J(\bm{v},\bm{u}) & = \frac{1}{2} \int_{a}^b \bm{v}(t)^{T} \bm{Q} \bm{v}(t) + \bm{u}(t)^{T} \bm{R} \bm{u}(t)\; dt \\ &
+	\dot{\bm{v}}(t) = \bm{A} \bm{v}(t) + \bm{B}\bm{u}(t), \\ &
+	\bm{v}(a) = \bm{v}_{0},
+\end{aligned}
+\end{equation}
+where $\bm{Q}$ is a real symmetric positive semi-definite matrix and $\bm{R}$ is a real symmetric positive definite matrix. 
+
+The Hamiltonian is
+\begin{equation}\label{eq_19}
+	\mathcal{H}(\bm{v},\bm{u},\bm{\lambda}) =  \frac{1}{2} \bm{v}(t)^{T} \bm{Q} \bm{v}(t) + \frac{1}{2} \bm{u}(t)^{T} \bm{R} \bm{u}(t) + \bm{\lambda}^{T} \bm{A}\bm{v}(t) + \bm{\lambda}^{T} \bm{B}\bm{u}(t), 
+\end{equation}
+and necessary conditions for optimality are 
+\begin{align}
+	& \dot{\bm{v}}(t) = \frac{\partial \mathcal{H}(\bm{v},\bm{u},\bm{\lambda})}{\bm{\partial\bm{\lambda}}}  = \bm{A} \bm{v}(t) + \bm{B}\bm{u}(t), \label{eq_20} \\ &
+	\dot{\bm{\lambda}}(t) =  -\frac{\partial \mathcal{H}(\bm{v},\bm{u},\bm{\lambda})}{\bm{\partial \bm{v}}} = -\bm{Q}\bm{v}(t) - \mathbf{A}^{T}\bm{\lambda}(t), \label{eq_21} \\ &
+	\bm{0} =  \frac{\partial \mathcal{H}(\bm{v},\bm{u},\bm{\lambda})}{\bm{\partial \bm{u}}} = \bm{R}\bm{u}(t) + \bm{B}^{T}\bm{\lambda}(t) \label{eq_22}.
+\end{align}
+Equation \eqref{eq_22} can be solved for $\mathbf{u}$ to give
+\begin{align}
+	\bm{u}(t) = -\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}(t), 
+\end{align}
+the existence of $\bm{R}^{-1}$ is assured, since $\bm{R}$ is a positive definite matrix.
+
+Let us apply  $SE11$  and $SE21$ schemes to equations \eqref{eq_20}-\eqref{eq_22}, respectively. we want to   show that both are symplectic integrators, that is, they preserve the symplectic condition, i.e. $d\bm{v}_{n+1} \wedge d\bm{\lambda}_{n+1} = d\bm{v}_{n} \wedge d\bm{\lambda}_{n}$ or $det(\frac{\partial(\bm{v}_{n+1},\bm{\lambda}_{n+1})}{\partial(\bm{v}_{n},\bm{\lambda}_{n})}) = 1.$    
+
+$\mathbf{SE1_1:}$
+\begin{align}
+&	\frac{\bm{v}_{n+1} - \bm{v}_n}{\Delta{t}} = \bm{A}\bm{v}_{n+1} + \bm{B}\bm{u}_{n} =  \bm{A}\bm{v}_{n+1} - \bm{B}\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}_{n} \Rightarrow \nonumber \\ &
+	\bm{v}_{n+1} = (\bm{I} - \Delta{t}\bm{A})^{-1} \bm{v}_{n} - \Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}_{n}, \label{eq_24} \\ &
+		\frac{\bm{\lambda}_{n+1} - \bm{\lambda}_n}{\Delta{t}} = -\mathbf{Q}\mathbf{v}_{n+1} - \mathbf{A}^{T}\bm{\lambda}_{n} \Rightarrow \nonumber \\ &
+		\bm{\lambda}_{n+1} = -\Delta{t}\bm{Q}\bm{v}_{n+1} +(\bm{I} - \Delta{t}\bm{A}^{T})\bm{\lambda}_{n}, \label{eq_25}
+\end{align}
+
+Taking differentials of \eqref{eq_24} and \eqref{eq_25}, respectively, we obtain the following implicit system of equations:
+\begin{align}
+	& 	d\bm{v}_{n+1} = (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} - \Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n}, \label{eq_26} \\ &
+	d\bm{\lambda}_{n+1} = -\Delta{t}\bm{Q}d\bm{v}_{n+1} +(\bm{I} - \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n}. \label{eq_27}
+\end{align}
+
+By taking the wedge product of \eqref{eq_26} with \eqref{eq_27} from the right, we have 
+
+\begin{align}
+		d\bm{v}_{n+1} \wedge 	d\bm{\lambda}_{n+1}  = &  (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} \wedge  \left(-\Delta{t}\bm{Q}d\bm{v}_{n+1}\right) +   (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} \wedge (\bm{I} - \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n}  +  \nonumber \\ &
+	      \left(-\Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n}\right) \wedge \left(-\Delta{t}\bm{Q}d\bm{v}_{n+1} \right) \label{eq_28}.
+\end{align} 
+
+Upon plugging \eqref{eq_26} into \eqref{eq_28} and using $d\bm{a} \wedge d(\bm{M}d\bm{b}) = (\bm{M}^{T}d\bm{a}) \wedge d\bm{b}$, we obtain the following equality
+\begin{align}
+	d\bm{v}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} \wedge \Delta{t}^2\bm{Q}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} + d\bm{v}_{n} \wedge d\bm{\lambda}_{n} + \nonumber \\ &
+  - \Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} \wedge -\Delta{t}\bm{Q}(\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_n   \nonumber \\ &
+   =  d\bm{v}_{n} \wedge d\bm{\lambda}_{n} - \Delta{t}^{2}(\bm{I}- \Delta{t}A)^{-T}\bm{Q}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} \wedge d\bm{v}_n + \nonumber \\ &
+    \Delta{t}^{2}(\bm{I}- \Delta{t}A)^{-T}\bm{Q}^{T}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} \wedge d\bm{v}_n  \nonumber \\ &
+    =  d\bm{v}_n \wedge d\bm{\lambda}_{n}.
+\end{align}
+
+$\mathbf{SE2_1:}$
+\begin{align}
+	&	\bm{v}_{n+1} = (\bm{I} + \Delta{t}\bm{A}) \bm{v}_{n} - \Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}_{n+1}, \label{eq_30} \\ &
+	\bm{\lambda}_{n+1} = -\Delta{t}(\bm{I}+\Delta{t}A^{T})^{-1}\bm{Q}\bm{v}_{n} +(\bm{I} + \Delta{t}\bm{A}^{T})^{-1}\bm{\lambda}_{n}, \label{eq_31} \\ &
+	d\bm{v}_{n+1} = (\bm{I} + \Delta{t}\bm{A}) d\bm{v}_{n} - \Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n+1}, \label{eq_32} \\ &
+	d\bm{\lambda}_{n+1} = -\Delta{t}(\bm{I}+\Delta{t}A^{T})^{-1}\bm{Q}d\bm{v}_{n} +(\bm{I} + \Delta{t}\bm{A}^{T})^{-1}d\bm{\lambda}_{n}. \label{eq_33}
+\end{align}
+
+By taking the wedge product of \eqref{eq_32} with \eqref{eq_33} we obtain
+
+\begin{align}
+	d\bm{\lambda}_{n+1} \wedge 	d\bm{v}_{n+1} = &  \left(-\Delta{t}(\bm{I}+\Delta{t}A^{T})^{-1}\bm{Q}d\bm{v}_{n}\right) \wedge  \left(- \Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n+1} \right) + \nonumber \\ &
+	 (\bm{I} + \Delta{t}\bm{A}^{T})^{-1}d\bm{\lambda}_{n} \wedge (\bm{I} + \Delta{t}\bm{A})d\bm{v}_{n} + \nonumber \\ &
+	 (\bm{I} + \Delta{t}\bm{A}^{T})^{-1}d\bm{\lambda}_{n} \wedge \left(-\Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n+1}\right). \label{eq_34}
+\end{align}
+
+Upon plugging \eqref{eq_33} into \eqref{eq_34}, we obtain the desired equality \eqref{eq_35}.
+\begin{align}
+		d\bm{\lambda}_{n+1} \wedge 	d\bm{v}_{n+1}  = &	d\bm{\lambda}_{n} \wedge d\bm{v}_{n} + \nonumber \\ & -\Delta{t}^2\left((\bm{I} + \Delta{t}\bm{A}^{T})^{-1}\bm{Q}\right)^{T}\bm{B}\bm{R}^{-1}\bm{B}^{T}(\bm{I} + \Delta{t}\bm{A}^{T})^{-1} d\bm{\lambda}_{n} \wedge d\bm{v}_{n}  + \nonumber \\ &
+		\Delta{t}^2 \left(\bm{B}\bm{R}^{-1}\bm{B}^{T}(\bm{I} + \Delta{t}\bm{A}^{T})^{-1}\bm{Q}\right)^{T} (\bm{I} + \Delta{t}\bm{A}^{T})^{-1} d\bm{\lambda}_{n} \wedge d\bm{v}_{n}  = \nonumber \\ &
+		 d\bm{\lambda}_{n} \wedge d\bm{v}_{n}. \label{eq_35}
+\end{align}
+	
+
+\section{Numerical Results (linear case)}
+
+In this section, we present numerical results (summarized in Table \ref{tab:table1}) that compare the initial and final areas computed by each method. Figures \ref{figse11}-\ref{figse22} depict the area of the triangles calculated in discrete time steps $(t = i\Delta{t},\; \Delta{t} = 0.1)$ with different $\alpha$ over the interval $[0, 10]$.  This stepwise analysis highlights how the area varies in the time range for each approach.
+
+\begin{table}[ht!]\label{table1}
+\begin{center}
+	\begin{tabular}{ |c|c|c| c|} 
+		\hline
+	Method	& $\alpha$ & $A_0$ & $A_T$ \\
+		\hline
+		\multirow{3}{3em}{$SE1_1$}
+		& 10 & 0.1000  & 0.1000 \\ 
+        & 7  & 0.1000  & 0.1000  \\
+		& 5  & 0.1000  & 0.1000  \\ 
+		& 2  & 0.1000  & 0.1000   \\
+		& 1  &  0.1000 & 0.1000    \\
+		&0.5 &  0.1000 & 0.0991          \\
+		\hline 
+		\multirow{3}{3em}{$SE1_2$}
+		& 10  & 0.1000  & 0.1095 \\ 
+        &  7  & 0.1000  & 0.1139   \\
+		& 5   & 0.1000  & 0.1200  \\ 
+		& 2   & 0.1000 & 0.1577   \\
+		& 1   & 0.1000  & 0.2493    \\
+		& 0.5 & 0.1000  & 0.4609        \\
+		\hline
+		\multirow{3}{3em} {$SE2_1$} 
+        & 10   & 0.1000  & 0.1000 \\ 
+        &  7   & 0.1000  & 0.1000  \\
+		& 5    & 0.1000  & 0.1000 \\ 
+		& 2    & 0.1000  & 0.1000 \\
+		& 1    & 0.1000  & 0.1001\\
+		& 0.5  & 0.1000  & 0.2500 \\
+		\hline
+		\multirow{3}{3em}{$SE2_2$} 
+        & 10 & 0.1000 & 0.0895 \\ 
+        & 7  & 0.1000 & 0.0853  \\
+		& 5   & 0.1000  & 0.0801  \\ 
+		& 2   & 0.1000  &  0.0573 \\ 
+		& 1   & 0.1000  & 0.0327 \\
+		& 0.5 & 0.1000  & 0.0117 \\
+		\hline		
+	\end{tabular}
+\end{center}
+\caption{Application of methods $SE1_1, SE1_2, SE2_1$ and $SE2_2$  to system \eqref{eq:necessary_coditions} on  the interval $[0,10]$ with three initial points  $\mathbf{z}_1 = (10,0.1)^{T}, \mathbf{z}_2 =(11,0.1)^{T}$ and $\mathbf{z}_3 = (10,-0.1)^{T}$, in addition,  $k =1, m =1, \Delta t =0.1, T = 10$. $A_0$ and $A_T$ denote the areas of the triangle at time $t = 0$ and $t = T = 10$, respectively.}  
+\label{tab:table1}
+\end{table}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=1\textwidth]{Images/se11.pdf}
+	\caption{$SE1_1$ method. Triangle area vs. time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10].$}\label{figse11}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=1\textwidth]{Images/se12.pdf}
+	\caption{$SE1_2$ method. Triangle area vs. time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10].$}\label{figse12}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=1\textwidth]{Images/se21.pdf}
+	\caption{$SE2_1$ method. Triangle area vs. time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10].$}\label{figse21}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=1\textwidth]{Images/se22.pdf}
+	\caption{$SE2_2$ method.Triangle area vs. time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10].$}\label{figse22}
+\end{figure}
+
+\section{Optimal control problem}
+
+Consider the following basic optimal control problem,
+\begin{equation}
+	\begin{aligned}
+		& \min \int_{a}^b\, j(\bm{y},\bm{u})\, dt \\ &
+		\bm{\dot{y}} = \bm{f}(\bm{y},\bm{u}) \\ &
+		\bm{y}(0) = \bm{y}_{0}
+	\end{aligned}
+\end{equation}
+
+The necessary conditions from the Hamiltonian $H$, which is defined as follows are generated
+\begin{align}
+	H(\bm{y},\bm{u},\bm{\lambda}) = j(\bm{y},\bm{u}) + \bm{\lambda}^{T}\bm{f}(\bm{y},\bm{u})
+\end{align} 
+The necessary optimality conditions can be written in term of the Hamiltonian: 
+\begin{align}
+	& \bm{\dot{y}} = H_{\bm{\lambda}}  = \frac{\partial H}{\partial \bm{\lambda}}(\bm{y},\bm{u},\bm{\lambda})\\ &
+	\bm{\dot{\lambda}} = -H_{\bm{y}} = - \frac{\partial H}{\partial \bm{y}}(\bm{y},\bm{u},\bm{\lambda})  \\ &
+	\bm{0} = H_{\bm{u}}= \frac{\partial H}{\partial \bm{u}}(\bm{y},\bm{u},\bm{\lambda}). \label{eq_40}
+\end{align}
+We want to show that $SE11$ and $SE21$  schemes are simplistic integrators, that is $d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = d\bm{y}_{n} \wedge d\bm{\lambda}_{n}$ if $H_{\bm{yu}} = \frac{\partial^{2}H}{\partial \bm{u}\partial\bm{y}} = \bm{0}$.
+
+$\mathbf{SE1_1:}$
+Let $\bm{u}$  be a function of $\bm{y}$ and $\bm{\lambda}$, i.e. $\bm{u} = \bm{g}(\bm{y},\bm{\lambda})$ so from \eqref{eq_40} we have 
+\begin{align}
+	& H_{\bm{uy}} + H_{\bm{uu}}\bm{g_y} = 0 \Rightarrow \bm{g_y} = - H_{\bm{uu}}^{-1}H_{\bm{uy}}  \label{eq_41} \\ &
+	 H_{\bm{u\lambda}} + H_{\bm{uu}}\bm{g_{\lambda}} = 0 \Rightarrow \bm{g_{\lambda}} = - H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}, \label{eq_42} \\ &
+	 d\bm{u} =  - H_{\bm{uu}}^{-1}H_{\bm{uy}} d\bm{y}  - H_{\bm{uu}}^{-1}H_{\bm{u\lambda}} d\bm{\lambda} \label{eq_43}
+\end{align}
+where $\bm{g_y} = \frac{\partial\bm{g}}{\partial\bm{y}}$ and $\bm{g_{\lambda}} = \frac{\partial\bm{g}}{\partial\bm{\lambda}}$, respectively. 
+\begin{align}
+	 \bm{y}_{n+1} = \bm{y}_n + \Delta{t} H_{\bm{\lambda}}(\bm{y}_{n+1},\bm{u}_n,\bm{\lambda}_n) \label{eq_44}. 
+\end{align}
+ Taking  differential of \eqref{eq_44} and plugging \eqref{eq_41}-\eqref{eq_43} into \eqref{eq_45}  we obtain the equation:
+\begin{align}
+	d\bm{y}_{n+1} = d\bm{y}_n + \Delta{t}(H_{\bm{\lambda y}}d\bm{y}_{n+1} + H_{\bm{\lambda u}}d\bm{u}_{n} + H_{\bm{\lambda \lambda}}d\bm{\lambda}_{n}), \label{eq_45} 
+\end{align}
+\begin{align}
+	&	d\bm{y}_{n+1} = d\bm{y}_n + \Delta{t}H_{\bm{\lambda y}}d\bm{y}_{n+1} -  \Delta{t} H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_n - \Delta{t} H_{\bm{\lambda u}} H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d\bm{\lambda}_n + \Delta{t} H_{\bm{\lambda \lambda}}d\bm{\lambda}_{n} \\ &
+		\boxed{d\bm{y}_{n+1} = (\bm{I} - \Delta{t}H_{\bm{\lambda y}})^{-1}(\bm{I} - \Delta{t}\bm{A}) d\bm{y}_n +\Delta{t}(\bm{I} - \Delta{t}H_{\bm{\lambda y}})^{-1}(-\bm{B} + H_{\bm{\lambda \lambda}})d\bm{\lambda}_{n}}, \label{eq_47}
+\end{align}
+where $\bm{A} = H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}$ and $\bm{B} = H_{\bm{\lambda u}} H_{\bm{uu}}^{-1}H_{\bm{u\lambda}} $.
+\begin{align}
+	& \bm{\lambda}_{n+1} = \bm{\lambda}_n - \Delta{t} H_{\bm{y}}(\bm{y}_{n+1},\bm{u}_n,\bm{\lambda}_n) \\ &
+		d\bm{\lambda}_{n+1} = d\bm{\lambda}_n - \Delta{t}(H_{\bm{yy}}d\bm{y}_{n+1} + H_{\bm{y u}}d\bm{u}_{n} + H_{\bm{y \lambda}}d\bm{\lambda}_{n}) \label{eq_49}
+		\end{align}
+		Upon plugging \eqref{eq_41}-\eqref{eq_43} into \eqref{eq_49}, we have 
+		\begin{align}
+			& 	d\bm{\lambda}_{n+1} = d\bm{\lambda}_n - \Delta{t}H_{\bm{yy}}d\bm{y}_{n+1} + \Delta{t} H_{\bm{y u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_{n} + \Delta{t} H_{\bm{y u}}H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d \bm{\lambda}_{n} -\Delta{t}  H_{\bm{y \lambda}}d\bm{\lambda}_{n} \\ &
+			d\bm{\lambda}_{n+1} = (I-\Delta{t}H_{\bm{y\lambda}} + \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n} + \Delta{t}\bm{D} d\bm{y}_n - \Delta{t}H_{\bm{yy}}d\bm{y}_{n+1} \label{eq_51}
+		\end{align}
+		where $D = H_{\bm{yu}}H^{-1}_{\bm{uu}}H_{\bm{uy}}$.
+		
+		By taking the wedge product of \eqref{eq_51} with $d\bm{y}_{n+1}$ we obtain
+		\begin{align*}
+			d\bm{\lambda}_{n+1} \wedge d\bm{y}_{n+1} = & (\bm{I} - \Delta{t}H_{\bm{y\lambda}} + \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n}\wedge (\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-1}(\bm{I} - \Delta{t}\bm{A})d\bm{y}_{n} + \\ &
+			\Delta{t}(\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-1}(\bm{B} - H_{\bm{\lambda \lambda}}) d\bm{\lambda}_{n} \wedge \Delta{t}\bm{D} d\bm{y}_{n}.
+		\end{align*}
+		If $H_{\bm{yu}} = \bm{0}$, then $\bm{A} = \bm{0},\; \bm{A}^{T} = \bm{0},\;\bm{D} = \bm{0}$ so we have
+		\begin{align}
+			d\bm{\lambda}_{n+1} \wedge d\bm{y}_{n+1} = &(\bm{I} - \Delta{t}H_{\bm{y\lambda}})d\bm{\lambda}_{n}\wedge (\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-1}d\bm{y}_{n}  =  \\ &
+			(\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-T}(\bm{I} - \Delta{t}H_{\bm{y\lambda}}) d\bm{\lambda}_{n} \wedge d\bm{y}_{n} = \\&
+			(\underbrace{\bm{I}- \Delta{t}H_{\bm{\lambda y}}^{T}}_{H_{\bm{y\lambda}} = H_{\bm{\lambda y}}^{T}})^{-1}(\bm{I} - \Delta{t}H_{\bm{y\lambda}}) d\bm{\lambda}_{n} \wedge d\bm{y}_{n}= \\&
+			(\bm{I}- \Delta{t}H_{\bm{y \lambda}})^{-1}(\bm{I} - \Delta{t}H_{\bm{y\lambda}}) d\bm{\lambda}_{n} \wedge d\bm{y}_{n} \\ &
+			d\bm{\lambda}_{n} \wedge d\bm{y}_{n}.
+		\end{align}
+		$\mathbf{SE2_1}$: 
+		\begin{align}
+				\bm{y}_{n+1} = \bm{y}_n + \Delta{t} H_{\bm{\lambda}}(\bm{y}_{n},\bm{u}_{n+1},\bm{\lambda}_{n+1})
+		\end{align}
+		\begin{equation}\label{eq_58}
+	\begin{aligned}
+			d\bm{y}_{n+1} =  & d\bm{y}_n + \Delta{t}H_{\bm{\lambda y}}d\bm{y}_{n} -  \Delta{t} H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_{n+1} -  \\ &
+			 \Delta{t} H_{\bm{\lambda u}} H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d\bm{\lambda}_{n+1} + \Delta{t} H_{\bm{\lambda \lambda}}d\bm{\lambda}_{n+1} \\ &
+		    = (\bm{I} + \Delta{t}H_{\bm{\lambda u}}H^{-1}_{\bm{uu}}H_{\bm{uy}})^{-1}(\bm{I} + \Delta{t}H_{\lambda y}) d\bm{y}_n + \\ & (\bm{I} + \Delta{t}H_{\bm{\lambda u}}H^{-1}_{\bm{uu}}H_{\bm{uy}})^{-1}(-\Delta{t}H_{\bm{\lambda u}}H_{\bm{uu}}H_{\bm{u\lambda}} + \Delta{t}H_{\lambda\lambda})  d\bm{\lambda}_{n+1}, 
+	\end{aligned}
+	\end{equation}
+	\begin{align}
+			\bm{\lambda}_{n+1} = \bm{\lambda}_n - \Delta{t} H_{\bm{y}}(\bm{y}_{n},\bm{u}_{n+1},\bm{\lambda}_{n+1})
+	\end{align}
+	\begin{equation}\label{eq_60}
+		\begin{aligned}
+				d\bm{\lambda}_{n+1} =  & d\bm{\lambda}_n -\Delta{t}H_{\bm{y y}}d\bm{y}_{n} + \Delta{t} H_{\bm{yu}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_{n+1} +  \\ &
+			\Delta{t} H_{\bm{yu}}H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d\bm{\lambda}_{n+1} - \Delta{t} H_{\bm{y \lambda}}d\bm{\lambda}_{n+1} \\ &
+			=  (\bm{I} - \Delta{t}H_{\bm{yu}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}}+\Delta{t}H_{\bm{y\lambda}})^{-1} d\bm{\lambda}_n - \\ &  \Delta{t} (\bm{I} - \Delta{t}H_{\bm{y u}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}}+\Delta{t}H_{\bm{y\lambda}})^{-1}H_{\bm{yy}}d\bm{y}_{n} + \\ &
+			\Delta{t}(\bm{I} - \Delta{t}H_{\bm{y u}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}}+\Delta{t}H_{\bm{y\lambda}})^{-1}H_{\bm{yu}}H^{-1}_{\bm{uu}}H_{\bm{uy}}d\bm{y}_{n+1}.
+			\end{aligned}
+	\end{equation}
+	
+	If $H_{\bm{uy}} = \bm{0}$, the equations \eqref{eq_58} and \eqref{eq_60} simplify  to 
+	\begin{align}
+			& d\bm{y}_{n+1} = (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} + (-\Delta{t}H_{\bm{\lambda u}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}} + \Delta{t} H_{\bm{\lambda\lambda}}) d\bm{\lambda}_{n+1} \label{eq_61}  \\ & 
+			d\bm{\lambda}_{n+1} = (\bm{I} + \Delta{t}H_{\bm{y\lambda}})^{-1} d\bm{y}_{n} -\Delta{t}(\bm{I} + \Delta{t}H_{\bm{y\lambda}})^{-1}H_{\bm{yy}}d\bm{y}_n \label{eq_62}
+	\end{align}
+	Taking the wedge product of \eqref{eq_61} with $d\bm{\lambda}_{n+1}$ and  substituting  equation \eqref{eq_62} into the resulting  expression, we obtain: 
+	\begin{equation}
+	\begin{aligned}
+		 d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} \wedge  (\bm{I} + \Delta{t}H_{\bm{y\lambda}})^{-1} d\bm{\lambda}_{n}   \\ & 
+		 = (\underbrace{\bm{I} + \Delta{t}H_{\bm{y\lambda}}^{T}}_{H_{\bm{y\lambda}}^{T}=H_{\bm{\lambda y}}})^{-1} (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} \wedge d\bm{\lambda}_n \\ &
+		  = d\bm{y}_n \wedge d\bm{\lambda}_n.
+	\end{aligned}  
+	\end{equation}
+    \textbf{Modified Mid Point:} $(\mathbf{M.M.P})$
+    \begin{align}
+        & \bm{y}_{n+1} = \bm{y}_{n} + \Delta{t}H_{\bm{\lambda}}(\bm{y_{n+\frac{1}{2}}}, \bm{u}(\bm{y_{n+\frac{1}{2}}},\bm{\lambda_{n+\frac{1}{2}}}),\bm{\lambda_{n+\frac{1}{2}}}), \nonumber \\ &
+        d\bm{y}_{n+1} = d\bm{y}_{n} + \frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{y}}(d\bm{y}_{n+1}+d\bm{y}_{n})+ \frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{u}}d\bm{u}+ \underbrace{\frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{\lambda}}(d\bm{\lambda}_{n+1}+d\bm{\lambda}_{n})}_{\bm{0}}, \nonumber \\ &
+        d\bm{y}_{n+1} = d\bm{y}_{n}  +  \frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{y}}(d\bm{y}_{n+1}+d\bm{y}_{n})
+        + \frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{u}}\left( -H_{\bm{uu}}^{-1}H_{\bm{uy}}d(d\bm{y}_{n+1}+d\bm{y}_{n})-H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}(d\bm{\lambda}_{n+1}+d\bm{\lambda}_{n}) \right), \nonumber \\ &
+        \boxed{ d\bm{y}_{n+1} = (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} + (-\frac{\Delta{t}}{2}) (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} + 
+          (-\frac{\Delta{t}}{2}) (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1},} \label{m.m.p_eq_1}
+    \end{align}
+    where $\bm{A} = H_{\bm{\lambda y}} - H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}},\; \bm{B} = H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}.$
+    
+    Applying a similar procedure, we obtain:
+    \begin{align}
+       \boxed{d\bm{\lambda}_{n+1} = (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})d\bm{\lambda}_{n} + (-\frac{\Delta{t}}{2}) (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + 
+          (-\frac{\Delta{t}}{2}) (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n},} \label{m.m.p_eq_2} 
+    \end{align}
+    where $\bm{C} = H_{\bm{yy}} - H_{\bm{yu}}H_{\bm{uu}}^{-1}H_{\bm{uy}}$ and 
+    \begin{align*}
+        \bm{\lambda}_{n+1} = \bm{\lambda}_{n} - \Delta{t}H_{\bm{y}}(\bm{y_{n+\frac{1}{2}}}, \bm{u}(\bm{y_{n+\frac{1}{2}}},\bm{\lambda_{n+\frac{1}{2}}}),\bm{\lambda_{n+\frac{1}{2}}}).
+    \end{align*}
+
+    By taking the wedge product of \eqref{m.m.p_eq_1} with $d\bm{\lambda}_{n+1}$ we have the following:
+    \begin{align}
+        d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} =  & (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge  d\bm{\lambda}_{n+1} + \nonumber \\ &
+        (-\frac{\Delta{t}}{2}) (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge d\bm{\lambda}_{n+1}  = \nonumber \\ &
+         (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})d\bm{\lambda}_{n} + \nonumber \\ & 
+        (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge   (-\frac{\Delta{t}}{2}) (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + \nonumber \\ &
+        (-\frac{\Delta{t}}{2}) (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2}) (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + \nonumber \\ &
+        (-\frac{\Delta{t}}{2}) (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2}) (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n}. \label{m.m.p_eq_0}
+    \end{align}
+    Using the facts $d\bm{a} \wedge d\bm{c} = -d\bm{c} \wedge d\bm{a}$ and $d\bm{a} \wedge \bm{M}d\bm{c} = \bm{M}^{T}d\bm{a} \wedge d\bm{c} $, equation \eqref{m.m.p_eq_0}  can be written as: 
+    \begin{align}
+        d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  (\bm{I}-\frac{\Delta{t}}{2}\bm{A})(\bm{I}+\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})  d\bm{y}_{n} \wedge d\bm{\lambda}_{n} + \nonumber \\ &
+        (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1} (\bm{I}+\frac{\Delta{t}}{2}\bm{A})^{-1} d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\ &
+        (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\ &
+        (\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n}. \label{m.m.p_eq_3}
+    \end{align}
+    Since $(\bm{I} - \frac{\Delta{t}}{2}\bm{A})(\bm{I} + \frac{\Delta{t}}{2}\bm{A}) = (\bm{I} + \frac{\Delta{t}}{2}\bm{A})(\bm{I} - \frac{\Delta{t}}{2}\bm{A})$, it follows that  $(\bm{I} - \frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I} + \frac{\Delta{t}}{2}\bm{A})^{-1} = (\bm{I} + \frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I} - \frac{\Delta{t}}{2}\bm{A})^{-1}$, So the equation \eqref{m.m.p_eq_3} can be rewritten as:
+    \begin{align}
+         d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  d\bm{y}_{n} \wedge d\bm{\lambda}_{n} + \nonumber \\ &
+        (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1} (\bm{I}+\frac{\Delta{t}}{2}\bm{A})^{-1} d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\ &
+        (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\ &
+        (\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n}. \label{m.m.p_eq_4}
+    \end{align}
+    \begin{align}
+         d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = & \bm{I}-\frac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n} \wedge d\bm{\lambda}_{n}  + \nonumber \\ &
+          (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1} (\bm{I}+\frac{\Delta{t}}{2}\bm{A})^{-1} d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\ &
+        (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1}. \label{m.m.p_eq_5}  
+    \end{align}
+    By taking the wedge product of  $d\bm{y}_{n+1}$ with $(-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}$ we have the following: 
+    \begin{align}
+       \underbrace{d\bm{y}_{n+1} \wedge  (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}}_{\bm{0}} =& (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} +\nonumber \\ &
+       (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}  + \nonumber \\ &
+       (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}. \label{m.m.p_eq_6}
+    \end{align}
+    Rewriting the equation \eqref{m.m.p_eq_6} by isolating  $ (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}$, we obtain the following equivalent form:
+    \begin{multline}\label{m.m.p_eq_7}
+     (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} \wedge (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1} = \\ 
+     (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + \\ 
+       (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}. 
+    \end{multline}
+    Upon plugging  \eqref{m.m.p_eq_7} into  \eqref{m.m.p_eq_5}, we get:
+    \begin{multline}\label{m.m.p_eq_8}
+        d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = \bm{I}-\frac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n} \wedge d\bm{\lambda}_{n} \\ 
+        +  \frac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1}
+    \end{multline}
+    By solving \eqref{m.m.p_eq_8} for $ d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1}$, we have:
+    \begin{multline}\label{m.m.p_eq_9}
+        \left(\bm{I}-\frac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}\right) d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1}  = \\ 
+          \left(\bm{I}-\frac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}\right) d\bm{y}_{n} \wedge d\bm{\lambda}_{n}.
+    \end{multline}
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    \subsection{Numerical results (nonlinear case)}
+    We consider the following nonlinear optimal control problems and  apply $SE11, SE21$, and implicit midpoint methods. As analytically proven, condition $H_{yu} = \vect{0}$ in Problem \eqref{eq_65} ensures the symplecticity of $SE11$ and $SE21$, thus guaranteeing the preservation of the phase-space area.  This property is numerically validated  in Table \ref{Table:2}, which compares the absolute relative errors in the preserved area at the initial and final times. In contrast, problem \eqref{eq_64} does not satisfy the condition $H_{yu} = \vect{0}$, and as shown in Table \ref{Table:2}, the $SE11$ and $SE21$ methods lose their symplectic property in this case, leading to nonpreservation of the phase-space area. 
+
+These simulations employ three distinct initial points to construct a triangular shape at the initial time see Figure \ref{triangle}. To compute the area of this triangle, we split it into four smaller non-overlapping triangles, calculate their individual areas, and add them to determine the total area. 
+
+\begin{minipage}{0.45\textwidth}
+\begin{align}
+     \min & \int_{0}^2\, \frac{1}{2}v^{2} + \frac{\alpha}{2}u^2\, dt \nonumber \\ &
+     \dot{v} = g + \frac{u}{m} - \frac{k}{m}v^2 \label{eq_64} \\ &
+     v(0) = v_0 \nonumber
+\end{align}
+\label{eq:einstein}
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\textwidth}
+\begin{align}
+\min & \int_{0}^2 \, \frac{1}{2}v^{2}+ \frac{\alpha}{2}u^2\, dt \nonumber \\ &
+\dot{v} = g + \frac{u}{m} - \frac{k}{m}uv \label{eq_65} \\ &
+     v(0) = v_0 \nonumber
+\end{align}
+\end{minipage}
+Necessary optimality conditions for \eqref{eq_64} and \eqref{eq_65}, respectively, 
+
+\begin{minipage}{0.4\textwidth}
+\begin{align}
+     & H(v,u,\lambda) = \frac{1}{2} v^2 + \frac{\alpha}{2} u^2 + \lambda (g + \frac{1}{m} u - \frac{k}{m}v^2) \nonumber \\ &
+     \begin{cases}
+         \dot{v} = H_{\lambda}(v,u,\lambda) =  g + \frac{u}{m} - \frac{k}{m}v^2  \\ 
+     \dot{\lambda} =  - H_{v}(v,u,\lambda) = -v + \frac{2k}{m} \lambda v  \\ 
+      0 =  H_{u}(v,u,\lambda) = \alpha u + \frac{1}{m}\lambda 
+     \end{cases} \label{eq_66} \\ &
+      H_{vu} = 0 \nonumber.
+\end{align}
+\end{minipage}
+\hfill
+\begin{minipage}{0.4\textwidth}
+\begin{align}
+ & H(v,u,\lambda) = \frac{1}{2} v^2 + \frac{\alpha}{2} u^2 + \lambda (g + \frac{1}{m} u - \frac{k}{m} uv) \nonumber \\ &
+ \begin{cases}
+     \dot{v} = H_{\lambda}(v,u,\lambda) =  g + \frac{u}{m} - \frac{k}{m}uv  \\ 
+     \dot{\lambda} =  - H_{v}(v,u,\lambda) = -v + \frac{k}{m} \lambda u  \\ 
+      0 =  H_{u}(v,u,\lambda) = \alpha u + \frac{1}{m}\lambda - \frac{k}{m}\lambda v 
+ \end{cases} \label{eq_67} \\ &
+      H_{vu} \neq 0. \nonumber
+\end{align}
+\end{minipage}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|c|c|c|c||c|c|}
+\hline
+ $\alpha =0.5,\; N.T = 1553$& $\Delta{t}$ & $|A_0 - A_{T}|, H_{vu}=0$ &$\frac{|A_0 - A_{T}|}{A_0}, \;H_{vu} = 0 $ & $|A_0-A_T|, H_{vu} \ne \vect{0}$& $\frac{|A_0 - A_{T}|}{A_0}, \;H_{vu} \neq 0 $ \\ \hline 
+%\cline{2-5}
+\multirow{3}{*}{$SE1_1$} & $0.02$ & $3.0978\times 10^{-5}$ & $2.478\times 10^{-2}$ &$1.1293\times 10^{-3}$ & $0.9032$ \\
+                         &$0.01$ & $2.2191\times 10^{-5}$ & $1.7753\times 10^{-2}$ & $1.1883\times 10^{-3}$ & $0.9506$ \\  \hline
+%\cline{2-5}
+\multirow{3}{*}{$SE2_1$} & $0.02$ & $1.1769\times 10^{-5}$ & $9.415\times 10^{-3}$ & $1.2610\times 10^{-4}$ &$0.1008$ \\
+                         & $0.01$& $1.3989\times 10^{-5}$ &$1.1191\times 10^{-2}$ & $1.5809\times 10^{-4}$ &$0.1264$ \\
+                     \hline
+%\cline{2-5}
+\multirow{3}{*}{Mid Point}  &$0.02$&$1.7307\times 10^{-5}$& $1.3845\times 10^{-2}$& $2.0385\times 10^{-4}$ &  $0.1630$ \\
+                            &$0.01$&$1.7222\times 10^{-5}$&$1.3777\times 10^{-2}$ & $1.9555\times 10^{-4}$ & $0.1564$  \\
+                             \hline
+\end{tabular}
+\caption{Application of $SE1_1, SE1_2$ and implicit mid point  methods  to systems \eqref{eq_66} and \eqref{eq_67} on the interval $[0,2]$ with three initial points  $\mathbf{z}_1 = (0,1)^{T}, \mathbf{z}_2 =(0.05,1)^{T}$ and $\mathbf{z}_3 = (0,1.05)^{T}$, where,  $k =1, m =20, T = 2$. $A_0 = 0.0013$ and $A_T$ denote the areas of the triangle at time $t = 0$ and $t = T = 2$, respectively.}
+\label{Table:2}
+\end{center}
+\end{table}
+%{\color{red}\Huge\textbf{$dx \wedge dy$ measures area on the tangent space of $(x, y)$.}}
+
+%{\color{red}{\Large{$dx \wedge dy$  measures area on the tangent space of $(x, y)$.}}}
+%$\omega$ measures areas on the tangent spaces of $(x_i,y_i)$
+%$x\quad y \quad X \quad Y$
+%$\alpha = 10  \quad \alpha = 7  \quad  \alpha = 2 \quad  \alpha = 5 \quad  \alpha = 1 %\quad \alpha = 0.5  \quad \Delta{t} =0.1$
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{table}[ht!]\label{table1}
+\begin{center}
+	\begin{tabular}{|c|c|c|} 
+		\hline
+	Method, $\alpha = 0.5$	& $\Delta t$ & $||A_0^{T} J A_0 - J||$, $H_{uv}\ne \vect{0}$ \\
+		\hline
+		\multirow{2}{5em}{$SE1_1$}
+		& 0.5 & 0.0174   \\ 
+        & 0.2  & 0028    \\
+		& 0.02  & $2.7721\times 10^{-5}$    \\ 
+		\hline 
+		\multirow{2}{5em}{$SE2_1$}
+		& 0.5  & 0.0166  \\ 
+        &  0.2  & 0028    \\
+		& 0.02   & $2.7712\times 10^{-5}$      \\ 
+		\hline\multirow{2}{5em}{Mid Point}
+		& 0.5  & 0.0079 \\ 
+        &  0.2  & $2.7735\times 10^{-4}$   \\
+		& 0.02   & $1.5254\times 10^{-7}$      \\ 
+		\hline
+        \multirow{2}{5em}{Modified $SE1_1$}
+		& 0.5  & $2.5931\times 10^{-8}$  \\ 
+        &  0.2  & $3.6732\times 10^{-9}$    \\
+		& 0.02   & $4.9304\times 10^{-10}$   \\ 
+		\hline
+        \multirow{2}{5em}{Modified $SE2_1$}
+		& 0.5  & $1.0876\times 10^{-8}$  \\ 
+        &  0.2  & $3.6732\times 10^{-9}$    \\
+		& 0.02   & $4.9304\times 10^{-10}$   \\ 
+        \hline
+        \multirow{2}{5em}{Modified Mid Point}
+		& 0.5  & $2.4509\times 10^{-8}$  \\ 
+        &  0.2  & $5.0484\times 10^{-9}$    \\
+		& 0.02   & $5.1423\times 10^{-10}$   \\ 
+        \hline
+	\end{tabular}
+\end{center}
+\caption{Numerical evaluation of symplecticity for  $SE1_1, SE2_1, M.P, M.SE1_1, M.SE2_1$, and $M.M.P$  methods  (applied to system \eqref{eq_67}) with different time step sizes $(\Delta t)$. $k=1, m=20$. $A_0 = \frac{\partial z_{n+1}}{\partial z_n}(v_n,\lambda_n).$}
+\label{tab:table1}
+\end{table}
+
+\begin{figure}[bht]
+	\centering
+	\includegraphics[width=0.5\textwidth]{triangle.pdf}
+	\caption{Splitting  the triangle with vertices A, B and C into 1553 smaller non-overlapping triangles}\label{triangle}
+\end{figure}
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Nonlinear optimal control problems(Inverted pendulum problem)}
+Consider the optimal control problem of   the inverted pendulum:
+\begin{align*}
+    \min_{u}\; &  \frac{1}{2}\, \int_{0}^{T} ||\bm{x}-\bm{x}_d||^{2}\; dt + \frac{\alpha}{2} \, \int_{0}^{T} u^{2} dt \\ &
+    m\ddot{\bm{x}} + \frac{\partial{U}}{\partial \bm{x}} = \bm{0}, \\ &
+    \bm{x}(0) = \bm{x}_{0}, \quad \dot{\bm{x}}(0) = \bm{v}_0,
+    \end{align*}
+    where
+    \begin{align*}
+        & U = \frac{1}{2}k(L-l_0)^2 - \bm{a}^{T}\bm{x},\; L = ||\bm{x}-(u,0)^{T}||, \\ &
+        \frac{\partial{U}}{\partial\bm{x}} =  k(\frac{L-l_{0}}{L})(\bm{x}- (u,0)^{T})-\bm{a}
+    \end{align*}
+By introducing an auxiliary variable $\bm{v}$ and set it to $\dot{\bm{x}}$, the second order differential equations is converted into a first order  system of differential equations so the control problem is formulated  as follows: 
+\begin{equation} 
+\label{eq:cont_tim_p}
+\begin{aligned}
+\min_{\bm{x},\, \bm{v},\, u} & J(\bm{x}, u) 
+\\ &
+\dot{\bm{x}} - \bm{v} = \bm{0}, \\ &
+ \dot{\bm{v}} + \frac{1}{m} \frac{\partial{U}}{\partial\bm{x}} =  \bm{0},
+\\ &
+ \bm{x}(0) =\bm{x}_0, \; \bm{v}(0) = \bm{v}_0.
+\end{aligned}
+\end{equation}
+
+To derive the necessary conditions for optimality, we introduce the Hamiltonian function $H$:
+\[
+H(\bm{v},\bm{x},u,\bm{\lambda},\bm{\mu}) =
+f(\bm{x},u) +  \bm{\lambda}^{T} (\frac{-1}{m})\frac{\partial U}{\partial\bm{x}} + \bm{\mu}^{T} \bm{v} 
+\]
+where $f(\bm{x},u) = r(\bm{x}) + q(u)$. By applying the Pontryagin's maximum principle to the Hamiltonian function,   the necessary  conditions for optimality are given  as follows:
+\begin{align*}
+ & \text{Adjoint Equations: }
+\begin{cases}
+\dot{\bm{\lambda}} = -\frac{\partial H}{\partial \bm{v}}, & \bm{\lambda}(T) = \bm{0} \\
+\dot{\bm{\mu}} = -\frac{\partial H}{\partial \bm{x}}, & \bm{\mu}(T)= \bm{0}
+\end{cases} \\ &
+\text{Control Equation: }
+\begin{cases}
+\frac{\partial H}{\partial u} = 0
+\end{cases} \\ &
+\text{State Equations: }
+\begin{cases}
+\dot{\bm{v}} = \frac{\partial H}{\partial \bm{\lambda}}, & \bm{\bm{v}(0)} = \bm{v}_{0} \\ 
+\dot{\bm{x}} = \frac{\partial H}{\partial \bm{\mu}}, & \bm{\bm{x}(0)} = \bm{x}_{0} \\ 
+\end{cases} \\ &
+\end{align*}
+This system of equations forms a two-point boundary value problem (TPBVP), with boundary conditions specified at both the initial and terminal times.  
+\begin{equation}
+\label{eq:sys_analytic_sol}
+\begin{aligned}
+& \begin{cases}
+\dot{\bm{\lambda}} + \bm{\mu} = \bm{0}, &  \bm{\lambda}(T) = \bm{0},
+\\ 
+\dot{\bm{\mu}} + (\bm{x} - \bm{x}_d)- \left(\frac{kl_0}{mL^3}(\bm{x} -(u,0)^{T})(\bm{x}-(u,0)^{T})^{T} + \frac{k}{m}(\frac{L-l_0}{L})\bm{I}\right)\bm{\lambda} = \bm{0}, & \bm{\mu}(T) = \bm{0},
+\end{cases}  
+\\ &
+\alpha u - \bm{\lambda}^{T}\left( \left[\frac{-kl_0}{mL^{3}}\bm{e}_1^{T}(\bm{x}-(u,0)^{T})\right](\bm{x} - (u,0)^{T}) + \frac{-k}{m} (\frac{L-l_0}{L})\bm{e}_1 \right) = 0,
+\\ &
+\begin{cases}
+\dot{\bm{v}} + \frac{k}{m}(\frac{L-l_0}{L})(\bm{x}-(u,0)^{T})-\frac{1}{m}\bm{a} = \bm{0}, & \bm{v}(0) = \bm{v}_0,
+\\ 
+\dot{\bm{x}} -\bm{v} = \bm{0}, & \bm{x}(0) = \bm{x}_0
+\end{cases}
+\end{aligned}
+\end{equation}
+To solve \eqref{eq:sys_analytic_sol}, six numerical schemes are  employed as follows: 
+\begin{align*}
+\text{Set } \bm{y}:= (\bm{v},\bm{x})^{T}, \quad \bm{p} := (\bm{\lambda},\bm{\mu})^{T},
+\end{align*}
+
+
+\begin{equation}
+\begin{array}{c@{\hspace}c}
+SE1: \begin{cases}
+            \dfrac{\Delta{\bm{y}}}{\Delta t} = \dfrac{\partial H}{\partial \bm{p}}(\bm{y}_{{\color{red}n+1}}, u_n, \bm{p}_n) \\ \\
+            \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{\color{red}{n+1}}, u_n, \bm{p}_n) \\ \\
+            H_{u} (\bm{y}_n,u_n,\bm{p}_n)= 0
+        \end{cases}  &  M.SE1: \begin{cases}
+            \frac{\Delta{\bm{y}}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{\color{red}n+1}, u_n, \bm{p}_n) \\ \\
+            \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{\color{red}n+1}, u_n, \bm{p}_n) \\ \\
+H_{u} (\bm{y}_{\color{red}n+1}, u_{n}, \bm{p}_{n})= 0 
+        \end{cases} \\  \\
+SE2: \begin{cases}
+            \frac{\Delta{\bm{y}}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(y_{\color{red}{n}}, u_{n+1}, \bm{p}_{n+1}) \\ \\
+            \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{{\color{red}{n}}}, u_{n+1}, \bm{p}_{n+1}) \\ \\
+            H_{u}(\bm{y}_{n},u_{n},\bm{p}_{n}) = 0
+        \end{cases} &   M.SE2:
+        \begin{cases}
+            \frac{\Delta{\bm{y}}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{\color{red}n}, u_{n}, \bm{p}_{n+1}) \\ \\
+             \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{\color{red}n}, u_{n}, \bm{p}_{n+1}) \\ \\
+             H_{u} (\bm{y}_{\color{red}n}, u_{n}, \bm{p}_{n+1})= 0 
+        \end{cases} \\ \\ 
+        M.P: 
+        \begin{cases}
+            \frac{\Delta{\bm{y}}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{n+0.5}, u_{n+0.5}, \bm{p}_{n+0.5}) \\ \\
+             \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{n+0.5}, u_{n+0.5}, \bm{p}_{n+0.5}) \\ \\
+             H_{u} (\bm{y}_n, u_{n}, \bm{p}_{n})= 0 
+        \end{cases} &  M.M.P
+        \begin{cases}
+            \frac{\Delta{\bm{y}}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5}) \\ \\
+             \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5}) \\ \\
+             H_{u} (\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5})= 0 
+        \end{cases} \\ \\ 
+        \end{array}
+\end{equation}
+Table \ref{tab:alpha_methods} presents the numerical results obtained by applying the six numerical schemes for different values of $\alpha$.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+\begin{table}[h!]
+      \centering
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.1 $& $\Delta t = 0.025 $& $\Delta t = 0.1 $& $\Delta t = 0.025 $& $\Delta t = 0.1 $& $\Delta t = 0.025 $& $\Delta t = 0.1 $& $\Delta t = 0.025 $\\
+        \midrule
+        SE1 & 6 & 6 & 6 & 6 & 8 & 14 & - & - \\
+        M. SE1 & 6 & 6 & 6 & 6 & 7 & 15 & 55 & 104 \\
+        \midrule
+        SE2 & 6 & 6 & 6 & 6 & 77 & 38 & 84 & 113 \\
+        M. SE2 & 6 & 6 & 6 & 6 & 26 & 28 & 29 & 41 \\
+        \midrule
+        MidPoint & 6 & 6 & 6 & 6 & 25 & 24 & 67 & 51 \\
+        M. MidPoint & 6 & 6 & 6 & 6 & 19 & 19 & 29 & 61 \\
+        \bottomrule
+      \end{tabular}
+      \caption{Number of iterations (N.I.) for different methods and values of \(\alpha\), with $\Delta t = 0.1, \Delta = 0.025, k=1, m=1, \bm{x}_{0} = (1,1)^{T}, \bm{x}_{d} = (0,2)^{T}, \bm{v}_{0} =(0,0)^{T}, l_{0} = \sqrt{2}, T = [0,10]$.}
+      \label{tab:alpha_methods}
+    \end{table}
+
+    \begin{table}[h!]
+      \centering
+      \caption{Numerical evaluation of symplecticity for SE1, SE2, M.P, M.SE1, M.SE2, and M.M.P methods  with different time step sizes $\Delta t$. $||\mathbf{A}_0^{T}\mathbf{J}\mathbf{A}_0-\mathbf{J}||$, where $\mathbf{A}_{0} = \frac{\partial(\mathbf{y}_{n+1},\mathbf{p}_{n+1})}{\partial(\mathbf{y}_{n},\mathbf{p}_{n})}$.}
+      \vspace{4pt}
+      \resizebox{\textwidth}{!}{
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} 
+          & \multicolumn{3}{c|}{$\alpha = 10.0$} 
+          & \multicolumn{3}{c|}{$\alpha = 5.0$} 
+          & \multicolumn{3}{c|}{$\alpha = 1.0$} \\
+        \cmidrule{2-10}
+          & $\Delta t=1$ & $\Delta t=0.1$ & $\Delta t=0.025$
+          & $\Delta t=1$ & $\Delta t=0.1$ & $\Delta t=0.025$
+          & $\Delta t=1$ & $\Delta t=0.1$ & $\Delta t=0.025$ \\
+        \midrule
+        SE1 & 0.0614853 & 0.0030918 & $1.4210\times 10^{-4}$ 
+            & 0.1148578 & 0.0031728 & $1.0397\times 10^{-4}$ 
+            & 0.3654304 & 0.0045715 & $1.7756\times 10^{-4}$ \\
+        M.\ SE1 & $3.7994\times 10^{-10}$ & $4.7898\times 10^{-10}$ & $6.8444\times 10^{-10}$ 
+                & $3.8148\times 10^{-10}$ & $3.9087\times 10^{-10}$ & $6.7330\times 10^{-10}$ 
+                & $3.9091\times 10^{-10}$ & $4.9181\times 10^{-10}$ & $4.0767\times 10^{-10}$ \\
+        \midrule
+        SE2 & 81.5165 & $5.5104\times 10^{-4}$ & $8.2952\times 10^{-5}$ 
+            & 29.9389 & 0.0021965 & $3.2923\times 10^{-5}$ 
+            & 25.2454 & 0.1528280 & $5.3776\times 10^{-5}$ \\
+        M.\ SE2 & $4.1198\times 10^{-8}$ & $1.2966\times 10^{-9}$ & $5.8667\times 10^{-10}$ 
+                & $4.3593\times 10^{-8}$ & $6.6569\times 10^{-10}$ & $4.4809\times 10^{-10}$ 
+                & $1.9479\times 10^{-8}$ & $5.4068\times 10^{-10}$ & $7.0251\times 10^{-10}$ \\
+        \midrule
+        MidPoint & 0.1192 & 0.0020301 & $1.3219\times 10^{-4}$ 
+                & 0.1403 & 0.0026914 & $1.7456\times 10^{-4}$ 
+                & 0.4556 & 0.0121969 & $7.6003\times 10^{-4}$ \\
+        M.\ MidPoint & $1.3738\times 10^{-9}$ & $4.6400\times 10^{-10}$ & $7.4220\times 10^{-10}$ 
+                    & $1.0867\times 10^{-9}$ & $5.4220\times 10^{-10}$ & $5.9989\times 10^{-10}$ 
+                    & $6.6610\times 10^{-10}$ & $6.0072\times 10^{-10}$ & $7.4891\times 10^{-10}$ \\
+        \bottomrule
+      \end{tabular}
+      } 
+
+  %\vspace{4pt}
+ % {\footnotesize
+ % All entries are $\|A_0^{\mathsf T} J A_0 - J\|$ with $H_{uv}\neq \vec{0}$.  
+ % }
+\end{table}
+
+% Tables of Number of Iterations (N.I.) grouped by x_0
+% Mapping used: N=100 -> Δt = 0.2, N=40 -> Δt = 0.5
+
+\pagebreak
+
+\section{Comparing the Modified and Unmodified Methods for Various Initial Conditions}
+
+  \subsection{Number of iterations comparisson for different starting points $x_0$}
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [-0.5,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 7 & 7 & 11 & - & - & - & - & - \\
+        M. SE1 & 7 & 7 & 8 & 8 & - & - & - & - \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & - & 12 & - & - & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+
+
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [-0.4,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 7 & 7 & 8 & 7 & - & - & - & - \\
+        M. SE1 & 7 & 7 & 8 & 8 & - & - & - & - \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & 11 & - & - & - & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+
+
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [-0.3,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 7 & 7 & 10 & - & - & - & - & - \\
+        M. SE1 & 7 & 7 & 10 & - & - & - & - & - \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & 9 & - & - & - & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+
+
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [-0.2,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 8 & - & - & 7 & - & - & - & - \\
+        M. SE1 & 8 & 7 & - & - & - & 243 & - & - \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & 17 & - & - & - & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+
+
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [-0.1,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 8 & 10 & 9 & - & - & - & - & - \\
+        M. SE1 & 8 & 7 & 8 & 7 & - & - & - & - \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & - & 10 & - & - & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+
+
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [0.0,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 7 & - & 8 & 12 & - & - & - & - \\
+        M. SE1 & 7 & 7 & 8 & 7 & - & - & - & - \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & 16 & 12 & - & - & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+
+
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [0.1,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 7 & 8 & 8 & 9 & - & - & - & - \\
+        M. SE1 & 7 & 10 & 7 & 7 & - & - & - & - \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & 10 & 8 & - & 9 & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+
+
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [0.2,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 8 & 8 & 8 & 10 & - & - & - & - \\
+        M. SE1 & 7 & 7 & 10 & 7 & - & - & - & - \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & - & 8 & - & 10 & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+
+
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [0.3,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 7 & 9 & 8 & 9 & - & - & - & - \\
+        M. SE1 & 7 & 7 & 8 & 7 & - & - & - & - \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & 11 & 9 & - & 9 & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+
+
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [0.4,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 7 & 10 & 8 & 12 & - & - & - & - \\
+        M. SE1 & 7 & 7 & 8 & 7 & - & - & - & 212 \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & - & 10 & 11 & 12 & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+
+
+    \begin{table}[h!]
+      \centering
+      \caption{$x_0 = [0.5,\,1.0]$}
+      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
+        \toprule
+        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
+        \cmidrule{2-9}
+        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
+        \midrule
+        SE1 & 7 & 9 & 11 & - & - & - & - & - \\
+        M. SE1 & 7 & 7 & 8 & 7 & - & - & - & - \\
+        \midrule
+        SE2 & - & - & - & - & - & - & - & - \\
+        M. SE2 & - & - & - & - & - & - & - & - \\
+        \midrule
+        MidPoint & - & 9 & - & - & - & - & - & - \\
+        M. MidPoint & - & - & - & - & - & - & - & - \\
+        \bottomrule
+      \end{tabular}
+    \end{table}
+  
+  \pagebreak
+
+  \subsection{Comparison of the taken path and control}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[-0.5, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.5, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[-0.4, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.4, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[-0.3, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.3, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[-0.2, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.2, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[-0.1, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.1, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.0, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.0, 1.0]$}
+  \end{figure} 
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.1, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.1, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.2, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.2, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.3, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.3, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.4, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.4, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.5, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.5, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[-0.3, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.3, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[-0.1, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.1, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.0, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.0, 1.0]$}
+  \end{figure} 
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.1, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.1, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.2, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.2, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.3, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.3, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.4, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.4, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.5, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.5, 1.0]$}
+  \end{figure}
+
+  % for N = 100
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[-0.5, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.5, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[-0.4, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.4, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[-0.3, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.3, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[-0.2, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.2, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[-0.1, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.1, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.0, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.0, 1.0]$}
+  \end{figure} 
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.1, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.1, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.2, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.2, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.3, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.3, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.4, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.4, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.5, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.5, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[-0.5, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.5, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[-0.4, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.4, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[-0.3, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.3, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[-0.1, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.1, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.0, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.0, 1.0]$}
+  \end{figure} 
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.1, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.1, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.2, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.2, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.4, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.4, 1.0]$}
+  \end{figure}
+
+  \begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.5, 1.0]_l02.5.pdf} 
+    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.5, 1.0]$}
+  \end{figure}
+\end{document}
