@@ -25,7 +25,6 @@ module NewtonMethodModule
                 x₀, x₁ = x₁, xₖ
                 f₀, f₁ = f(x₀), f(x₁)
 
-                println("k: $i, xₖ: $xₖ, f(xₖ): $(f(xₖ))")
                 if abs(x₁ - x₀) ≤ ϵ || abs(f(x₁)) ≤ δ
                     return (c = x₁,iterations = i)
                 end
@@ -85,7 +84,7 @@ module NewtonMethodModule
         end
 
         function AproximateJacobian(F :: Function, x₀ :: Vector{Float64}; t = 1e-6 :: Float64) 
-            Fx₀ = F(x₀)
+            local Fx₀ = F(x₀)
             local J = zeros(Float64, length(Fx₀), length(x₀))
 
             Threads.@threads for i ∈ 1:length(x₀)
@@ -124,7 +123,7 @@ module NewtonMethodModule
             local N = length(x₀)
             local J = zeros(T, N, N)
 
-            Fx₀ = F(x₀)
+            local Fx₀ = F(x₀)
             Threads.@threads for i ∈ 1:length(x₀)
                 local x_plus = copy(x₀)
                 local x_minus = copy(x₀)
