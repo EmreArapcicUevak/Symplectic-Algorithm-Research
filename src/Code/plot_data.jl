@@ -1,25 +1,34 @@
 using Plots, Plots.Measures, Serialization, Base.Threads, ColorSchemes, Printf
 include("../Modules/NewtonMethodModule.jl")
-include("../Modules/Systems.jl")
+include("../Modules/NewSystem.jl")
 
 const record_type = Tuple{Int,Float64,String}
 const name_to_func = Dict(
-  "SE1" => Systems.SE1,
-  "SE2" => Systems.SE2,
-  "Modified SE1" => Systems.Modified_SE1,
-  "Modified SE2" => Systems.Modified_SE2,
-  "MidPoint" => Systems.MidPoint,
-  "Modified MidPoint" => Systems.Modified_MidPoint
+  "SE1" => NewSystems.SE1,
+  #"SE2" => Systems.SE2,
+  #"Modified SE1" => Systems.Modified_SE1,
+  #"Modified SE2" => Systems.Modified_SE2,
+  #"MidPoint" => Systems.MidPoint,
+  #"Modified MidPoint" => Systems.Modified_MidPoint
 )
 const func_names = keys(name_to_func)
-func_number_of_iterations, func_results = deserialize("results_x0[1.0, 1.0]_l01.41_ultra.jls")
+
+func_number_of_iterations, func_results = deserialize("results_x0[$(round(wanted_x₀[1], digits=2)), $(round(wanted_x₀[2], digits=2))]_x_d[0.0, 4.0]_l02.5.jls")
 
 
 records = keys(func_results)
 record_pairs = [record for record ∈ Iterators.product(records, records) if record[1][1] == record[2][1] && record[1][2] == record[2][2] && record[1][3] == "Modified $(record[2][3])" && func_results[record[1]] != [] && func_results[record[2]] != []]
 
-l₀, x_d, x₀ =  √2, Float64[0,4], Float64[1,1]
+l₀, x_d, x₀ =  2.5, Float64[0,4], Float64[1,1]
 T, t₀ = 60.0, 0.0
+
+
+println("Printing records for x₀ = [$(round(wanted_x₀[1], digits=2)), $(round(wanted_x₀[2], digits=2))]")
+for record ∈ records
+  if !(record[1] in [40,100] ) continue end
+  println("Record: $record, Iterations: $(func_number_of_iterations[record]), Result Length: $(length(func_results[record]))")
+end
+println("==============================")
 
 for record_pair ∈ record_pairs
   modified_info = record_pair[1]
@@ -32,8 +41,8 @@ for record_pair ∈ record_pairs
   control = [ Systems.u(func_results[info], i, info[1]) for i ∈ 0:info[1] - 1]
   abs_diff = [abs(control_modified[i] - control[i]) for i ∈ 1:length(control)]
 
-  positions = [Systems.x(func_result, i, info[1]) for i ∈ 0:info[1] - 1]
-  positions_modified = [Systems.x(func_result_modified, i, modified_info[1]) for i ∈ 0:modified_info[1] - 1]
+  positions = [Systems.x(func_result, i, info[1], wanted_x₀) for i ∈ 0:info[1] - 1]
+  positions_modified = [Systems.x(func_result_modified, i, modified_info[1], wanted_x₀) for i ∈ 0:modified_info[1] - 1]
 
   x, y = [p[1] for p ∈ positions], [p[2] for p ∈ positions]
   x_modified, y_modified = [p[1] for p ∈ positions_modified], [p[2] for p ∈ positions_modified]
@@ -44,7 +53,7 @@ for record_pair ∈ record_pairs
     control,
     xlabel="Time (s)", 
     ylabel="Control\nu(t)", 
-    title=@sprintf("Control Over Time\n(N=%d, α=%.2f)\nx₀=[%.2f, %.2f] l₀=√2", info[1], info[2], x₀[1], x₀[2]),
+    title=@sprintf("Control Over Time\n(N=%d, α=%.2f)\nx₀=[%.2f, %.2f] l₀=2.5", info[1], info[2], wanted_x₀[1], wanted_x₀[2]),
     label=info[3],
     dpi = 600,
     titlefont=font(20),   # make title a bit bigger
@@ -72,7 +81,7 @@ for record_pair ∈ record_pairs
     log10.(abs_diff .+ eps()),  # add eps to avoid log10(0)
     xlabel="Time (s)", 
     ylabel="log₁₀(|u(t) - u_modified(t)|)",
-    title=@sprintf("Logarithmic Error Between Controls\n(N=%d, α=%.2f, %s)\nx₀=[%.2f, %.2f] l₀=√2", info[1], info[2], info[3], x₀[1], x₀[2]),
+    title=@sprintf("Logarithmic Error Between Controls\n(N=%d, α=%.2f, %s)\nx₀=[%.2f, %.2f] l₀=2.5", info[1], info[2], info[3], wanted_x₀[1], wanted_x₀[2]),
     label="control error",
     dpi = 600,
     titlefont=font(20),   # make title a bit bigger
@@ -101,7 +110,7 @@ for record_pair ∈ record_pairs
     quiver=(diff(x),diff(y)), 
     color=:blue, 
     label="$(info[3]) Direction", 
-    title=@sprintf("Position Over Time\n(N=%d, α=%.2f)\nx₀=[%.2f, %.2f] l₀=√2", info[1], info[2], Systems.x₀[1], Systems.x₀[2]),
+    title=@sprintf("Position Over Time\n(N=%d, α=%.2f)\nx₀=[%.2f, %.2f] l₀=2.5", info[1], info[2], wanted_x₀[1], wanted_x₀[2]),
     xlabel="X Position", 
     ylabel="Y Position",
     aspect_ratio= 1,
@@ -128,7 +137,7 @@ for record_pair ∈ record_pairs
   )
 
   scatter!(position_over_time_plot, [x_d[1]], [x_d[2]], color = :orange, label = "Desired Position", markershape = :xcross, markersize = 8)
-  scatter!(position_over_time_plot, [x₀[1]], [x₀[2]], color = :orange, label = "Starting Position", markersize = 5)
+  scatter!(position_over_time_plot, [wanted_x₀[1]], [wanted_x₀[2]], color = :orange, label = "Starting Position", markersize = 5)
   # Add dummy scatter points for legend
   plot!(
       position_over_time_plot,
@@ -156,5 +165,5 @@ for record_pair ∈ record_pairs
   )
 
   display(final_plot)
-  savefig(final_plot, "ThesisPaper/Images/control_and_position_N$(info[1])_alpha$(info[2])_$(info[3])_x0$(x₀)_l0$(round(l₀, digits=2)).pdf")
+  savefig(final_plot, "ThesisPaper/Images/control_and_position_N$(info[1])_alpha$(info[2])_$(info[3])_x₀[$(round(wanted_x₀[1], digits=2)), $(round(wanted_x₀[2], digits=2))]_l0$(round(l₀, digits=2)).pdf")
 end

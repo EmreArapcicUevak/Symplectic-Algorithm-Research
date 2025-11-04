@@ -1,12 +1,19 @@
-include("../Modules/Systems.jl")
+include("../Modules/NewSystem.jl")
 using GLMakie, VideoIO, Serialization, Base.Threads, ColorSchemes, LinearAlgebra
-wanted_l₀ = 1.0
-wanted_x_d = Float64[0, 4]
-wanted_x₀ = Float64[0, 1]
+wanted_l₀ = 5.0
+wanted_x₀ = Float64[5.3, 2]
 wanted_a = Float64[0, -1]
+wanted_m = 1.0
+wanted_k = 1.0
+T = Observable(20.0)
+t₀ = Observable(0.0)
 
 # Load data
-func_number_of_iterations, func_results = deserialize("results_x0[1.0, 1.0]_l01.41_ultra.jls")
+function round_vector(v::Vector{Float64}, digits::Integer = 2) :: String
+    return "[$(join([round(x, digits=digits) for x in v], ", "))]"
+end
+load_file_name = "results_old_cost_x0$(round_vector(wanted_x₀,2))_l0$(round(wanted_l₀, digits = 2))_m$(round(wanted_m, digits = 2))_k$(round(wanted_k, digits = 2)).jls"
+func_number_of_iterations, func_results = deserialize(load_file_name)
 function spring_points(A::Point2f, B::Point2f; coils=12, amp=0.08f0, n=200, straight_frac=0.10f0)
     v   = B - A
     L   = LinearAlgebra.norm(v)
@@ -31,23 +38,21 @@ function spring_points(A::Point2f, B::Point2f; coils=12, amp=0.08f0, n=200, stra
 end
 
 # --- 2) Color mapping from stretch/energy to a single color ---
-stress_color(ℓ; max_stretch=0.5) = get(ColorSchemes.plasma, clamp(abs(ℓ - wanted_l₀)/max_stretch, 0, 1))
+stress_color(ℓ) = get(ColorSchemes.plasma, clamp(abs(ℓ - wanted_l₀)/wanted_l₀, 0, 1))
 
 
 for (meta_data, func_result) ∈ func_results
   if length(func_result) == 0 continue end
-
+  println("Simulating for $meta_data")
   i = Observable(1)
   playing = Observable(false)
   choosen_N = Observable(meta_data[1])
   choosen_α = Observable(meta_data[2])
   choosen_method = Observable(meta_data[3])
-
-  T = Observable(10.0)
-  t₀ = Observable(0.0)
   h = @lift(($T - $t₀)/$choosen_N)
 
-  pendulum_positions = @lift([Point2f(pos) for pos ∈ [Systems.x(func_results[($choosen_N, $choosen_α, $choosen_method)], i, $choosen_N) for i ∈ 0:$choosen_N-1]])
+
+  pendulum_positions = @lift([Point2f(pos) for pos ∈ [Systems.x(func_results[($choosen_N, $choosen_α, $choosen_method)], i, $choosen_N, wanted_x₀) for i ∈ 0:$choosen_N-1]])
   cart_positions = @lift([Point2f(u, 0) for u ∈ [Systems.u(func_results[($choosen_N, $choosen_α, $choosen_method)], i, $choosen_N) for i ∈ 0:$choosen_N-1]])
   Xᵢ = @lift($pendulum_positions[$i])
   Uᵢ = @lift($cart_positions[$i])
@@ -59,7 +64,7 @@ for (meta_data, func_result) ∈ func_results
   R = @lift(maximum(norm, $pendulum_positions))
   max_cart_pos = @lift(maximum(norm, $cart_positions))
 
-  spring_color = @lift(stress_color($curr_len; max_stretch=$R))
+  spring_color = @lift(stress_color($curr_len))
 
   f = Figure(size = (1000,700))
 
@@ -68,7 +73,6 @@ for (meta_data, func_result) ∈ func_results
   ylims!(main_axis, -R[] - 2, R[] + 2)
   hidespines!(main_axis)
 
-  scatter!(main_axis, [wanted_x_d[1]], [wanted_x_d[2]], label = "Desired Position", markersize = 5, color = :blue)
   hlines!(main_axis, [0.0], color = (:black, 0.4))
 
 
@@ -76,8 +80,7 @@ for (meta_data, func_result) ∈ func_results
   lines!(main_axis, spring_pts, color = spring_color, linewidth = 3)
   # draw pendulum bob
   scatter!(main_axis, @lift([$Xᵢ]), markersize = 20, color = :orange)
-  # draw desired position
-  scatter!(main_axis, Point2f[wanted_x_d], markersize = 14, color = :red, marker=:xcross)
+
   # draw pivot
   scatter!(main_axis, @lift([$Uᵢ]), markersize = 20, color = :gray, marker = :circle)
   scatter!(main_axis, @lift([$Uᵢ]), markersize = 10, color = :white, marker = :xcross)
@@ -87,7 +90,7 @@ for (meta_data, func_result) ∈ func_results
     f[1, 2],
     colormap = ColorSchemes.plasma,
     limits = (0, 0.5),  # your max_stretch value
-    label = "|ℓ - l₀| / max_stretch"
+    label = "|ℓ - l₀| / l₀"
   )
 
   # Draw lenght of spring arrow
@@ -108,7 +111,7 @@ for (meta_data, func_result) ∈ func_results
 
   lenght_text_label = textlabel!(main_axis,
     lenght_text_label_pos,
-    text = @lift("L = $(round($L, digits=2))"),
+    text = @lift("L = $(round($L, digits=4))"),
     text_rotation = lenght_text_label_rotation_angle,
     fontsize = 14,
     alpha = 0.0,
@@ -139,7 +142,7 @@ for (meta_data, func_result) ∈ func_results
   )
 
   pivot_position_label = textlabel!(main_axis,
-    @lift($Uᵢ - Point2f(0, 0.5)),
+    @lift($Uᵢ + Point2f(0,  $Xᵢ[2] < 0 ? 0.5 : -0.5)),
     text = @lift("($(round($Uᵢ[1], digits=2)), $(round($Uᵢ[2], digits=2)))"),
   )
 
@@ -148,8 +151,8 @@ for (meta_data, func_result) ∈ func_results
     text = @lift("($(round($Xᵢ[1], digits=2)), $(round($Xᵢ[2], digits=2)))"),
   )
 
-  framerate = choosen_N[]/(T[] - t₀[])          # fps you want
-  simulation_file_name = "pendulumx0=$(wanted_x₀)l0=$(round(wanted_l₀, digits=2))N=$(choosen_N[])α=$(choosen_α[])method=$(choosen_method[]).mp4"
+  framerate = max(choosen_N[]/(T[] - t₀[]), 1)          # fps you want
+  simulation_file_name = "old_cost_pendulumx0=$(round_vector(wanted_x₀))l0=$(round(wanted_l₀, digits=2))N=$(choosen_N[])α=$(choosen_α[])method=$(choosen_method[]).mp4"
   record(f, "Simulations/$simulation_file_name", 1:choosen_N[]; framerate = framerate) do frame
       i[] = frame
       nothing  # block must return nothing
