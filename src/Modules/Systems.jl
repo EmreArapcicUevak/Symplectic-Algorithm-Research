@@ -53,6 +53,7 @@ module Systems
   function SE1(Y::Vector{Float64}; N :: Integer, α :: Float64, m :: Float64, k :: Float64, a :: Vector{Float64}, t₀ :: Float64, T :: Float64, x₀ :: Vector{Float64} ,l₀ :: Float64, x_d :: Vector{Float64}) :: Vector{Float64}
     h = (T - t₀)/N
     result = zeros(Float64, 9N + 1)
+    result_lock = ReentrantLock()
 
     Threads.@threads for i ∈ 0:N-1
       local xᵢ = x(Y, i, N, x₀)
@@ -103,7 +104,9 @@ module Systems
         α * uᵢ - dot(λᵢ ,(-a₁ * dot([1.0, 0.0], a₃)) * a₃ - a₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      lock(result_lock) do
+        @inbounds result[9i + 1 : 9i + 9] = temp_result 
+      end
     end
 
     @inbounds result[end] = begin
@@ -126,6 +129,7 @@ module Systems
   function SE2(Y::Vector{Float64}; N :: Integer, α :: Float64, m :: Float64, k :: Float64, a :: Vector{Float64}, t₀ :: Float64, T :: Float64, l₀ :: Float64, x₀ :: Vector{Float64}, x_d :: Vector{Float64}) :: Vector{Float64}
     h = (T - t₀)/N
     result = zeros(Float64, 9N + 1)
+    result_lock = ReentrantLock()
 
     Threads.@threads for i ∈ 0:N-1
       local xᵢ = x(Y, i, N, x₀)
@@ -177,7 +181,9 @@ module Systems
         α * uᵢ - dot(λᵢ ,(-a₁ * dot([1, 0], a₃)) * a₃ - a₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      lock(result_lock) do
+        @inbounds result[9i + 1 : 9i + 9] = temp_result
+      end
     end
 
     @inbounds result[end] = begin
@@ -225,28 +231,28 @@ module Systems
       local δx = (xᵢ₊₁ - xᵢ)/h
 
       local temp_result = zeros(Float64, 9)
-      temp_result[1:2] = begin
+      @inbounds temp_result[1:2] = begin
         δλ + μᵢ
       end
 
-      temp_result[3:4] = begin
+      @inbounds temp_result[3:4] = begin
         δx - vᵢ₊₁
       end
 
-      temp_result[5:6] = begin
+      @inbounds temp_result[5:6] = begin
         δμ + (xᵢ₊₁ - x_d) - (c₁ * c₃ * c₃' + c₂ * Matrix{Float64}(I, 2, 2)) * λᵢ
       end
 
-      temp_result[7:8] = begin
+      @inbounds temp_result[7:8] = begin
         δv + c₂ * c₃ - (1/m) * a
       end
 
-      temp_result[9] = begin
+      @inbounds temp_result[9] = begin
         α * uₜ - dot(λᵢ ,(-c₁ * dot([1, 0], c₃)) * c₃ - c₂ * [1, 0])
       end
 
       lock(result_lock) do
-        @inbounds result[9i + 1 : 9i + 9] = temp_result 
+        @inbounds result[9i + 1 : 9i + 9] = temp_result
       end
     end
 
@@ -257,6 +263,7 @@ module Systems
   function Modified_SE2(Y::Vector{Float64}; N :: Integer, α :: Float64, m :: Float64, k :: Float64, a :: Vector{Float64}, t₀ :: Float64, T :: Float64, l₀ :: Float64, x₀ :: Vector{Float64}, x_d :: Vector{Float64}) :: Vector{Float64}
     h = (T - t₀)/N
     result = zeros(Float64, 9N)
+    result_lock = ReentrantLock()
 
     Threads.@threads for i ∈ 0:N-1
       local xᵢ = x(Y, i, N, x₀)
@@ -302,7 +309,9 @@ module Systems
         α * uₜ - dot(λᵢ₊₁ ,(-c₁ * dot([1, 0], c₃)) * c₃ - c₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      lock(result_lock) do
+        @inbounds result[9i + 1 : 9i + 9] = temp_result
+      end
     end
 
     return result
@@ -312,8 +321,9 @@ module Systems
   function MidPoint(Y :: Vector{Float64}; N :: Integer, α :: Float64, m :: Float64, k :: Float64, a :: Vector{Float64}, t₀ :: Float64, T :: Float64, l₀ :: Float64, x₀ :: Vector{Float64}, x_d :: Vector{Float64}) :: Vector{Float64}
     h = (T - t₀)/N
     result = zeros(Float64, 9N + 1)
+    result_lock = ReentrantLock()
 
-    for i ∈ 0:N-1
+    Threads.@threads for i ∈ 0:N-1
       local xᵢ = x(Y, i, N, x₀)
       local vᵢ = v(Y, i, N)
       local λᵢ = λ(Y, i, N)
@@ -370,7 +380,9 @@ module Systems
         α * uᵢ - dot(λᵢ ,(-a₁ * dot([1, 0], a₃)) * a₃ - a₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      lock(result_lock) do
+        @inbounds result[9i + 1 : 9i + 9] = temp_result
+      end
     end
 
     @inbounds result[end] = begin
@@ -392,8 +404,9 @@ module Systems
   function Modified_MidPoint(Y :: Vector{Float64}; N :: Integer, α :: Float64, m :: Float64, k :: Float64, a :: Vector{Float64}, t₀ :: Float64, T :: Float64, l₀ :: Float64, x₀ :: Vector{Float64}, x_d :: Vector{Float64}) :: Vector{Float64}
     h = (T - t₀)/N
     result = zeros(Float64, 9N)
+    result_lock = ReentrantLock()
 
-    for i ∈ 0:N-1
+    Threads.@threads for i ∈ 0:N-1
       local xᵢ = x(Y, i, N, x₀)
       local vᵢ = v(Y, i, N)
       local λᵢ = λ(Y, i, N)
@@ -431,19 +444,21 @@ module Systems
         δx - vₘ
       end
 
-      temp_result[5:6] = begin
+      @inbounds temp_result[5:6] = begin
         δμ + (xₘ - x_d) - (c₁ * c₃ * c₃' + c₂ * Matrix{Float64}(I, 2, 2)) * λₘ
       end
 
-      temp_result[7:8] = begin
+      @inbounds temp_result[7:8] = begin
         δv + c₂ * c₃ - (1/m) * a
       end
 
-      temp_result[9] = begin
+      @inbounds temp_result[9] = begin
         α * uₜ - dot(λₘ ,(-c₁ * dot([1, 0], c₃)) * c₃ - c₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      lock(result_lock) do
+        @inbounds result[9i + 1 : 9i + 9] = temp_result
+      end
     end
 
     return result
