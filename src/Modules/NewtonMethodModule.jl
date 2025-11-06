@@ -91,7 +91,7 @@ module NewtonMethodModule
                 local x = copy(x₀)
                 x[i] += t
 
-                @inbounds  J[:,i] .= (F(x) .- Fx₀) ./ t
+                J[:,i] = (F(x) - Fx₀) / t
             end
 
             return J

@@ -199,6 +199,7 @@ module Systems
   function Modified_SE1(Y::Vector{Float64}; N :: Integer, α :: Float64, m :: Float64, k :: Float64, a :: Vector{Float64}, t₀ :: Float64, T :: Float64, l₀ :: Float64, x₀ :: Vector{Float64}, x_d :: Vector{Float64}) :: Vector{Float64}
     h = (T - t₀)/N
     result = zeros(Float64, 9N)
+    result_lock = ReentrantLock()
 
     Threads.@threads for i ∈ 0:N-1
       local xᵢ = x(Y, i, N, x₀)
@@ -244,7 +245,9 @@ module Systems
         α * uₜ - dot(λᵢ ,(-c₁ * dot([1, 0], c₃)) * c₃ - c₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      lock(result_lock) do
+        @inbounds result[9i + 1 : 9i + 9] = temp_result 
+      end
     end
 
     return result
