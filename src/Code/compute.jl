@@ -1,9 +1,9 @@
 using Pkg; Pkg.instantiate()
 using InteractiveUtils; versioninfo()
-include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); using Revise, MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, Serialization, LinearAlgebra
+include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); using MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, Serialization, LinearAlgebra
 
 const name_to_func = Dict(
-  "SE1" => Systems.SE1,
+  #"SE1" => Systems.SE1,
   #"SE2" => Systems.SE2,
   "Modified SE1" => Systems.Modified_SE1,
   #"Modified SE2" => Systems.Modified_SE2,
@@ -33,8 +33,8 @@ param_grid = Dict(
 
 
 const RecordType = NamedTuple{
-    (:N, :α, :m, :l₀, :k, :method, :x_d),
-    Tuple{Int, Float64, Float64, Float64, Float64, String, Vector{Float64}}
+    (:N, :α, :m, :l₀, :k, :method, :x_d, :x₀),
+    Tuple{Int, Float64, Float64, Float64, Float64, String, Vector{Float64}, Vector{Float64}}
 }
 
 function get_initial_guess(N :: Integer, x₀ :: Vector{Float64}, x_d :: Vector{Float64}, m :: Float64, k :: Float64, l₀ :: Float64) :: Vector{Float64}
@@ -66,16 +66,7 @@ function get_initial_guess(N :: Integer, x₀ :: Vector{Float64}, x_d :: Vector{
   return x₀_guess
 end
 
-func_number_of_iterations = Dict{
-  RecordType, 
-  NamedTuple{
-    (:x₀, :iterations), 
-    Tuple{
-      Vector{Float64},
-      Int
-    }
-  }
-}()
+func_number_of_iterations = Dict{RecordType, Integer }()
 func_results = Dict{RecordType, Vector{Float64}}()
 func_err_history = Dict{RecordType, Vector{Float64}}()
 
@@ -96,7 +87,7 @@ space = CartesianIndices(Tuple(lens))
 pbar = ProgressBar(); comp_job = addjob!(pbar,N = n_combinations, description = "Total Progress")
 start!(pbar); render(pbar)
 initial_guesses = Dict{Tuple{Integer, Vector{Float64}, Vector{Float64}, Float64, Float64, Float64}, Vector{Float64}}()
-Threads.@threads for i ∈ 1:n_combinations
+Threads.@threads :static for i ∈ 1:n_combinations
   local I
   lock(param_read) do 
     I = space[i]
@@ -107,7 +98,7 @@ Threads.@threads for i ∈ 1:n_combinations
 
   local initial_guess
   lock(initial_guess_lock) do
-    init_guess_key = (params.N, params.x₀, params.x_d, params.m, params.k, params.l₀)
+    local init_guess_key = (params.N, params.x₀, params.x_d, params.m, params.k, params.l₀)
     initial_guess = get(initial_guesses, (init_guess_key), nothing)
     #func_err_history[(N₀, α₀, method_name)] = Float64[]
     if initial_guess === nothing
@@ -125,17 +116,17 @@ Threads.@threads for i ∈ 1:n_combinations
     results = NewtonMethodModule.MultiDimentionalNewtonMethod(method, x -> NewtonMethodModule.AproximateJacobian(method, x), initial_guess_m; maxIterations = 150, δ = 0.5e-10, ϵ = 0.5e-10)
   catch e
       #@warn "Newton method failed" N=params.N α=params.α method=params.method e
-      results = nothing
+    results = nothing
   end
 
   # Write results safely
   lock(result_lock) do
-    local key = NamedTuple{(:N, :α, :m, :l₀, :k, :method, :x_d)}(params)
+    local key = NamedTuple{(:N, :α, :m, :l₀, :k, :method, :x_d, :x₀)}(params)
       if results === nothing
-          func_number_of_iterations[key] = (x₀ = params.x₀, iterations = -1)
+          func_number_of_iterations[key] =  -1
           func_results[key] = []
       else
-          func_number_of_iterations[key] =  (x₀ = params.x₀, iterations = results.iterations)
+          func_number_of_iterations[key] =  results.iterations
           func_results[key] = results.c
       end
   end
