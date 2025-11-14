@@ -1,36 +1,23 @@
 using Pkg; Pkg.instantiate()
-using InteractiveUtils; versioninfo()
-include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); using MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, Serialization, LinearAlgebra
+
+include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); include("../Modules/CLI_Param.jl")
+using MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, Serialization, LinearAlgebra
+using ArgParse
 
 const name_to_func = Dict(
-  #"SE1" => Systems.SE1,
-  #"SE2" => Systems.SE2,
+  "SE1" => Systems.SE1,
+  "SE2" => Systems.SE2,
   "Modified SE1" => Systems.Modified_SE1,
-  #"Modified SE2" => Systems.Modified_SE2,
-  #"MidPoint" => Systems.MidPoint,
-  #"Modified MidPoint" => Systems.Modified_MidPoint,
+  "Modified SE2" => Systems.Modified_SE2,
+  "MidPoint" => Systems.MidPoint,
+  "Modified MidPoint" => Systems.Modified_MidPoint,
 )
-const func_names = collect(keys(name_to_func))
+const func_names = sort(collect(keys(name_to_func)))
 
-param_grid = Dict(
-  :l₀ => Float64[1,2.5,5],
-  :x_d => [Vector{Float64}([0,y]) for y in LinRange(2,10, 10)],
-  :x₀ => [Vector{Float64}([x,y]) for x in LinRange(-2,2,10) for y in LinRange(0.1,2, 5)],
-  :k => Float64[1,3,5],
-  :m => Float64[1],
-  :N => [100],
-  :α => Float64[10],
-  :method => func_names
-)
-
-
-
-
+param_grid, output_file_name = CLI_Param.get_parameters(func_names)
+using InteractiveUtils; versioninfo()
 
 ############################## Other code ########################################
-
-
-
 
 const RecordType = NamedTuple{
     (:N, :α, :m, :l₀, :k, :method, :x_d, :x₀),
@@ -145,5 +132,4 @@ function round_vector(v::Vector{Float64}, digits::Integer = 2) :: String
     return "[$(join([round(x, digits=digits) for x in v], ", "))]"
 end
 
-save_file_name = "Grid_Search.jls"
-println("Saving results to $save_file_name"); serialize(save_file_name, (func_number_of_iterations, func_results))
+println("Saving results to $output_file_name"); serialize(output_file_name, (func_number_of_iterations, func_results))
