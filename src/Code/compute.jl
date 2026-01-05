@@ -1,7 +1,7 @@
 using Pkg; Pkg.instantiate()
 
 include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); include("../Modules/CLI_Param.jl")
-using MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, Serialization, LinearAlgebra
+using MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, Serialization, LinearAlgebra, CSV, DataFrames
 using ArgParse
 
 const name_to_func = Dict(
@@ -74,15 +74,14 @@ space = CartesianIndices(Tuple(lens))
 pbar = ProgressBar(); comp_job = addjob!(pbar,N = n_combinations, description = "Total Progress")
 start!(pbar); render(pbar)
 initial_guesses = Dict{Tuple{Integer, Vector{Float64}, Vector{Float64}, Float64, Float64, Float64}, Vector{Float64}}()
-Threads.@threads :static for i ∈ 1:n_combinations
-  local I
-  lock(param_read) do 
-    I = space[i]
-  end
-  
+Threads.@threads for i ∈ 1:n_combinations
+  local I = space[i]
+
   local tup = ntuple(j -> values_[j][I[j]], length(values_))
   local params = NamedTuple{Tuple(keys_)}(tup)
-
+  local l₀ = norm(params.x₀ - params.x_d)
+  params = (; params..., l₀ = l₀)
+  
   local initial_guess
   lock(initial_guess_lock) do
     local init_guess_key = (params.N, params.x₀, params.x_d, params.m, params.k, params.l₀)
@@ -100,7 +99,7 @@ Threads.@threads :static for i ∈ 1:n_combinations
   local results
   
   try
-    results = NewtonMethodModule.MultiDimentionalNewtonMethod(method, x -> NewtonMethodModule.AproximateJacobian(method, x), initial_guess_m; maxIterations = 150, δ = 0.5e-10, ϵ = 0.5e-10)
+    results = NewtonMethodModule.MultiDimentionalNewtonMethod(method, x -> NewtonMethodModule.AproximateJacobian(method, x), initial_guess_m; maxIterations = 30, δ = 0.5e-10, ϵ = 0.5e-10)
   catch e
       #@warn "Newton method failed" N=params.N α=params.α method=params.method e
     results = nothing
@@ -125,8 +124,6 @@ Threads.@threads :static for i ∈ 1:n_combinations
 
 end
 stop!(pbar)
-
-print(func_number_of_iterations)
 
 function round_vector(v::Vector{Float64}, digits::Integer = 2) :: String
     return "[$(join([round(x, digits=digits) for x in v], ", "))]"
