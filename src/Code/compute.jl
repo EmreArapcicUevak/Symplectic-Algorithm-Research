@@ -1,40 +1,27 @@
 using Pkg; Pkg.instantiate()
-using InteractiveUtils; versioninfo()
-include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); using Revise, MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, Serialization, LinearAlgebra
+
+include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); include("../Modules/CLI_Param.jl")
+using MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, Serialization, LinearAlgebra, CSV, DataFrames
+using ArgParse
 
 const name_to_func = Dict(
   "SE1" => Systems.SE1,
-  #"SE2" => Systems.SE2,
+  "SE2" => Systems.SE2,
   "Modified SE1" => Systems.Modified_SE1,
-  #"Modified SE2" => Systems.Modified_SE2,
-  #"MidPoint" => Systems.MidPoint,
-  #"Modified MidPoint" => Systems.Modified_MidPoint,
+  "Modified SE2" => Systems.Modified_SE2,
+  "MidPoint" => Systems.MidPoint,
+  "Modified MidPoint" => Systems.Modified_MidPoint,
 )
-const func_names = collect(keys(name_to_func))
+const func_names = sort(collect(keys(name_to_func)))
 
-param_grid = Dict(
-  :l₀ => Float64[1,2.5,5],
-  :x_d => [Vector{Float64}([0,y]) for y in LinRange(2,10, 10)],
-  :x₀ => [Vector{Float64}([x,y]) for x in LinRange(-2,2,10) for y in LinRange(0.1,2, 5)],
-  :k => Float64[1,3,5],
-  :m => Float64[1],
-  :N => [100],
-  :α => Float64[10],
-  :method => func_names
-)
-
-
-
-
+param_grid, output_file_name = CLI_Param.get_parameters(func_names)
+using InteractiveUtils; versioninfo()
 
 ############################## Other code ########################################
 
-
-
-
 const RecordType = NamedTuple{
-    (:N, :α, :m, :l₀, :k, :method, :x_d),
-    Tuple{Int, Float64, Float64, Float64, Float64, String, Vector{Float64}}
+    (:N, :α, :m, :l₀, :k, :method, :x_d, :x₀),
+    Tuple{Int, Float64, Float64, Float64, Float64, String, Vector{Float64}, Vector{Float64}}
 }
 
 function get_initial_guess(N :: Integer, x₀ :: Vector{Float64}, x_d :: Vector{Float64}, m :: Float64, k :: Float64, l₀ :: Float64) :: Vector{Float64}
@@ -66,16 +53,7 @@ function get_initial_guess(N :: Integer, x₀ :: Vector{Float64}, x_d :: Vector{
   return x₀_guess
 end
 
-func_number_of_iterations = Dict{
-  RecordType, 
-  NamedTuple{
-    (:x₀, :iterations), 
-    Tuple{
-      Vector{Float64},
-      Int
-    }
-  }
-}()
+func_number_of_iterations = Dict{RecordType, Integer }()
 func_results = Dict{RecordType, Vector{Float64}}()
 func_err_history = Dict{RecordType, Vector{Float64}}()
 
@@ -97,17 +75,16 @@ pbar = ProgressBar(); comp_job = addjob!(pbar,N = n_combinations, description = 
 start!(pbar); render(pbar)
 initial_guesses = Dict{Tuple{Integer, Vector{Float64}, Vector{Float64}, Float64, Float64, Float64}, Vector{Float64}}()
 Threads.@threads for i ∈ 1:n_combinations
-  local I
-  lock(param_read) do 
-    I = space[i]
-  end
-  
+  local I = space[i]
+
   local tup = ntuple(j -> values_[j][I[j]], length(values_))
   local params = NamedTuple{Tuple(keys_)}(tup)
-
+  local l₀ = norm(params.x₀ - params.x_d)
+  params = (; params..., l₀ = l₀)
+  
   local initial_guess
   lock(initial_guess_lock) do
-    init_guess_key = (params.N, params.x₀, params.x_d, params.m, params.k, params.l₀)
+    local init_guess_key = (params.N, params.x₀, params.x_d, params.m, params.k, params.l₀)
     initial_guess = get(initial_guesses, (init_guess_key), nothing)
     #func_err_history[(N₀, α₀, method_name)] = Float64[]
     if initial_guess === nothing
@@ -122,20 +99,20 @@ Threads.@threads for i ∈ 1:n_combinations
   local results
   
   try
-    results = NewtonMethodModule.MultiDimentionalNewtonMethod(method, x -> NewtonMethodModule.AproximateJacobian(method, x), initial_guess_m; maxIterations = 150, δ = 0.5e-10, ϵ = 0.5e-10)
+    results = NewtonMethodModule.MultiDimentionalNewtonMethod(method, x -> NewtonMethodModule.AproximateJacobian(method, x), initial_guess_m; maxIterations = 30, δ = 0.5e-10, ϵ = 0.5e-10)
   catch e
       #@warn "Newton method failed" N=params.N α=params.α method=params.method e
-      results = nothing
+    results = nothing
   end
 
   # Write results safely
   lock(result_lock) do
-    local key = NamedTuple{(:N, :α, :m, :l₀, :k, :method, :x_d)}(params)
+    local key = NamedTuple{(:N, :α, :m, :l₀, :k, :method, :x_d, :x₀)}(params)
       if results === nothing
-          func_number_of_iterations[key] = (x₀ = params.x₀, iterations = -1)
+          func_number_of_iterations[key] =  -1
           func_results[key] = []
       else
-          func_number_of_iterations[key] =  (x₀ = params.x₀, iterations = results.iterations)
+          func_number_of_iterations[key] =  results.iterations
           func_results[key] = results.c
       end
   end
@@ -148,11 +125,8 @@ Threads.@threads for i ∈ 1:n_combinations
 end
 stop!(pbar)
 
-print(func_number_of_iterations)
-
 function round_vector(v::Vector{Float64}, digits::Integer = 2) :: String
     return "[$(join([round(x, digits=digits) for x in v], ", "))]"
 end
 
-save_file_name = "Grid_Search.jls"
-println("Saving results to $save_file_name"); serialize(save_file_name, (func_number_of_iterations, func_results))
+println("Saving results to $output_file_name"); serialize(output_file_name, (func_number_of_iterations, func_results))

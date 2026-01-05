@@ -1,6 +1,7 @@
 module Systems
   using LinearAlgebra, Base.Threads
-
+  BLAS.set_num_threads(1)
+  
   L(x :: Vector{Float64}, u :: Float64) :: Float64 = norm(x - [u, 0],2)
 
   function x(Y :: Vector{Float64}, i :: Integer, N :: Integer, x₀ :: Vector{Float64} = Float64[1, 1]) :: Vector{Float64} 
@@ -54,7 +55,7 @@ module Systems
     h = (T - t₀)/N
     result = zeros(Float64, 9N + 1)
 
-    Threads.@threads for i ∈ 0:N-1
+    for i ∈ 0:N-1
       local xᵢ = x(Y, i, N, x₀)
       local vᵢ = v(Y, i, N)
       local λᵢ = λ(Y, i, N)
@@ -78,35 +79,35 @@ module Systems
       local δx = (xᵢ₊₁ - xᵢ)/h
 
       local temp_result = zeros(Float64, 9)
-      @inbounds temp_result[1:2] =  begin
+      temp_result[1:2] =  begin
         δλ + μᵢ
       end
 
-      @inbounds temp_result[3:4] = begin
+      temp_result[3:4] = begin
         δx - vᵢ₊₁
       end
 
-      @inbounds temp_result[5:6] = begin
+      temp_result[5:6] = begin
         local a₁ = (xᵢ₊₁ - [uᵢ, 0]) 
         δμ + (xᵢ₊₁ - x_d) - (c₁ * a₁ * a₁' + c₂ * Matrix{Float64}(I, 2, 2)) * λᵢ
       end
 
-      @inbounds temp_result[7:8] = begin
+      temp_result[7:8] = begin
         local a₁ = (xᵢ₊₁ - [uᵢ, 0]) 
         δv + c₂ * a₁ - (1/m) * a
       end
 
-      @inbounds temp_result[9] =  begin
+      temp_result[9] =  begin
         local a₁ = k * l₀ / (m * Lᵤ^3)
         local a₂ = k/m * (1 - l₀/Lᵤ)
         local a₃ = (xᵢ - [uᵢ, 0])
         α * uᵢ - dot(λᵢ ,(-a₁ * dot([1.0, 0.0], a₃)) * a₃ - a₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      result[9i + 1 : 9i + 9] = temp_result 
     end
 
-    @inbounds result[end] = begin
+    result[end] = begin
       local xₙ = x(Y, N, N, x₀)
       local uₙ = u(Y, N, N)
       local λₙ = λ(Y,N,N)
@@ -127,7 +128,7 @@ module Systems
     h = (T - t₀)/N
     result = zeros(Float64, 9N + 1)
 
-    Threads.@threads for i ∈ 0:N-1
+    for i ∈ 0:N-1
       local xᵢ = x(Y, i, N, x₀)
       local vᵢ = v(Y, i, N)
       local λᵢ = λ(Y, i, N)
@@ -152,35 +153,35 @@ module Systems
       local δx = (xᵢ₊₁ - xᵢ)/h
 
       local temp_result = zeros(Float64, 9)
-      @inbounds temp_result[1:2] = begin
+      temp_result[1:2] = begin
         δλ + μᵢ₊₁
       end
 
-      @inbounds temp_result[3:4] = begin
+      temp_result[3:4] = begin
         δx - vᵢ
       end
 
-      @inbounds temp_result[5:6] =  begin
+      temp_result[5:6] =  begin
         local a₁ = (xᵢ - [uᵢ₊₁, 0]) 
         δμ + (xᵢ - x_d) - (c₁ * a₁ * a₁' + c₂ * Matrix{Float64}(I, 2, 2)) * λᵢ₊₁
       end
 
-      @inbounds temp_result[7:8] =  begin
+      temp_result[7:8] =  begin
         local a₁ = (xᵢ - [uᵢ₊₁, 0]) 
         δv + c₂ * a₁ - (1/m) * a
       end
 
-      @inbounds temp_result[9] = begin
+      temp_result[9] = begin
         local a₁ = k * l₀ / (m * Lᵤ^3)
         local a₂ = k/m * (1 - l₀/Lᵤ)
         local a₃ = (xᵢ - [uᵢ, 0])
         α * uᵢ - dot(λᵢ ,(-a₁ * dot([1, 0], a₃)) * a₃ - a₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      result[9i + 1 : 9i + 9] = temp_result
     end
 
-    @inbounds result[end] = begin
+    result[end] = begin
       local xₙ = x(Y, N, N, x₀)
       local uₙ = u(Y, N, N)
       local Lᵤ = L(xₙ, uₙ)
@@ -200,7 +201,7 @@ module Systems
     h = (T - t₀)/N
     result = zeros(Float64, 9N)
 
-    Threads.@threads for i ∈ 0:N-1
+    for i ∈ 0:N-1
       local xᵢ = x(Y, i, N, x₀)
       local vᵢ = v(Y, i, N)
       local λᵢ = λ(Y, i, N)
@@ -244,7 +245,7 @@ module Systems
         α * uₜ - dot(λᵢ ,(-c₁ * dot([1, 0], c₃)) * c₃ - c₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      result[9i + 1 : 9i + 9] = temp_result
     end
 
     return result
@@ -255,7 +256,7 @@ module Systems
     h = (T - t₀)/N
     result = zeros(Float64, 9N)
 
-    Threads.@threads for i ∈ 0:N-1
+    for i ∈ 0:N-1
       local xᵢ = x(Y, i, N, x₀)
       local vᵢ = v(Y, i, N)
       local λᵢ = λ(Y, i, N)
@@ -279,27 +280,27 @@ module Systems
       local δx = (xᵢ₊₁ - xᵢ)/h
 
       temp_result = zeros(Float64, 9)
-      @inbounds temp_result[1:2] = begin
+      temp_result[1:2] = begin
         δλ + μᵢ₊₁
       end
 
-      @inbounds temp_result[3:4] = begin
+      temp_result[3:4] = begin
         δx - vᵢ
       end
 
-      @inbounds temp_result[5:6] = begin
+      temp_result[5:6] = begin
         δμ + (xᵢ - x_d) - (c₁ * c₃ * c₃' + c₂ * Matrix{Float64}(I, 2, 2)) * λᵢ₊₁
       end
 
-      @inbounds temp_result[7:8] = begin
+      temp_result[7:8] = begin
         δv + c₂ * c₃ - (1/m) * a
       end
 
-      @inbounds temp_result[9] = begin
+      temp_result[9] = begin
         α * uₜ - dot(λᵢ₊₁ ,(-c₁ * dot([1, 0], c₃)) * c₃ - c₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      result[9i + 1 : 9i + 9] = temp_result
     end
 
     return result
@@ -342,35 +343,35 @@ module Systems
 
 
       local temp_result = zeros(Float64, 9)
-      @inbounds temp_result[1:2] = begin
+      temp_result[1:2] = begin
         δλ + μₘ
       end
 
-      @inbounds temp_result[3:4] = begin
+      temp_result[3:4] = begin
         δx - vₘ
       end
 
-      @inbounds temp_result[5:6] = begin
+      temp_result[5:6] = begin
         local a₁ = (xₘ - [uₘ, 0]) 
         δμ + (xₘ - x_d) - (c₁ * a₁ * a₁' + c₂ * Matrix{Float64}(I, 2, 2)) * λₘ
       end
 
-      @inbounds temp_result[7:8] = begin
+      temp_result[7:8] = begin
         local a₁ = (xₘ - [uₘ, 0]) 
         δv + c₂ * a₁ - (1/m) * a
       end
 
-      @inbounds temp_result[9] = begin
+      temp_result[9] = begin
         local a₁ = k * l₀ / (m * Lᵤ^3)
         local a₂ = k/m * (1 - l₀/Lᵤ)
         local a₃ = (xᵢ - [uᵢ, 0])
         α * uᵢ - dot(λᵢ ,(-a₁ * dot([1, 0], a₃)) * a₃ - a₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      result[9i + 1 : 9i + 9] = temp_result
     end
 
-    @inbounds result[end] = begin
+    result[end] = begin
       local xₙ = x(Y, N, N, x₀)
       local uₙ = u(Y, N, N)
       local λₙ = λ(Y,N,N)
@@ -420,11 +421,11 @@ module Systems
 
       local temp_result = zeros(Float64, 9)
 
-      @inbounds temp_result[1:2] = begin
+      temp_result[1:2] = begin
         δλ + μₘ
       end
 
-      @inbounds temp_result[3:4] = begin
+      temp_result[3:4] = begin
         δx - vₘ
       end
 
@@ -440,7 +441,7 @@ module Systems
         α * uₜ - dot(λₘ ,(-c₁ * dot([1, 0], c₃)) * c₃ - c₂ * [1, 0])
       end
 
-      @inbounds result[9i + 1 : 9i + 9] = temp_result
+      result[9i + 1 : 9i + 9] = temp_result
     end
 
     return result
