@@ -1,5 +1,5 @@
 module CLI_Param
-  using ArgParse, REPL.TerminalMenus
+  using ArgParse, REPL.TerminalMenus, Serialization
   include("Simple_Promt.jl")
 
 
@@ -74,12 +74,6 @@ module CLI_Param
 
         "--kValues", "-k"
             help = "List of spring constants to try"
-            arg_type = Float64
-            range_tester = x -> x > 0.0
-            nargs = '+'
-
-        "--lValues", "-l"
-            help = "List of spring's rest lengths to try"
             arg_type = Float64
             range_tester = x -> x > 0.0
             nargs = '+'
@@ -231,7 +225,6 @@ module CLI_Param
     end
 
     alpha_values = parsed_args["alphaValues"]
-    l_values = parsed_args["lValues"]
     k_values = parsed_args["kValues"]
     mass_values = parsed_args["massValues"]
     N_values = parsed_args["NValues"]
@@ -242,16 +235,6 @@ module CLI_Param
         push!(alpha_values, Simple_Promt.prompt("Enter a value for α:", Float64))
         clear_terminal()
         print_slider(minimum(alpha_values), maximum(alpha_values), "$(length(alpha_values)) points")
-        Simple_Promt.prompt("Add another value?", Bool) || break
-      end
-    end
-
-    if isempty(l_values)
-      l_values = Float64[]
-      while true
-        push!(l_values, Simple_Promt.prompt("Enter a value for l₀:", Float64))
-        clear_terminal()
-        print_slider(minimum(l_values), maximum(l_values), "$(length(l_values)) points")
         Simple_Promt.prompt("Add another value?", Bool) || break
       end
     end
@@ -287,7 +270,6 @@ module CLI_Param
     end
 
     param_grid = Dict(
-      :l₀ => l_values,
       :x_d => [Vector{Float64}([0,y]) for y in height_values],
       :x₀ => [Vector{Float64}([x,y]) for x in x_values for y in y_values],
       :k => k_values,
