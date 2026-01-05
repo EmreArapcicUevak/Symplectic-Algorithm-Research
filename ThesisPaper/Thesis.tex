@@ -52,7 +52,8 @@
 %%%%%%%%%%%%%%%%%%%%5
 
 
-\graphicspath{Images/}
+\graphicspath{./Images/}
+\newcommand{\vect}[1]{\mathbf{#1}}   % or \boldsymbol{#1}
 
 \begin{document}
 
@@ -628,7 +629,7 @@ Necessary optimality conditions for \eqref{eq_64} and \eqref{eq_65}, respectivel
 
 \begin{figure}[bht]
 	\centering
-	\includegraphics[width=0.5\textwidth]{triangle.pdf}
+	\includegraphics[width=0.5\textwidth]{./Images/triangle.pdf}
 	\caption{Splitting  the triangle with vertices A, B and C into 1553 smaller non-overlapping triangles}\label{triangle}
 \end{figure}
 \newpage
@@ -1298,4 +1299,6 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
     \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.5, 1.0]_l02.5.pdf} 
     \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.5, 1.0]$}
   \end{figure}
+
+  \section{Numerical Results Comparisson over state space}
 \end{document}
