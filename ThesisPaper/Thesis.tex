@@ -1,8 +1,4 @@
 \documentclass[a4paper, 10pt]{article}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{mathtools}
-\usepackage{bm}
 
 \usepackage[margin = 1in]{geometry} % for spacing around
 \usepackage{tabularx}
@@ -12,11 +8,13 @@
 \usepackage[utf8]{inputenc} % for encoded text
 \usepackage[T1]{fontenc}
 \usepackage{setspace} % for setting different line spacings between paragrafs.
-
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{bm}
 \usepackage{enumerate} % for letting us get more detailed enumerate lists
 \usepackage{multirow} % to let us combine more rows together
 \usepackage{colortbl} % for decorating tables
-\usepackage{amsmath} % used for representing more complicated math displays
 \usepackage{supertabular}
 \usepackage{longtable} % both of these packages are used to making really big tables
 \usepackage{wrapfig} % allows us to wrap text around figures
@@ -29,19 +27,14 @@
 \usepackage{rotating} % For rotating objects
 % \usepackage{draftwatermark} % For adding watermarks
 \usepackage{MnSymbol} % for using multiple symbols
-\usepackage{mathtools} % Used for more math symbols
 \usepackage{xfrac} % For more complciated fractions and to add derivitives
-\usepackage{hyperref} % for hyper links
 \usepackage{enumitem} % for better enum lists
 \usepackage{tcolorbox} % for adding colored text boxes
-\usepackage{bm} % Adding bold text to math inputs
 \usepackage{pgfplots} % Used for plotting functions
 \usepackage{pgfplotstable} % Used for plotting tables
 \usepackage{booktabs} % for nicer tables
-\usepackage{longtable} % for long tables that can span multiple pages
 \usepackage[toc,page]{appendix} % for adding appendices
 \usepackage{array}
-\usepackage{colortbl}
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{minted}
@@ -49,6 +42,8 @@
 \usepackage{media9}
 \usepackage{qrcode}
 \usepackage{float}
+\usepackage{amsopn}
+\usepackage{amstext}
 %%%%%%%%%%%%%%%%%%%%5
 
 
@@ -82,6 +77,7 @@ Consider the following optimal control problem:
 		v(0) = v_{0}, \; \lambda(T) = 0.
 		\label{eq:necessary_coditions}
 	\end{aligned}
+	\label{eq:equation2}
 \end{equation} 
 To solve the resulting system of equations, we apply four numerical techniques, specifically the $SE1_1, SE1_2, SE2_1$ and $SE2_2$  methods. Each method begins with three initial points $\mathbf{z}_1 = (v_1(0),\lambda_1(0)), \mathbf{z}_2 =(v_2(0),\lambda_2(0))$ and $\mathbf{z}_3 = (v_3(0),\lambda_3(0))$, which form a triangle in the phase space. The area of this triangle is computed at the initial time $t = 0$, and the methods are applied, respectively, to determine the area of the triangle at the final time $t = T$. So, it allows us to identify which method effectively preserves the geometric properties of the triangle, particularly its area. 
 
@@ -115,6 +111,7 @@ By applying the $SE1_1, SE1_2, SE2_1$ and $SE2_2$ methods to   \eqref{eq:necessa
 		       		v(0) = v_0,\; \lambda(0) = \lambda_0. 
 		       	\end{cases}
 	\end{aligned}
+	\label{eq:equation3}
 \end{equation}
 Before presenting numerical results, we first demonstrate that the numerical methods $SE1_1$ and $SE2_2$ are symplectic integrators, which means that they exactly preserve the symplectic condition. In contrast, $SE1_2$ and $SE2_2$ are not symplectic integrators.
 
@@ -178,11 +175,13 @@ $\mathbf{SE2_2:}$
 Taking differentials of both sides of equations \eqref{eq:se2_2_11} and \eqref{eq:se2_2_12} and using wedge product,  we have
 \begin{equation}
 	dv_{n+1} \wedge d\lambda_{n+1} = \left(1 - \frac{k(\Delta{t})^2}{m\alpha(m-k\Delta{t})}\right) dv_{n} \wedge d\lambda_{n}.
+	\label{eq:equation4}
 \end{equation}
 \subsection{Linear optimal control problem}
 Let us consider the following linear optimal control problem:
 
-\begin{equation}\label{eq_18}
+\begin{equation}
+	\label{eq_18}
 \begin{aligned}
 	J(\bm{v},\bm{u}) & = \frac{1}{2} \int_{a}^b \bm{v}(t)^{T} \bm{Q} \bm{v}(t) + \bm{u}(t)^{T} \bm{R} \bm{u}(t)\; dt \\ &
 	\dot{\bm{v}}(t) = \bm{A} \bm{v}(t) + \bm{B}\bm{u}(t), \\ &
@@ -308,7 +307,7 @@ In this section, we present numerical results (summarized in Table \ref{tab:tabl
 	\end{tabular}
 \end{center}
 \caption{Application of methods $SE1_1, SE1_2, SE2_1$ and $SE2_2$  to system \eqref{eq:necessary_coditions} on  the interval $[0,10]$ with three initial points  $\mathbf{z}_1 = (10,0.1)^{T}, \mathbf{z}_2 =(11,0.1)^{T}$ and $\mathbf{z}_3 = (10,-0.1)^{T}$, in addition,  $k =1, m =1, \Delta t =0.1, T = 10$. $A_0$ and $A_T$ denote the areas of the triangle at time $t = 0$ and $t = T = 10$, respectively.}  
-\label{tab:table1}
+\label{tab:table2}
 \end{table}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 \begin{figure}[ht]
@@ -344,6 +343,7 @@ Consider the following basic optimal control problem,
 		\bm{\dot{y}} = \bm{f}(\bm{y},\bm{u}) \\ &
 		\bm{y}(0) = \bm{y}_{0}
 	\end{aligned}
+	\label{eq:equation5}
 \end{equation}
 
 The necessary conditions from the Hamiltonian $H$, which is defined as follows are generated
@@ -436,9 +436,11 @@ where $\bm{A} = H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}$ and $\bm{B} = H_{
 		 d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} \wedge  (\bm{I} + \Delta{t}H_{\bm{y\lambda}})^{-1} d\bm{\lambda}_{n}   \\ & 
 		 = (\underbrace{\bm{I} + \Delta{t}H_{\bm{y\lambda}}^{T}}_{H_{\bm{y\lambda}}^{T}=H_{\bm{\lambda y}}})^{-1} (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} \wedge d\bm{\lambda}_n \\ &
 		  = d\bm{y}_n \wedge d\bm{\lambda}_n.
-	\end{aligned}  
+	\end{aligned}
+	\label{eq:equation6}
 	\end{equation}
-    \textbf{Modified Mid Point:} $(\mathbf{M.M.P})$
+
+    \textbf{Modified MidPoint:} $(\mathbf{M.M.P})$
     \begin{align}
         & \bm{y}_{n+1} = \bm{y}_{n} + \Delta{t}H_{\bm{\lambda}}(\bm{y_{n+\frac{1}{2}}}, \bm{u}(\bm{y_{n+\frac{1}{2}}},\bm{\lambda_{n+\frac{1}{2}}}),\bm{\lambda_{n+\frac{1}{2}}}), \nonumber \\ &
         d\bm{y}_{n+1} = d\bm{y}_{n} + \frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{y}}(d\bm{y}_{n+1}+d\bm{y}_{n})+ \frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{u}}d\bm{u}+ \underbrace{\frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{\lambda}}(d\bm{\lambda}_{n+1}+d\bm{\lambda}_{n})}_{\bm{0}}, \nonumber \\ &
@@ -512,7 +514,8 @@ where $\bm{A} = H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}$ and $\bm{B} = H_{
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     \subsection{Numerical results (nonlinear case)}
-    We consider the following nonlinear optimal control problems and  apply $SE11, SE21$, and implicit midpoint methods. As analytically proven, condition $H_{yu} = \vect{0}$ in Problem \eqref{eq_65} ensures the symplecticity of $SE11$ and $SE21$, thus guaranteeing the preservation of the phase-space area.  This property is numerically validated  in Table \ref{Table:2}, which compares the absolute relative errors in the preserved area at the initial and final times. In contrast, problem \eqref{eq_64} does not satisfy the condition $H_{yu} = \vect{0}$, and as shown in Table \ref{Table:2}, the $SE11$ and $SE21$ methods lose their symplectic property in this case, leading to nonpreservation of the phase-space area. 
+	\label{subsec:numerical-results-(nonlinear-case)}
+We consider the following nonlinear optimal control problems and  apply $SE11, SE21$, and implicit midpoint methods. As analytically proven, condition $H_{yu} = \vect{0}$ in Problem \eqref{eq_65} ensures the symplecticity of $SE11$ and $SE21$, thus guaranteeing the preservation of the phase-space area.  This property is numerically validated  in Table \ref{Table:2}, which compares the absolute relative errors in the preserved area at the initial and final times. In contrast, problem \eqref{eq_64} does not satisfy the condition $H_{yu} = \vect{0}$, and as shown in Table \ref{Table:2}, the $SE11$ and $SE21$ methods lose their symplectic property in this case, leading to nonpreservation of the phase-space area.
 
 These simulations employ three distinct initial points to construct a triangular shape at the initial time see Figure \ref{triangle}. To compute the area of this triangle, we split it into four smaller non-overlapping triangles, calculate their individual areas, and add them to determine the total area. 
 
@@ -571,13 +574,14 @@ Necessary optimality conditions for \eqref{eq_64} and \eqref{eq_65}, respectivel
                          & $0.01$& $1.3989\times 10^{-5}$ &$1.1191\times 10^{-2}$ & $1.5809\times 10^{-4}$ &$0.1264$ \\
                      \hline
 %\cline{2-5}
-\multirow{3}{*}{Mid Point}  &$0.02$&$1.7307\times 10^{-5}$& $1.3845\times 10^{-2}$& $2.0385\times 10^{-4}$ &  $0.1630$ \\
+\multirow{3}{*}{MidPoint}  &$0.02$&$1.7307\times 10^{-5}$& $1.3845\times 10^{-2}$& $2.0385\times 10^{-4}$ &  $0.1630$ \\
                             &$0.01$&$1.7222\times 10^{-5}$&$1.3777\times 10^{-2}$ & $1.9555\times 10^{-4}$ & $0.1564$  \\
                              \hline
 \end{tabular}
 \caption{Application of $SE1_1, SE1_2$ and implicit mid point  methods  to systems \eqref{eq_66} and \eqref{eq_67} on the interval $[0,2]$ with three initial points  $\mathbf{z}_1 = (0,1)^{T}, \mathbf{z}_2 =(0.05,1)^{T}$ and $\mathbf{z}_3 = (0,1.05)^{T}$, where,  $k =1, m =20, T = 2$. $A_0 = 0.0013$ and $A_T$ denote the areas of the triangle at time $t = 0$ and $t = T = 2$, respectively.}
-\label{Table:2}
 \end{center}
+
+\label{tab:table14}
 \end{table}
 %{\color{red}\Huge\textbf{$dx \wedge dy$ measures area on the tangent space of $(x, y)$.}}
 
@@ -586,7 +590,7 @@ Necessary optimality conditions for \eqref{eq_64} and \eqref{eq_65}, respectivel
 %$x\quad y \quad X \quad Y$
 %$\alpha = 10  \quad \alpha = 7  \quad  \alpha = 2 \quad  \alpha = 5 \quad  \alpha = 1 %\quad \alpha = 0.5  \quad \Delta{t} =0.1$
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{table}[ht!]\label{table1}
+\begin{table}[ht!]\label{table3}
 \begin{center}
 	\begin{tabular}{|c|c|c|} 
 		\hline
@@ -702,7 +706,7 @@ This system of equations forms a two-point boundary value problem (TPBVP), with 
 \end{equation}
 To solve \eqref{eq:sys_analytic_sol}, six numerical schemes are  employed as follows: 
 \begin{align*}
-\text{Set } \bm{y}:= (\bm{v},\bm{x})^{T}, \quad \bm{p} := (\bm{\lambda},\bm{\mu})^{T},
+\text{Set } \bm{y}\coloneqq (\bm{v},\bm{x})^{T}, \quad \bm{p} := (\bm{\lambda},\bm{\mu})^{T},
 \end{align*}
 
 
@@ -738,7 +742,7 @@ SE2: \begin{cases}
              \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5}) \\ \\
              H_{u} (\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5})= 0 
         \end{cases} \\ \\ 
-        \end{array}
+        \end{array}\label{eq:equation}
 \end{equation}
 Table \ref{tab:alpha_methods} presents the numerical results obtained by applying the six numerical schemes for different values of $\alpha$.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
@@ -804,9 +808,9 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
                     & $6.6610\times 10^{-10}$ & $6.0072\times 10^{-10}$ & $7.4891\times 10^{-10}$ \\
         \bottomrule
       \end{tabular}
-      } 
+      }\label{tab:table}
 
-  %\vspace{4pt}
+		%\vspace{4pt}
  % {\footnotesize
  % All entries are $\|A_0^{\mathsf T} J A_0 - J\|$ with $H_{uv}\neq \vec{0}$.  
  % }
@@ -838,8 +842,8 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & - & 12 & - & - & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table3}
+	\end{table}
 
 
     \begin{table}[h!]
@@ -860,8 +864,8 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & 11 & - & - & - & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table4}
+	\end{table}
 
 
     \begin{table}[h!]
@@ -882,8 +886,8 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & 9 & - & - & - & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table5}
+	\end{table}
 
 
     \begin{table}[h!]
@@ -904,8 +908,8 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & 17 & - & - & - & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table6}
+	\end{table}
 
 
     \begin{table}[h!]
@@ -926,8 +930,8 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & - & 10 & - & - & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table7}
+	\end{table}
 
 
     \begin{table}[h!]
@@ -948,8 +952,8 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & 16 & 12 & - & - & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table8}
+	\end{table}
 
 
     \begin{table}[h!]
@@ -970,8 +974,8 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & 10 & 8 & - & 9 & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table9}
+	\end{table}
 
 
     \begin{table}[h!]
@@ -992,8 +996,8 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & - & 8 & - & 10 & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table10}
+	\end{table}
 
 
     \begin{table}[h!]
@@ -1014,8 +1018,8 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & 11 & 9 & - & 9 & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table11}
+	\end{table}
 
 
     \begin{table}[h!]
@@ -1036,8 +1040,8 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & - & 10 & 11 & 12 & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table12}
+	\end{table}
 
 
     \begin{table}[h!]
@@ -1058,247 +1062,9 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         MidPoint & - & 9 & - & - & - & - & - & - \\
         M. MidPoint & - & - & - & - & - & - & - & - \\
         \bottomrule
-      \end{tabular}
-    \end{table}
+      \end{tabular}\label{tab:table13}
+	\end{table}
   
   \pagebreak
 
-  \subsection{Comparison of the taken path and control}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[-0.5, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.5, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[-0.4, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.4, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[-0.3, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.3, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[-0.2, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.2, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[-0.1, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.1, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.0, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.0, 1.0]$}
-  \end{figure} 
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.1, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.1, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.2, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.2, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.3, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.3, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.4, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.4, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha10.0_SE1_x₀[0.5, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.5, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[-0.3, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.3, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[-0.1, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.1, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.0, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.0, 1.0]$}
-  \end{figure} 
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.1, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.1, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.2, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.2, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.3, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.3, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.4, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.4, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N40_alpha5.0_SE1_x₀[0.5, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 40$, $l_0 = 2.5$, and $\bm{x}_0 = [0.5, 1.0]$}
-  \end{figure}
-
-  % for N = 100
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[-0.5, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.5, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[-0.4, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.4, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[-0.3, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.3, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[-0.2, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.2, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[-0.1, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.1, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.0, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.0, 1.0]$}
-  \end{figure} 
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.1, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.1, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.2, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.2, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.3, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.3, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.4, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.4, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha10.0_SE1_x₀[0.5, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 10.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.5, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[-0.5, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.5, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[-0.4, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.4, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[-0.3, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.3, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[-0.1, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [-0.1, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.0, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.0, 1.0]$}
-  \end{figure} 
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.1, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.1, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.2, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.2, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.4, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.4, 1.0]$}
-  \end{figure}
-
-  \begin{figure}[h!]
-    \centering
-    \includegraphics[width=\textwidth]{Images/control_and_position_N100_alpha5.0_SE1_x₀[0.5, 1.0]_l02.5.pdf} 
-    \caption{Comparison of SE1 and Modified SE1 for $\alpha = 5.0$, $N = 100$, $l_0 = 2.5$, and $\bm{x}_0 = [0.5, 1.0]$}
-  \end{figure}
-
-  \section{Numerical Results Comparisson over state space}
 \end{document}
