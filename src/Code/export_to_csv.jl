@@ -1,7 +1,7 @@
 using Serialization, CSV, DataFrames
 include("../Modules/Systems.jl")
 
-func_number_of_iterations, func_results = deserialize("Grid_Search.jls")
+func_number_of_iterations, func_results = deserialize("Results/Grid_Search.jls")
 
 rows = Vector{Dict{Symbol, Any}}()
 
@@ -28,4 +28,4 @@ end
 df = DataFrame(rows)
 
 keys(func_results)
-CSV.write("results.csv", df)
+CSV.write("Results/results.csv", df)
