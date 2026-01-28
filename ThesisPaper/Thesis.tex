@@ -47,7 +47,7 @@
 %%%%%%%%%%%%%%%%%%%%5
 
 
-\graphicspath{./Images/}
+%\graphicspath{./Images/}
 \newcommand{\vect}[1]{\mathbf{#1}}   % or \boldsymbol{#1}
 
 \begin{document}
@@ -77,8 +77,7 @@ Consider the following optimal control problem:
 		v(0) = v_{0}, \; \lambda(T) = 0.
 		\label{eq:necessary_coditions}
 	\end{aligned}
-	\label{eq:equation2}
-\end{equation} 
+\end{equation}
 To solve the resulting system of equations, we apply four numerical techniques, specifically the $SE1_1, SE1_2, SE2_1$ and $SE2_2$  methods. Each method begins with three initial points $\mathbf{z}_1 = (v_1(0),\lambda_1(0)), \mathbf{z}_2 =(v_2(0),\lambda_2(0))$ and $\mathbf{z}_3 = (v_3(0),\lambda_3(0))$, which form a triangle in the phase space. The area of this triangle is computed at the initial time $t = 0$, and the methods are applied, respectively, to determine the area of the triangle at the final time $t = T$. So, it allows us to identify which method effectively preserves the geometric properties of the triangle, particularly its area. 
 
 Preserving the triangle's area is important in this context, as it serves as a test for identifying symplectic algorithms. Symplectic algorithms are numerical methods designed to preserve the symplectic structure of Hamiltonian systems, which is directly related to the conservation of geometric properties like area in phase space. 
@@ -821,250 +820,465 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
 
 \pagebreak
 
-\section{Comparing the Modified and Unmodified Methods for Various Initial Conditions}
-
-  \subsection{Number of iterations comparisson for different starting points $x_0$}
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [-0.5,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 7 & 7 & 11 & - & - & - & - & - \\
-        M. SE1 & 7 & 7 & 8 & 8 & - & - & - & - \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & - & 12 & - & - & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table3}
-	\end{table}
+	\section{Algorithm Comparison}
+		In this section, we will compare the different algorithms (SE1, SE2, MidPoint) to their Modified Counterparts.
+		We will do this comparison by introduction three types of graphs:
+		\begin{itemize}
+			\item \textbf{Iteration Plots:} are plots that show us for some combination of parameters <$k$, $m$, $N$, $\alpha$, $x_d$> how many iterations
+			it took to converge, if we did converge, for some values $x_0$ represented by dots. And on top of that it will show us the arrow of from each $x_0$ to
+			the final reached position $x_N$
+			\item \textbf{Control Plots:} are plots that show the control function $u(t)$ over the iteration.
+			\item \textbf{Projection Plots:} are plots that show the path that the pendulum bob took while going from $x_0$ to $x_N$
+		\end{itemize}
 
 
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [-0.4,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 7 & 7 & 8 & 7 & - & - & - & - \\
-        M. SE1 & 7 & 7 & 8 & 8 & - & - & - & - \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & 11 & - & - & - & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table4}
-	\end{table}
+		\noindent Before we go and look at the results lets first take a look at how an iteration plot looks like and explain it in further detail:
+
+		\begin{figure}[h!]
+			\centering
+			\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0}
+			\caption{Iteration plot of Modified SE1 for k=0.25 h=10.0 N=200 and m=1.0}
+			\label{fig:example_iter_plot}
+		\end{figure}
+
+		\noindent Figure~\ref{fig:example_iter_plot} shows an iteration plot of the \emph{Modified SE1} algorithm with parameter values of $k=0.25$, $h=10.0$, $N=200$, $m=1.0$, $x_d = (0.00, 10.00)$. The
+		iteration plot contains multiple dots in the input space, these are different combination of the initial state $x_0$. The color of these dots shows how long it took for the algorithm
+		to converge, if the algorithm didn't converge in the predefined number of maximum iteration, 30 for our case here, then the dots are colored black. On top of the color
+		there are also arrows coming out of the dots, and they point to the final position $x_N$ of the system. Keep in mind they don't show the trajectory through the state space
+		but the projection plot does.
+
+	 	\pagebreak
+		\begin{figure}[h!]
+			\centering
+			\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0_x0=-1.11, 2.12}
+			\caption{Control plot of Modified SE1 for k=0.25 h=10.0 N=200, m=1.0, and $\mathbf{x_0}= (-1.11, 2.12)$}
+			\label{fig:example_control_plot}
+		\end{figure}
+
+		\noindent Figure~\ref{fig:example_control_plot} shows the control function of the Modified SE1 for the parameter values of $k=0.25$, $h=10.0$, $N=200$, $m=1.0$, $x_d = (0.00, 10.00)$
+		and initial value $x_0 = (-1.11, 2.12)$. For modified algorithms the x axis represents some time $t_i$ where we do not know the exact time $t_i$ but as $N \rightarrow \infty$, $t_i \rightarrow t_0 + \frac{T - t_0}{N} * i$.
+		And for unmodified algorithms $t_i = t_0 + \frac{T - t_0}{N} * i$. Where $i \in [0, N]$
 
 
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [-0.3,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 7 & 7 & 10 & - & - & - & - & - \\
-        M. SE1 & 7 & 7 & 10 & - & - & - & - & - \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & 9 & - & - & - & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table5}
-	\end{table}
+		\begin{figure}[h!]
+			\centering
+			\includegraphics[width=.8\textwidth]{../Images/Projection_PyPlots/ProjectionPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0_x0=-1.11, 2.12}
+			\caption{Projection plot of Modified SE1 for k=0.25 h=10.0 N=200, m=1.0, and $\mathbf{x_0} = (-1.11, 2.12)$}
+			\label{fig:example_projection_plot}
+		\end{figure}
+
+		\noindent Figure~\ref{fig:example_projection_plot} shows the projection plot of the Modified SE1 for the parameter values of $k=0.25$, $h=10.0$, $N=200$, $m=1.0$, $x_d = (0.00, 10.00)$
+		and initial value $x_0 = (-1.11, 2.12)$. The projection plots shows the trajectory through the state space that the pendulum bob took to get to its final position as marked on the Iteration Plot (Figure~\ref{fig:example_iter_plot})
+
+\subsection{SE1}
+{
+	% --------------------------
+	% Parameters for this subsection
+	% --------------------------
+	\newcommand{\AlgoName}{SE1} % e.g. MidPoint
+	\newcommand{\kval}{1.0}
+	\newcommand{\hval}{8.0}
+	\newcommand{\Nval}{200}
+	\newcommand{\mval}{1.0}
+
+	\newcommand{\xA}{2.00, 2.93}
+	\newcommand{\xB}{-1.56, 2.93}
+
+	% Optional: desired target if you reference it in text
+	% \newcommand{\xd}{(0.00,\;10.00)}
+
+	% --------------------------
+	% Iteration plots (Modified vs Base)
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
+		\label{fig:\AlgoName_iter_mod}
+	  \end{subfigure}
+
+	  \vspace{0.5cm}
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
+		\label{fig:\AlgoName_iter_base}
+	  \end{subfigure}
+
+	  \caption{Iteration plots for \AlgoName~and its modified variant with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_iter_compare}
+	\end{figure}
 
 
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [-0.2,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 8 & - & - & 7 & - & - & - & - \\
-        M. SE1 & 8 & 7 & - & - & - & 243 & - & - \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & 17 & - & - & - & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table6}
-	\end{table}
+	% --------------------------
+	% Control plots for x0 = xA (Modified vs Base)
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
+		\caption{Modified~\AlgoName}
+		\label{fig:\AlgoName_ctrl_mod_xa}
+	  \end{subfigure}
+
+	  \vspace{0.5cm}
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
+		\caption{\AlgoName}
+		\label{fig:\AlgoName_ctrl_base_xa}
+	  \end{subfigure}
+
+	  \caption{Control trajectories for $x_0=\xA$ with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_ctrl_compare_xa}
+	\end{figure}
+
+	% --------------------------
+	% Projection comparison for x0 = xA
+	% --------------------------
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/high_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
+		\caption{Projection comparison for $x_0=\xA$ with
+			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+		\label{fig:\AlgoName_proj_xa}
+	\end{figure}
+	\vfill
+
+	% --------------------------
+	% Control plots for x0 = xB (Modified vs Base)
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+		\caption{Modified~\AlgoName}
+		\label{fig:\AlgoName_ctrl_mod_xb}
+	  \end{subfigure}
+
+	  \vspace{0.5cm}
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+		\caption{\AlgoName}
+		\label{fig:\AlgoName_ctrl_base_xb}
+	  \end{subfigure}
+
+	  \caption{Control trajectories for $x_0=\xB$ with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_ctrl_compare_xb}
+	\end{figure}
 
 
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [-0.1,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 8 & 10 & 9 & - & - & - & - & - \\
-        M. SE1 & 8 & 7 & 8 & 7 & - & - & - & - \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & - & 10 & - & - & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table7}
-	\end{table}
+	% --------------------------
+	% Projection comparison for x0 = xB
+	% --------------------------
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/h!igh_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+		\caption{Projection comparison for $x_0=\xB$ with
+			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+		\label{fig:\AlgoName_proj_xb}
+	\end{figure}
+}
+\vfill
 
 
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [0.0,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 7 & - & 8 & 12 & - & - & - & - \\
-        M. SE1 & 7 & 7 & 8 & 7 & - & - & - & - \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & 16 & 12 & - & - & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table8}
-	\end{table}
+\subsection{SE2}
+{
+	% --------------------------
+	% Parameters for this subsection
+	% --------------------------
+	\newcommand{\AlgoName}{SE2} % e.g. MidPoint
+	\newcommand{\kval}{0.25}
+	\newcommand{\hval}{6.0}
+	\newcommand{\Nval}{100}
+	\newcommand{\mval}{1.0}
+
+	\newcommand{\xA}{2.00, 2.12}
+	\newcommand{\xB}{-2.00, 0.50}
+
+	% Optional: desired target if you reference it in text
+	% \newcommand{\xd}{(0.00,\;10.00)}
+
+	% --------------------------
+	% Iteration plots (Modified vs Base)
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
+		\caption{Modified \AlgoName}
+		\label{fig:\AlgoName_iter_mod}
+	  \end{subfigure}
+
+	  \vspace{0.5cm}
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
+		\caption{\AlgoName}
+		\label{fig:\AlgoName_iter_base}
+	  \end{subfigure}
+
+	  \caption{Iteration plots for \AlgoName and its modified variant with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_iter_compare}
+	\end{figure}
 
 
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [0.1,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 7 & 8 & 8 & 9 & - & - & - & - \\
-        M. SE1 & 7 & 10 & 7 & 7 & - & - & - & - \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & 10 & 8 & - & 9 & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table9}
-	\end{table}
+	% --------------------------
+	% Control plots for x0 = xA (Modified vs Base)
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
+		\caption{Modified \AlgoName}
+		\label{fig:\AlgoName_ctrl_mod_xa}
+	  \end{subfigure}
+
+	  \vspace{0.5cm}
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
+		\caption{\AlgoName}
+		\label{fig:\AlgoName_ctrl_base_xa}
+	  \end{subfigure}
+
+	  \caption{Control trajectories for $x_0=\xA$ with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_ctrl_compare_xa}
+	\end{figure}
+
+	% --------------------------
+	% Projection comparison for x0 = xA
+	% --------------------------
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/h!igh_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
+		\caption{Projection comparison for $x_0=\xA$ with
+			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+		\label{fig:\AlgoName_proj_xa}
+	\end{figure}
+
+	% --------------------------
+	% Control plots for x0 = xB (Modified vs Base)
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+		\caption{Modified \AlgoName}
+		\label{fig:\AlgoName_ctrl_mod_xb}
+	  \end{subfigure}
+
+	  \vspace{0.5cm}
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+		\caption{\AlgoName}
+		\label{fig:\AlgoName_ctrl_base_xb}
+	  \end{subfigure}
+
+	  \caption{Control trajectories for $x_0=\xB$ with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_ctrl_compare_xb}
+	\end{figure}
 
 
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [0.2,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 8 & 8 & 8 & 10 & - & - & - & - \\
-        M. SE1 & 7 & 7 & 10 & 7 & - & - & - & - \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & - & 8 & - & 10 & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table10}
-	\end{table}
+	% --------------------------
+	% Projection comparison for x0 = xB
+	% --------------------------
+	\begin{figure}[h!]
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/h!igh_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+		\caption{Projection comparison for $x_0=\xB$ with
+			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+		\label{fig:\AlgoName_proj_xb}
+	\end{figure}
+}
+
+\subsection{MidPoint}
+{
+	% --------------------------
+	% Parameters for this subsection
+	% --------------------------
+	\newcommand{\AlgoName}{MidPoint} % e.g. MidPoint
+	\newcommand{\kval}{1.0}
+	\newcommand{\hval}{10.0}
+	\newcommand{\Nval}{200}
+	\newcommand{\mval}{1.0}
+
+	\newcommand{\xA}{1.11, 3.74}
+	\newcommand{\xB}{2.00, 3.74}
+	\newcommand{\xC}{-2.00, 3.74}
+
+	% Optional: desired target if you reference it in text
+	% \newcommand{\xd}{(0.00,\;10.00)}
+
+	% --------------------------
+	% Iteration plots (Modified vs Base)
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
+		\caption{Modified \AlgoName}
+		\label{fig:\AlgoName_iter_mod}
+	  \end{subfigure}
+
+	  \vspace{0.5cm}
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
+		\caption{\AlgoName}
+		\label{fig:\AlgoName_iter_base}
+	  \end{subfigure}
+
+	  \caption{Iteration plots for \AlgoName and its modified variant with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_iter_compare}
+	\end{figure}
 
 
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [0.3,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 7 & 9 & 8 & 9 & - & - & - & - \\
-        M. SE1 & 7 & 7 & 8 & 7 & - & - & - & - \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & 11 & 9 & - & 9 & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table11}
-	\end{table}
+	% --------------------------
+	% Control plots for x0 = xA (Modified vs Base)
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
+		\caption{Modified \AlgoName}
+		\label{fig:\AlgoName_ctrl_mod_xa}
+	  \end{subfigure}
+
+	  \vspace{0.5cm}
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
+		\caption{\AlgoName}
+		\label{fig:\AlgoName_ctrl_base_xa}
+	  \end{subfigure}
+
+	  \caption{Control trajectories for $x_0=\xA$ with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_ctrl_compare_xa}
+	\end{figure}
 
 
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [0.4,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 7 & 10 & 8 & 12 & - & - & - & - \\
-        M. SE1 & 7 & 7 & 8 & 7 & - & - & - & 212 \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & - & 10 & 11 & 12 & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table12}
-	\end{table}
+	% --------------------------
+	% Control plots for x0 = xB (Modified vs Base)
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+		\caption{Modified \AlgoName}
+		\label{fig:\AlgoName_ctrl_mod_xb}
+	  \end{subfigure}
+
+	  \vspace{0.5cm}
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+		\caption{\AlgoName}
+		\label{fig:\AlgoName_ctrl_base_xb}
+	  \end{subfigure}
+
+	  \caption{Control trajectories for $x_0=\xB$ with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_ctrl_compare_xb}
+	\end{figure}
 
 
-    \begin{table}[h!]
-      \centering
-      \caption{$x_0 = [0.5,\,1.0]$}
-      \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
-        \toprule
-        \multirow{2}{*}{Method} & \multicolumn{2}{c|}{$\alpha = 10.0$} & \multicolumn{2}{c|}{$\alpha = 5.0$} & \multicolumn{2}{c|}{$\alpha = 1.0$} & \multicolumn{2}{c|}{$\alpha = 0.5$} \\
-        \cmidrule{2-9}
-        & $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $& $\Delta t = 0.2 $& $\Delta t = 0.5 $\\
-        \midrule
-        SE1 & 7 & 9 & 11 & - & - & - & - & - \\
-        M. SE1 & 7 & 7 & 8 & 7 & - & - & - & - \\
-        \midrule
-        SE2 & - & - & - & - & - & - & - & - \\
-        M. SE2 & - & - & - & - & - & - & - & - \\
-        \midrule
-        MidPoint & - & 9 & - & - & - & - & - & - \\
-        M. MidPoint & - & - & - & - & - & - & - & - \\
-        \bottomrule
-      \end{tabular}\label{tab:table13}
-	\end{table}
-  
-  \pagebreak
+	% --------------------------
+	% Control plots for x0 = xB (Modified vs Base)
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xC}
+		\caption{Modified \AlgoName}
+		\label{fig:\AlgoName_ctrl_mod_xc}
+	  \end{subfigure}
+
+	  \vspace{0.5cm}
+
+	  \begin{subfigure}{\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xC}
+		\caption{\AlgoName}
+		\label{fig:\AlgoName_ctrl_base_xc}
+	  \end{subfigure}
+
+	  \caption{Control trajectories for $x_0=\xC$ with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_ctrl_compare_xc}
+	\end{figure}
+
+	% --------------------------
+	% Projection comparison for x0 = xA
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+	  \includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/h!igh_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
+	  \caption{Projection comparison for $x_0=\xA$ with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_proj_xa}
+	\end{figure}
+
+	% --------------------------
+	% Projection comparison for x0 = xB
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+	  \includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/h!igh_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+	  \caption{Projection comparison for $x_0=\xB$ with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_proj_xb}
+	\end{figure}
+
+	% --------------------------
+	% Projection comparison for x0 = xC
+	% --------------------------
+	\begin{figure}[h!]
+	  \centering
+	  \includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/h!igh_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xC}
+	  \caption{Projection comparison for $x_0=\xC$ with
+	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+	  \label{fig:\AlgoName_proj_xc}
+	\end{figure}
+}
+
 
 \end{document}
