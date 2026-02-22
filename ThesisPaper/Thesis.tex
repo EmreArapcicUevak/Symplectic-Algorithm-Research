@@ -55,7 +55,7 @@
 
 \pgfkeys{
   /algoAnalysis/.is family, /algoAnalysis,
-  method/.initial=,
+	method/.initial=,
 	k/.initial=1.0,
 	h/.initial=10.0,
 	N/.initial=100,
@@ -63,9 +63,8 @@
 	xA/.initial=,
 	xB/.initial=,
 	xC/.initial=,
-
 }
-
+\newcommand{\vecx}[2]{\begin{bmatrix}#1\\#2\end{bmatrix}}
 
 \newcommand{\plotAnalysis}[6]{
 	\edef\AlgoName{#1}
@@ -73,43 +72,39 @@
 	\edef\hval{#3}
 	\edef\Nval{#4}
 	\edef\mval{#5}
-	\edef\xB{#6}
+	\edef\x{#6}
 
 	\begin{figure}[H]
 		\centering
 
 		\begin{subfigure}{\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+			\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\x}
 			\caption{Modified \AlgoName}
-			\label{fig:\AlgoName_ctrl_mod_xb}
 		\end{subfigure}
 
 		\vspace{0.5cm}
 
 		\begin{subfigure}{\textwidth}
 			\centering
-			\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
+			\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\x}
 			\caption{\AlgoName}
-			\label{fig:\AlgoName_ctrl_base_xb}
 		\end{subfigure}
 
-		\caption{Control trajectories for $x_0=\xB$ with
+		\caption{Control trajectories for $\mathbf{x_0}=(\x)$ with
 		$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_ctrl_compare_xb}
 	\end{figure}
 
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/high_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
-		\caption{Trajectory comparison for $x_0=\xB$ with
+		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\x}
+		\caption{Trajectory comparison for $\mathbf{x_0}=(\x)$ with
 		$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xb}
 	\end{figure}
 }
 
 \newcommand{\algoAnalysis}[1][]{
-	\pgfkeys{/algoAnalysis, method=, k=1.0, h=10.0, N=100, m=1.0, xA=, xB=, xC=, #1}
+	\pgfkeys{/algoAnalysis, xA=,xB=,xC=,#1}
 
 	\edef\AlgoName{\pgfkeysvalueof{/algoAnalysis/method}}
 	\edef\kval{\pgfkeysvalueof{/algoAnalysis/k}}
@@ -117,8 +112,8 @@
 	\edef\Nval{\pgfkeysvalueof{/algoAnalysis/N}}
 	\edef\mval{\pgfkeysvalueof{/algoAnalysis/m}}
 	\edef\xA{\pgfkeysvalueof{/algoAnalysis/xA}}
-	\edef\xB{\pgfkeysvalueof{/algoBnalysis/xB}}
-	\edef\xB{\pgfkeysvalueof{/algoCnalysis/xC}}
+	\edef\xB{\pgfkeysvalueof{/algoAnalysis/xB}}
+	\edef\xC{\pgfkeysvalueof{/algoAnalysis/xC}}
 
 	\begin{figure}[H]
 		\centering
@@ -929,59 +924,80 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
 % Mapping used: N=100 -> Δt = 0.2, N=40 -> Δt = 0.5
 
 \pagebreak
+\section{Algorithm Comparison}
 
-	\section{Algorithm Comparison}
-		In this section, we will compare the different algorithms (SE1, SE2, MidPoint) to their Modified Counterparts.
-		We will do this comparison by introduction three types of graphs:
-		\begin{itemize}
-			\item \textbf{Iteration Plots:} are plots that show us for some combination of parameters <$k$, $m$, $N$, $\alpha$, $x_d$> how many iterations
-			it took to converge, if we did converge, for some values $x_0$ represented by dots. And on top of that it will show us the arrow of from each $x_0$ to
-			the final reached position $x_N$
-			\item \textbf{Control Plots:} are plots that show the control function $u(t)$ over the iteration.
-			\item \textbf{Trajectory Plots:} are plots that show the path that the pendulum bob took while going from $x_0$ to $x_N$
-		\end{itemize}
+In this section, we compare the baseline algorithms (SE1, SE2, MidPoint) with their modified counterparts.
+The comparison is illustrated using three types of plots:
 
+\begin{itemize}
+  \item \textbf{Iteration plots:} Visualize convergence behavior over a grid of initial states \(\mathbf{x_0}\).
+  For each tested \(\mathbf{x_0}\), the color encodes the number of iterations required to converge (up to a fixed maximum).
+  If the method does not converge within the maximum number of iterations (30 in our experiments), the corresponding point is colored black.
+  Additionally, an arrow is drawn from each \(\mathbf{x_0}\) to the final state \(\mathbf{x_N}\), indicating the achieved terminal state.
 
-		\noindent Before we go and look at the results lets first take a look at how an iteration plot looks like and explain it in further detail:
+  \item \textbf{Control plots:} Show the computed control sequence \(u(t_i)\) (or \(u_i\)) over the discrete time index $t_i$ where \(i \in \{0,\dots,N\}\).
 
-		\begin{figure}[h!]
-			\centering
-			\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0}
-			\caption{Iteration plot of Modified SE1 for k=0.25 h=10.0 N=200 and m=1.0}
-			\label{fig:example_iter_plot}
-		\end{figure}
+  \item \textbf{Trajectory plots:} Show the path of the system in state space as it evolves from \(\mathbf{x_0}\) to \(\mathbf{x_N}\).
+  Unlike the iteration plot arrows, these plots display the full trajectory, not only the start and end points.
+\end{itemize}
 
-		\noindent Figure~\ref{fig:example_iter_plot} shows an iteration plot of the \emph{Modified SE1} algorithm with parameter values of $k=0.25$, $h=10.0$, $N=200$, $m=1.0$, $x_d = (0.00, 10.00)$. The
-		iteration plot contains multiple dots in the input space, these are different combination of the initial state $x_0$. The color of these dots shows how long it took for the algorithm
-		to converge, if the algorithm didn't converge in the predefined number of maximum iteration, 30 for our case here, then the dots are colored black. On top of the color
-		there are also arrows coming out of the dots, and they point to the final position $x_N$ of the system. Keep in mind they don't show the trajectory through the state space
-		but the projection plot does.
+\noindent Before presenting the full set of results, we first explain these plots using a representative example.
 
-	 	\pagebreak
-		\begin{figure}[h!]
-			\centering
-			\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0_x0=-1.11, 2.12}
-			\caption{Control plot of Modified SE1 for k=0.25 h=10.0 N=200, m=1.0, and $\mathbf{x_0}= (-1.11, 2.12)$}
-			\label{fig:example_control_plot}
-		\end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0}
+  \caption{Iteration plot of Modified SE1 for \(k=0.25\), \(h=10.0\), \(N=200\), and \(m=1.0\).}
+  \label{fig:example_iter_plot}
+\end{figure}
 
-		\noindent Figure~\ref{fig:example_control_plot} shows the control function of the Modified SE1 for the parameter values of $k=0.25$, $h=10.0$, $N=200$, $m=1.0$, $x_d = (0.00, 10.00)$
-		and initial value $x_0 = (-1.11, 2.12)$. For modified algorithms the x axis represents some time $t_i$ where we do not know the exact time $t_i$ but as $N \rightarrow \infty$, $t_i \rightarrow t_0 + \frac{T - t_0}{N} * i$.
-		And for unmodified algorithms $t_i = t_0 + \frac{T - t_0}{N} * i$. Where $i \in [0, N]$
+\noindent Figure~\ref{fig:example_iter_plot} shows an iteration plot for the \emph{Modified SE1} method with
+\(k=0.25\), \(h=10.0\), \(N=200\), \(m=1.0\), and desired terminal state
+\(\mathbf{x_d}=\vecx{0.00}{10.00}\).
+Each dot corresponds to a different initial condition \(\mathbf{x_0}\) in the sampled grid.
+The color indicates the number of iterations needed to converge; points that do not converge within the allowed maximum are colored black.
+Finally, each arrow maps \(\mathbf{x_0}\) to the achieved terminal state \(\mathbf{x_N}\).
+Note that these arrows do \emph{not} represent the full trajectory through the state space—only the start and end points.
+The full state evolution is shown in the trajectory  plot.
 
+\pagebreak
 
-		\begin{figure}[h!]
-			\centering
-			\includegraphics[width=.8\textwidth]{../Images/Projection_PyPlots/ProjectionPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0_x0=-1.11, 2.12}
-			\caption{Trajectory plot of Modified SE1 for k=0.25 h=10.0 N=200, m=1.0, and $\mathbf{x_0} = (-1.11, 2.12)$}
-			\label{fig:example_projection_plot}
-		\end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0_x0=-1.11, 2.12}
+  \caption{Control plot of Modified SE1 for \(k=0.25\), \(h=10.0\), \(N=200\), \(m=1.0\), and \(\mathbf{x_0}=\vecx{-1.11}{2.12}\).}
+  \label{fig:example_control_plot}
+\end{figure}
 
-		\noindent Figure~\ref{fig:example_projection_plot} shows the trajectory plot of the Modified SE1 for the parameter values of $k=0.25$, $h=10.0$, $N=200$, $m=1.0$, $x_d = (0.00, 10.00)$
-		and initial value $x_0 = (-1.11, 2.12)$. The trajectory plots shows the trajectory through the state space that the pendulum bob took to get to its final position as marked on the Iteration Plot (Figure~\ref{fig:example_iter_plot}) \newline
+\noindent Figure~\ref{fig:example_control_plot} shows the computed control sequence for Modified SE1 with
+\(k=0.25\), \(h=10.0\), \(N=200\), \(m=1.0\), desired state \(\mathbf{x_d}=\vecx{0.00}{10.00}\),
+and initial condition \(\mathbf{x_0}=\vecx{-1.11}{2.12}\).
+For modified methods, the horizontal axis corresponds to discrete time samples \(t_i\), where the exact interpretation depends on the modification.
+In practice, the sampling approaches the uniform grid as \(N \to \infty\), i.e.,
+\[
+t_i \to t_0 + \frac{T-t_0}{N}\, i.
+\]
+For the unmodified methods, the grid is explicitly uniform:
+\[
+t_i = t_0 + \frac{T-t_0}{N}\, i,
+\qquad i \in \{0,\dots,N\}.
+\]
 
-		\noindent One important detail before we go further, since there are so many examples we only showcased the ones where the difference in the projections were high. Another thing to point out quickly is that when the height
-		of the desired point was small, the converged results tend to make the pendulum bob fall, and for some reason this also made a drastic difference in the projection even if the end positions were pretty similar.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{../Images/Projection_PyPlots/ProjectionPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0_x0=-1.11, 2.12}
+  \caption{Trajectory plot of Modified SE1 for \(k=0.25\), \(h=10.0\), \(N=200\), \(m=1.0\), and \(\mathbf{x_0}=\vecx{-1.11}{2.12}\).}
+  \label{fig:example_projection_plot}
+\end{figure}
+
+\noindent Figure~\ref{fig:example_projection_plot} shows the resulting trajectory in state space for the same configuration as in Figure~\ref{fig:example_control_plot}.
+In particular, the plot visualizes the evolution of the state from \(\mathbf{x_0}=\vecx{-1.11}{2.12}\) to the final state \(\mathbf{x_N}\),
+which corresponds to the endpoint indicated in the iteration plot (Figure~\ref{fig:example_iter_plot}).
+
+\medskip
+\noindent Finally, note that because the number of generated examples is large, we only include representative cases in which the difference between baseline and modified trajectories is pronounced (i.e., where the trajectory discrepancy is high).
+Moreover, when the desired height component of \(\mathbf{x_d}\) is small, the converged solutions often correspond to trajectories in which the pendulum falls.
+Empirically, such cases can exhibit large differences in the projection plots even when the terminal states \(\mathbf{x_N}\) are close.
+
 
 \FloatBarrier
 \subsection{SE1}
@@ -991,896 +1007,86 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
   h      = 8.0,
   N      = 200,
   m      = 1.0,
-  xA     = {2.00, 2.92},
+  xA     = {2.00, 2.93},
   xB     = {-1.56, 2.93}
 ]{}
-{
-	% --------------------------
-	% Parameters for this subsection
-	% --------------------------
-	\newcommand{\AlgoName}{SE1} % e.g. MidPoint
-	\newcommand{\kval}{1.0}
-	\newcommand{\hval}{8.0}
-	\newcommand{\Nval}{200}
-	\newcommand{\mval}{1.0}
 
-	\newcommand{\xA}{2.00, 2.93}
-	\newcommand{\xB}{-1.56, 2.93}
-
-	% Optional: desired target if you reference it in text
-	% \newcommand{\xd}{(0.00,\;10.00)}
-
-	% --------------------------
-	% Iteration plots (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-		\label{fig:\AlgoName_iter_mod}
-	  \end{subfigure}
-
-	  \vspace{0.5cm}
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-		\label{fig:\AlgoName_iter_base}
-	  \end{subfigure}
-
-	  \caption{Iteration plots for \AlgoName~and its modified variant with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_iter_compare}
-	\end{figure}
+\algoAnalysis[
+  method = SE1,
+  k      = 0.5,
+  h      = 8.0,
+  N      = 100,
+  m      = 1.0,
+  xA     = {-2.00, 1.72},
+]{}
 
 
-	% --------------------------
-	% Control plots for x0 = xA (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
+\algoAnalysis[
+	method = SE1,
+	k      = 0.25,
+	h      = 10.0,
+	N      = 100,
+	m      = 1.0,
+	xA     = {1.56, 1.72},
+]{}
 
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-		\caption{Modified~\AlgoName}
-		\label{fig:\AlgoName_ctrl_mod_xa}
-	  \end{subfigure}
-
-	  \vspace{0.5cm}
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-		\caption{\AlgoName}
-		\label{fig:\AlgoName_ctrl_base_xa}
-	  \end{subfigure}
-
-	  \caption{Control trajectories for $x_0=\xA$ with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_ctrl_compare_xa}
-	\end{figure}
-
-	% --------------------------
-	% Trajectory comparison for x0 = xA
-	% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/high_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
-		\caption{Trajectory comparison for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xa}
-	\end{figure}
-	\vfill
-
-	% --------------------------
-	% Control plots for x0 = xB (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
-		\caption{Modified~\AlgoName}
-		\label{fig:\AlgoName_ctrl_mod_xb}
-	  \end{subfigure}
-
-	  \vspace{0.5cm}
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
-		\caption{\AlgoName}
-		\label{fig:\AlgoName_ctrl_base_xb}
-	  \end{subfigure}
-
-	  \caption{Control trajectories for $x_0=\xB$ with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_ctrl_compare_xb}
-	\end{figure}
-
-
-	% --------------------------
-	% Trajectory comparison for x0 = xB
-	% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[height=.9\textheight]{../Images/Projection_Comparison_PyPlots/high_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
-		\caption{Trajectory comparison for $x_0=\xB$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xb}
-	\end{figure}
-}
-
-
-{
-% --------------------------
-% Parameters for this subsection
-% --------------------------
-	\newcommand{\AlgoName}{SE1} % e.g. MidPoint
-	\newcommand{\kval}{0.5}
-	\newcommand{\hval}{8.0}
-	\newcommand{\Nval}{100}
-	\newcommand{\mval}{1.0}
-
-	\newcommand{\xA}{-2.00, 1.72}
-
-% Optional: desired target if you reference it in text
-% \newcommand{\xd}{(0.00,\;10.00)}
-
-% --------------------------
-% Iteration plots (Modified vs Base)
-% --------------------------
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-			\label{fig:\AlgoName_iter_mod}
-		\end{subfigure}
-
-		\vspace{0.5cm}
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-			\label{fig:\AlgoName_iter_base}
-		\end{subfigure}
-
-		\caption{Iteration plots for \AlgoName~and its modified variant with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_iter_compare}
-	\end{figure}
-
-
-% --------------------------
-% Control plots for x0 = xA (Modified vs Base)
-% --------------------------
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-			\caption{Modified~\AlgoName}
-			\label{fig:\AlgoName_ctrl_mod_xa}
-		\end{subfigure}
-
-		\vspace{0.5cm}
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-			\caption{\AlgoName}
-			\label{fig:\AlgoName_ctrl_base_xa}
-		\end{subfigure}
-
-		\caption{Control trajectories for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_ctrl_compare_xa}
-	\end{figure}
-
-% --------------------------
-% Trajectory comparison for x0 = xA
-% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/high_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
-		\caption{Trajectory comparison for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xa}
-	\end{figure}
-	\vfill
-}
-
-{
-% --------------------------
-% Parameters for this subsection
-% --------------------------
-	\newcommand{\AlgoName}{SE1} % e.g. MidPoint
-	\newcommand{\kval}{0.25}
-	\newcommand{\hval}{10.0}
-	\newcommand{\Nval}{100}
-	\newcommand{\mval}{1.0}
-
-	\newcommand{\xA}{1.56, 1.72}
-
-% Optional: desired target if you reference it in text
-% \newcommand{\xd}{(0.00,\;10.00)}
-
-% --------------------------
-% Iteration plots (Modified vs Base)
-% --------------------------
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-			\label{fig:\AlgoName_iter_mod}
-		\end{subfigure}
-
-		\vspace{0.5cm}
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-			\label{fig:\AlgoName_iter_base}
-		\end{subfigure}
-
-		\caption{Iteration plots for \AlgoName~and its modified variant with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_iter_compare}
-	\end{figure}
-
-
-% --------------------------
-% Control plots for x0 = xA (Modified vs Base)
-% --------------------------
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-			\caption{Modified~\AlgoName}
-			\label{fig:\AlgoName_ctrl_mod_xa}
-		\end{subfigure}
-
-		\vspace{0.5cm}
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-			\caption{\AlgoName}
-			\label{fig:\AlgoName_ctrl_base_xa}
-		\end{subfigure}
-
-		\caption{Control trajectories for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_ctrl_compare_xa}
-	\end{figure}
-
-% --------------------------
-% Trajectory comparison for x0 = xA
-% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/Low_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
-		\caption{Trajectory comparison for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xa}
-	\end{figure}
-	\vfill
-}
-
-
-\FloatBarrier
 \subsection{SE2}
-{
-% --------------------------
-% Parameters for this subsection
-% --------------------------
-	\newcommand{\AlgoName}{SE2} % e.g. MidPoint
-	\newcommand{\kval}{1.0}
-	\newcommand{\hval}{6.0}
-	\newcommand{\Nval}{100}
-	\newcommand{\mval}{1.0}
+\algoAnalysis[
+	method = SE2,
+	k      = 1.0,
+	h      = 6.0,
+	N      = 100,
+	m      = 1.0,
+	xA     = {1.11, 2.52},
+]{}
 
-	\newcommand{\xA}{1.11, 2.52}
+\algoAnalysis[
+	method = SE2,
+	k      = 0.5,
+	h      = 10.0,
+	N      = 100,
+	m      = 1.0,
+	xA     = {-2.00, 3.74},
+	xB     = {2.00, 3.74},
+]{}
 
-% Optional: desired target if you reference it in text
-% \newcommand{\xd}{(0.00,\;10.00)}
+\algoAnalysis[
+	method = SE2,
+	k      = 0.25,
+	h      = 10.0,
+	N      = 100,
+	m      = 1.0,
+	xA     = {-1.56, 2.12},
+]{}
 
-% --------------------------
-% Iteration plots (Modified vs Base)
-% --------------------------
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-			\label{fig:\AlgoName_iter_mod}
-		\end{subfigure}
-
-		\vspace{0.5cm}
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-			\label{fig:\AlgoName_iter_base}
-		\end{subfigure}
-
-		\caption{Iteration plots for \AlgoName~and its modified variant with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_iter_compare}
-	\end{figure}
-
-
-% --------------------------
-% Control plots for x0 = xA (Modified vs Base)
-% --------------------------
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-			\caption{Modified~\AlgoName}
-			\label{fig:\AlgoName_ctrl_mod_xa}
-		\end{subfigure}
-
-		\vspace{0.5cm}
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-			\caption{\AlgoName}
-			\label{fig:\AlgoName_ctrl_base_xa}
-		\end{subfigure}
-
-		\caption{Control trajectories for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_ctrl_compare_xa}
-	\end{figure}
-
-% --------------------------
-% Trajectory comparison for x0 = xA
-% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/high_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
-		\caption{Trajectory comparison for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xa}
-	\end{figure}
-	\vfill
-}
-
-{
-% --------------------------
-% Parameters for this subsection
-% --------------------------
-	\newcommand{\AlgoName}{SE2} % e.g. MidPoint
-	\newcommand{\kval}{0.5}
-	\newcommand{\hval}{10.0}
-	\newcommand{\Nval}{100}
-	\newcommand{\mval}{1.0}
-
-	\newcommand{\xA}{-2.00, 3.74}
-	\newcommand{\xB}{2.00, 3.74}
-
-% Optional: desired target if you reference it in text
-% \newcommand{\xd}{(0.00,\;10.00)}
-
-% --------------------------
-% Iteration plots (Modified vs Base)
-% --------------------------
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-			\label{fig:\AlgoName_iter_mod}
-		\end{subfigure}
-
-		\vspace{0.5cm}
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-			\label{fig:\AlgoName_iter_base}
-		\end{subfigure}
-
-		\caption{Iteration plots for \AlgoName~and its modified variant with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_iter_compare}
-	\end{figure}
-
-
-% --------------------------
-% Control plots for x0 = xA (Modified vs Base)
-% --------------------------
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-			\caption{Modified~\AlgoName}
-			\label{fig:\AlgoName_ctrl_mod_xa}
-		\end{subfigure}
-
-		\vspace{0.5cm}
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-			\caption{\AlgoName}
-			\label{fig:\AlgoName_ctrl_base_xa}
-		\end{subfigure}
-
-		\caption{Control trajectories for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_ctrl_compare_xa}
-	\end{figure}
-
-% --------------------------
-% Trajectory comparison for x0 = xA
-% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/Low_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
-		\caption{Trajectory comparison for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xa}
-	\end{figure}
-	\vfill
-
-% --------------------------
-% Control plots for x0 = xB (Modified vs Base)
-% --------------------------
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
-			\caption{Modified~\AlgoName}
-			\label{fig:\AlgoName_ctrl_mod_xb}
-		\end{subfigure}
-
-		\vspace{0.5cm}
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
-			\caption{\AlgoName}
-			\label{fig:\AlgoName_ctrl_base_xb}
-		\end{subfigure}
-
-		\caption{Control trajectories for $x_0=\xB$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_ctrl_compare_xb}
-	\end{figure}
-
-
-% --------------------------
-% Trajectory comparison for x0 = xB
-% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[height=.9\textheight]{../Images/Projection_Comparison_PyPlots/Low_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
-		\caption{Trajectory comparison for $x_0=\xB$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xb}
-	\end{figure}
-}
-
-{
-	% --------------------------
-	% Parameters for this subsection
-	% --------------------------
-	\newcommand{\AlgoName}{SE2} % e.g. MidPoint
-	\newcommand{\kval}{0.25}
-	\newcommand{\hval}{10.0}
-	\newcommand{\Nval}{100}
-	\newcommand{\mval}{1.0}
-
-	\newcommand{\xA}{-1.56, 2.12}
-
-	% Optional: desired target if you reference it in text
-	% \newcommand{\xd}{(0.00,\;10.00)}
-
-	% --------------------------
-	% Iteration plots (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-		\label{fig:\AlgoName_iter_mod}
-	  \end{subfigure}
-
-	  \medskip
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=0.98\linewidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-		\label{fig:\AlgoName_iter_base}
-	  \end{subfigure}
-
-	  \caption{Iteration plots for \AlgoName and its modified variant with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_iter_compare}
-	\end{figure}
-
-
-	% --------------------------
-	% Control plots for x0 = xA (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-		\caption{Modified \AlgoName}
-		\label{fig:\AlgoName_ctrl_mod_xa}
-	  \end{subfigure}
-
-	  \vspace{0.5cm}
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=0.98\linewidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-		\caption{\AlgoName}
-		\label{fig:\AlgoName_ctrl_base_xa}
-	  \end{subfigure}
-
-	  \caption{Control trajectories for $x_0=\xA$ with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_ctrl_compare_xa}
-	\end{figure}
-
-	% --------------------------
-	% Trajectory comparison for x0 = xA
-	% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/low_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
-		\caption{Trajectory comparison for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xa}
-	\end{figure}
-}
-
-\FloatBarrier
 \subsection{MidPoint}
-{
-	% --------------------------
-	% Parameters for this subsection
-	% --------------------------
-	\newcommand{\AlgoName}{MidPoint} % e.g. MidPoint
-	\newcommand{\kval}{1.0}
-	\newcommand{\hval}{10.0}
-	\newcommand{\Nval}{200}
-	\newcommand{\mval}{1.0}
+\algoAnalysis[
+	method = MidPoint,
+	k      = 1.0,
+	h      = 10.0,
+	N      = 200,
+	m      = 1.0,
+	xA     = {1.11, 3.74},
+	xB     = {2.00, 3.74},
+	xC     = {-2.00, 3.74},
+]{}
 
-	\newcommand{\xA}{1.11, 3.74}
-	\newcommand{\xB}{2.00, 3.74}
-	\newcommand{\xC}{-2.00, 3.74}
+\algoAnalysis[
+	method = MidPoint,
+	k      = 0.5,
+	h      = 10.0,
+	N      = 100,
+	m      = 1.0,
+	xA     = {-1.11, 3.33},
+]{}
 
-	% Optional: desired target if you reference it in text
-	% \newcommand{\xd}{(0.00,\;10.00)}
+\algoAnalysis[
+	method = MidPoint,
+	k      = 0.25,
+	h      = 10.0,
+	N      = 100,
+	m      = 1.0,
+	xA     = {0.22, 2.12},
+]{}
 
-	% --------------------------
-	% Iteration plots (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-	  \end{subfigure}
-
-	  \medskip
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-	  \end{subfigure}
-
-	  \caption{Iteration plots for \AlgoName and its modified variant with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_iter_compare}
-	\end{figure}
-
-
-	% --------------------------
-	% Control plots for x0 = xA (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-		\caption{Modified \AlgoName}
-		\label{fig:\AlgoName_ctrl_mod_xa}
-	  \end{subfigure}
-
-	  \vspace{0.5cm}
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-		\caption{\AlgoName}
-		\label{fig:\AlgoName_ctrl_base_xa}
-	  \end{subfigure}
-
-	  \caption{Control trajectories for $x_0=\xA$ with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_ctrl_compare_xa}
-	\end{figure}
-
-
-% --------------------------
-% Trajectory comparison for x0 = xA
-% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/high_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
-		\caption{Trajectory comparison for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xa}
-	\end{figure}
-	% --------------------------
-	% Control plots for x0 = xB (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
-		\caption{Modified \AlgoName}
-		\label{fig:\AlgoName_ctrl_mod_xb}
-	  \end{subfigure}
-
-	  \vspace{0.5cm}
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
-		\caption{\AlgoName}
-		\label{fig:\AlgoName_ctrl_base_xb}
-	  \end{subfigure}
-
-	  \caption{Control trajectories for $x_0=\xB$ with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_ctrl_compare_xb}
-	\end{figure}
-
-% --------------------------
-% Trajectory comparison for x0 = xB
-% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/high_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xB}
-		\caption{Trajectory comparison for $x_0=\xB$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xb}
-	\end{figure}
-
-	% --------------------------
-	% Control plots for x0 = xC (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xC}
-		\caption{Modified \AlgoName}
-		\label{fig:\AlgoName_ctrl_mod_xc}
-	  \end{subfigure}
-
-	  \vspace{0.5cm}
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xC}
-		\caption{\AlgoName}
-		\label{fig:\AlgoName_ctrl_base_xc}
-	  \end{subfigure}
-
-	  \caption{Control trajectories for $x_0=\xC$ with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_ctrl_compare_xc}
-	\end{figure}
-
-
-
-
-	% --------------------------
-	% Trajectory comparison for x0 = xC
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-	  \includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/high_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xC}
-	  \caption{Trajectory comparison for $x_0=\xC$ with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_proj_xc}
-	\end{figure}
-}
-
-{
-	% --------------------------
-	% Parameters for this subsection
-	% --------------------------
-	\newcommand{\AlgoName}{MidPoint} % e.g. MidPoint
-	\newcommand{\kval}{0.5}
-	\newcommand{\hval}{10.0}
-	\newcommand{\Nval}{100}
-	\newcommand{\mval}{1.0}
-
-	\newcommand{\xA}{-1.11, 3.33}
-
-	% Optional: desired target if you reference it in text
-	% \newcommand{\xd}{(0.00,\;10.00)}
-
-	% --------------------------
-	% Iteration plots (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-	  \end{subfigure}
-
-	  \medskip
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-	  \end{subfigure}
-
-	  \caption{Iteration plots for \AlgoName and its modified variant with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_iter_compare}
-	\end{figure}
-
-
-	% --------------------------
-	% Control plots for x0 = xA (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-		\caption{Modified \AlgoName}
-		\label{fig:\AlgoName_ctrl_mod_xa}
-	  \end{subfigure}
-
-	  \vspace{0.5cm}
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-		\caption{\AlgoName}
-		\label{fig:\AlgoName_ctrl_base_xa}
-	  \end{subfigure}
-
-	  \caption{Control trajectories for $x_0=\xA$ with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_ctrl_compare_xa}
-	\end{figure}
-
-
-% --------------------------
-% Trajectory comparison for x0 = xA
-% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/Low_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
-		\caption{Trajectory comparison for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xa}
-	\end{figure}
-}
-
-
-
-	{
-	% --------------------------
-	% Parameters for this subsection
-	% --------------------------
-	\newcommand{\AlgoName}{MidPoint} % e.g. MidPoint
-	\newcommand{\kval}{0.25}
-	\newcommand{\hval}{10.0}
-	\newcommand{\Nval}{100}
-	\newcommand{\mval}{1.0}
-
-	\newcommand{\xA}{0.22, 2.12}
-
-	% Optional: desired target if you reference it in text
-	% \newcommand{\xd}{(0.00,\;10.00)}
-
-	% --------------------------
-	% Iteration plots (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-	  \end{subfigure}
-
-	  \medskip
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-	  \end{subfigure}
-
-	  \caption{Iteration plots for \AlgoName and its modified variant with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_iter_compare}
-	\end{figure}
-
-
-	% --------------------------
-	% Control plots for x0 = xA (Modified vs Base)
-	% --------------------------
-	\begin{figure}[H]
-	  \centering
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-		\caption{Modified \AlgoName}
-		\label{fig:\AlgoName_ctrl_mod_xa}
-	  \end{subfigure}
-
-	  \vspace{0.5cm}
-
-	  \begin{subfigure}{\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA.pdf}
-		\caption{\AlgoName}
-		\label{fig:\AlgoName_ctrl_base_xa}
-	  \end{subfigure}
-
-	  \caption{Control trajectories for $x_0=\xA$ with
-	  $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	  \label{fig:\AlgoName_ctrl_compare_xa}
-	\end{figure}
-
-
-% --------------------------
-% Trajectory comparison for x0 = xA
-% --------------------------
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/Low_Difference_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\xA}
-		\caption{Trajectory comparison for $x_0=\xA$ with
-			$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_proj_xa}
-	\end{figure}
-}
 \end{document}
