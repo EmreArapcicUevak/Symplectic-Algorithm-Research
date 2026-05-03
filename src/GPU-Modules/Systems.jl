@@ -69,4 +69,17 @@ function MidPoint(Y::Vector{Float64}; N::Integer, α::Float64, m::Float64, k::Fl
 
     return R
 end
+function Modified_MidPoint(Y::Vector{Float64}; N::Integer, α::Float64, m::Float64, k::Float64, a::Vector{Float64},
+    t₀::Float64, T::Float64, x₀::Vector{Float64}, l₀::Float64, x_d::Vector{Float64})::Vector{Float64}
+
+    R = zeros(Float64, 9 * N)
+
+    ccall((:Modified_MidPoint, lib), Cvoid,
+        (Ptr{Float64}, Ptr{Float64}, Clong, Cdouble, Cdouble, Cdouble, Ptr{Float64}, Cdouble, Cdouble, Ptr{Float64},
+            Cdouble, Ptr{Float64}),
+        Y, R, N, α, m, k, a, t₀, T, x₀, l₀, x_d
+    )
+
+    return R
+end
 end

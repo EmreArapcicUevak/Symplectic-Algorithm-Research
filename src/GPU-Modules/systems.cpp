@@ -437,7 +437,7 @@ __global__ void Modified_SE2_loop_kernel(const double* __restrict__ Y,
       alpha * u_t - (lambda_i_plus_1_0 * fu_0 + lambda_i_plus_1_1 * fu_1);
 }
 
-// <-----  Midpoint -----> //
+// <-----  MidPoint -----> //
 
 __global__ void MidPoint_loop_kernel(const double* __restrict__ Y,
                                      double* __restrict__ R, long N,
@@ -550,9 +550,95 @@ __global__ void MidPoint_boundary_kernel(const double* __restrict__ Y,
   R[9 * N] = alpha * u_n - (lambda_n_0 * fu_0 + lambda_n_1 * fu_1);
 }
 
+// <-----  Modified_MidPoint -----> //
+
+__global__ void Modified_MidPoint_loop_kernel(
+    const double* __restrict__ Y, double* __restrict__ R, long N, double alpha,
+    double m, double k, double a0, double a1, double t0, double T, double x0_0,
+    double x0_1, double l0, double xd0, double xd1) {
+  const long i = (long)(blockIdx.x * blockDim.x + threadIdx.x);
+  if (i >= N) return;
+
+  const double h = (T - t0) / (double)N;
+
+  double x_i_0, x_i_1;
+  double x_i_plus_1_0, x_i_plus_1_1;
+  double v_i_0, v_i_1;
+  double v_i_plus_1_0, v_i_plus_1_1;
+  double lambda_i_0, lambda_i_1;
+  double lambda_i_plus_1_0, lambda_i_plus_1_1;
+  double mu_i_0, mu_i_1;
+  double mu_i_plus_1_0, mu_i_plus_1_1;
+
+  x(Y, i, N, x0_0, x0_1, x_i_0, x_i_1);
+  x(Y, i + 1, N, x0_0, x0_1, x_i_plus_1_0, x_i_plus_1_1);
+  v(Y, i, N, 0, 0, v_i_0, v_i_1);
+  v(Y, i + 1, N, 0, 0, v_i_plus_1_0, v_i_plus_1_1);
+  lambda(Y, i, N, 0, 0, lambda_i_0, lambda_i_1);
+  lambda(Y, i + 1, N, 0, 0, lambda_i_plus_1_0, lambda_i_plus_1_1);
+  mu(Y, i, N, 0, 0, mu_i_0, mu_i_1);
+  mu(Y, i + 1, N, 0, 0, mu_i_plus_1_0, mu_i_plus_1_1);
+
+  const double u_t = u(Y, i, N);
+
+  const double x_m_0 = 0.5 * (x_i_0 + x_i_plus_1_0);
+  const double x_m_1 = 0.5 * (x_i_1 + x_i_plus_1_1);
+  const double v_m_0 = 0.5 * (v_i_0 + v_i_plus_1_0);
+  const double v_m_1 = 0.5 * (v_i_1 + v_i_plus_1_1);
+  const double lambda_m_0 = 0.5 * (lambda_i_0 + lambda_i_plus_1_0);
+  const double lambda_m_1 = 0.5 * (lambda_i_1 + lambda_i_plus_1_1);
+  const double mu_m_0 = 0.5 * (mu_i_0 + mu_i_plus_1_0);
+  const double mu_m_1 = 0.5 * (mu_i_1 + mu_i_plus_1_1);
+
+  const double Li = L(x_m_0, x_m_1, u_t);
+  const double c1 = k * l0 / (m * Li * Li * Li);
+  const double c2 = k / m * (1.0 - l0 / Li);
+
+  const double c3_0 = x_m_0 - u_t;
+  const double c3_1 = x_m_1;
+
+  const double delta_lambda_0 = (lambda_i_plus_1_0 - lambda_i_0) / h;
+  const double delta_lambda_1 = (lambda_i_plus_1_1 - lambda_i_1) / h;
+  const double delta_mu_0 = (mu_i_plus_1_0 - mu_i_0) / h;
+  const double delta_mu_1 = (mu_i_plus_1_1 - mu_i_1) / h;
+  const double delta_v_0 = (v_i_plus_1_0 - v_i_0) / h;
+  const double delta_v_1 = (v_i_plus_1_1 - v_i_1) / h;
+  const double delta_x_0 = (x_i_plus_1_0 - x_i_0) / h;
+  const double delta_x_1 = (x_i_plus_1_1 - x_i_1) / h;
+
+  const double c3_dot_lambda_m = c3_0 * lambda_m_0 + c3_1 * lambda_m_1;
+
+  const long base = 9 * i;
+
+  R[base] = delta_lambda_0 + mu_m_0;
+  R[base + 1] = delta_lambda_1 + mu_m_1;
+
+  R[base + 2] = delta_x_0 - v_m_0;
+  R[base + 3] = delta_x_1 - v_m_1;
+
+  R[base + 4] = delta_mu_0 + (x_m_0 - xd0) -
+                (c1 * c3_0 * c3_dot_lambda_m + c2 * lambda_m_0);
+  R[base + 5] = delta_mu_1 + (x_m_1 - xd1) -
+                (c1 * c3_1 * c3_dot_lambda_m + c2 * lambda_m_1);
+
+  R[base + 6] = delta_v_0 + c2 * c3_0 - a0 / m;
+  R[base + 7] = delta_v_1 + c2 * c3_1 - a1 / m;
+
+  const double fu_0 = -c1 * c3_0 * c3_0 - c2;
+  const double fu_1 = -c1 * c3_0 * c3_1;
+  R[base + 8] = alpha * u_t - (lambda_m_0 * fu_0 + lambda_m_1 * fu_1);
+}
+
 // <-----  Kernel Launcher -----> //
 
-enum class Method { SE1, SE2, Modified_SE1, Modified_SE2, MidPoint };
+enum class Method {
+  SE1,
+  SE2,
+  Modified_SE1,
+  Modified_SE2,
+  MidPoint,
+  Modified_MidPoint
+};
 
 void SE_launch(Method method, const double* Y_h, double* R_h, long N,
                double alpha, double m, double k, double* a, double t0, double T,
@@ -560,7 +646,8 @@ void SE_launch(Method method, const double* Y_h, double* R_h, long N,
   constexpr int BLOCK = 256;
   long length = 9 * N + 1;
 
-  if (method == Method::Modified_SE1 || method == Method::Modified_SE2)
+  if (method == Method::Modified_SE1 || method == Method::Modified_SE2 ||
+      method == Method::Modified_MidPoint)
     length = 9 * N;
 
   double* Y;
@@ -602,6 +689,10 @@ void SE_launch(Method method, const double* Y_h, double* R_h, long N,
 
     hipLaunchKernelGGL(MidPoint_boundary_kernel, dim3(1), dim3(1), 0, stream, Y,
                        R, N, alpha, m, k, x0[0], x0[1], l0);
+  } else if (method == Method::Modified_MidPoint) {
+    hipLaunchKernelGGL(Modified_MidPoint_loop_kernel, grid, dim3(BLOCK), 0,
+                       stream, Y, R, N, alpha, m, k, a[0], a[1], t0, T, x0[0],
+                       x0[1], l0, x_d[0], x_d[1]);
   }
 
   HIP_CHECK(hipGetLastError());
@@ -651,5 +742,11 @@ void MidPoint(const double* Y_h, double* R_h, long N, double alpha, double m,
               double k, double* a, double t0, double T, double* x0, double l0,
               double* x_d) {
   SE_launch(Method::MidPoint, Y_h, R_h, N, alpha, m, k, a, t0, T, x0, l0, x_d);
+}
+void Modified_MidPoint(const double* Y_h, double* R_h, long N, double alpha,
+                       double m, double k, double* a, double t0, double T,
+                       double* x0, double l0, double* x_d) {
+  SE_launch(Method::Modified_MidPoint, Y_h, R_h, N, alpha, m, k, a, t0, T, x0,
+            l0, x_d);
 }
 }
