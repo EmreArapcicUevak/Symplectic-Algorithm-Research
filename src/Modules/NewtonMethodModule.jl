@@ -43,8 +43,6 @@ module NewtonMethodModule
 
                 Δ_norm = LinearAlgebra.norm(Δ, 2)
                 F_x₁_norm = LinearAlgebra.norm(F(x₁), 2)
-                #println("Iteration $i done out of $maxIterations")
-                #println("$(Δ_norm), $(F_x₁_norm)")
                 #if history !== nothing push!(history, F_x₁_norm) end
                 #if iteration_points !== nothing push!(iteration_points, x₁) end
                 if Δ_norm ≤ ϵ && F_x₁_norm ≤ δ return (c = x₁,iterations = i) end
