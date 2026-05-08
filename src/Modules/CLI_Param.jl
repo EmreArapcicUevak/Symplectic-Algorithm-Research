@@ -238,6 +238,6 @@ function get_parameters(func_names::Vector{String})
     )
 
     clear_terminal()
-    return param_grid, "$(parsed_args["output"]).jls"
+    return param_grid, parsed_args["output"]
   end
 end
