@@ -13,8 +13,12 @@ module Remote_Status_Notifier
         end
     end
 
-    function send_ntfy_message(msg :: String)
-        run(`curl -d "$(msg)" ntfy.sh/$(NTFY_TOPIC)`)
+    function send_ntfy_message(msg::String)
+        try
+            run(`curl -s -d $(msg) ntfy.sh/$(NTFY_TOPIC)`)
+        catch e
+            @warn "ntfy failed" exception=e
+        end
     end
 end
 
