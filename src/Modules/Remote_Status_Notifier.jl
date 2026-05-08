@@ -13,9 +13,13 @@ module Remote_Status_Notifier
         end
     end
 
-    function send_ntfy_message(msg::String)
+    function send_ntfy_message(msg::String; title :: String = "Placeholder title", tags :: String = "Placeholder tags", priority :: String = "low")
         try
-            run(`curl -s -d $(msg) ntfy.sh/$(NTFY_TOPIC)`)
+            run(`curl -s --max-time 5 
+            -H "Title: $(title)"
+            -H "Tags: $(tags)"
+            -H "Priority: $(priority)"
+            -d $(msg) ntfy.sh/$(NTFY_TOPIC)`)
         catch e
             @warn "ntfy failed" exception=e
         end
