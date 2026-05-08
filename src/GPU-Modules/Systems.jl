@@ -1,7 +1,7 @@
 module Systems_GPU
 
 # Change to the path of the library file
-const lib = "systems.so"
+const lib = joinpath(@__DIR__, "systems.so")
 
 export SE1
 function SE1(Y::Vector{Float64}; N::Integer, α::Float64, m::Float64, k::Float64, a::Vector{Float64},
