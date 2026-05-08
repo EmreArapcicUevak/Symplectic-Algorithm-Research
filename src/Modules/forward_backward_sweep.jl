@@ -4,7 +4,7 @@ module forward_backward_sweep_module
 
     export H
     function H(; yₙ :: Vector{Float64}, pₙ :: Vector{Float64}, uₙ :: Float64, k :: Float64, l₀ :: Float64, m :: Float64, α :: Float64, x_d :: Vector{Float64} , a :: Vector{Float64} = Float64[0, -1])
-        @views xₙ, vₙ = yₙ[1:2], yₙ[3:4]
+        @views vₙ, xₙ = yₙ[1:2], yₙ[3:4]
         @views λₙ, μₙ = pₙ[1:2], pₙ[3:4]
 
         local u_to_x = xₙ - Float64[uₙ, 0.0]
@@ -17,20 +17,20 @@ module forward_backward_sweep_module
     end
 
     function Hp(; yₙ :: Vector{Float64}, uₙ :: Float64, k :: Float64, l₀ :: Float64, m :: Float64, a ::Vector{Float64} = Float64[0,-1])
-        @views xₙ, vₙ = yₙ[1:2], yₙ[3:4]
+        @views vₙ, xₙ = yₙ[1:2], yₙ[3:4]
 
         local u_to_x = xₙ - Float64[uₙ, 0.0]
         local L = norm(u_to_x)
 
         result = similar(yₙ, 4)
-        result[1:2] .= vₙ
-        result[3:4] .= 1/m * a - k / m * ( L - l₀ ) / L * (u_to_x)
+        result[1:2] .= 1/m * a - k / m * ( L - l₀ ) / L * (u_to_x)
+        result[3:4] .= vₙ
 
         return result
     end
 
     function Hy(; yₙ :: Vector{Float64}, pₙ :: Vector{Float64}, uₙ :: Float64, k :: Float64, l₀ :: Float64, m :: Float64, x_d :: Vector{Float64})
-        @views xₙ, vₙ = yₙ[1:2], yₙ[3:4]
+        @views vₙ, xₙ = yₙ[1:2], yₙ[3:4]
         @views λₙ, μₙ = pₙ[1:2], pₙ[3:4]
         local u_to_x = xₙ - Float64[uₙ, 0.0]
         local L = norm(u_to_x) 
@@ -43,7 +43,7 @@ module forward_backward_sweep_module
     end
 
     function Hu(; yₙ :: Vector{Float64}, pₙ :: Vector{Float64}, uₙ :: Float64, k :: Float64, l₀ :: Float64, m :: Float64, α :: Float64)
-        @views xₙ, vₙ = yₙ[1:2], yₙ[3:4]
+        @views vₙ, xₙ = yₙ[1:2], yₙ[3:4]
         @views λₙ, μₙ = pₙ[1:2], pₙ[3:4]
         local u_to_x = xₙ - Float64[uₙ, 0.0]
         local L = norm(u_to_x) 
@@ -57,7 +57,7 @@ module forward_backward_sweep_module
 
 
     function Loss(; yₙ :: Vector{Float64}, uₙ :: Float64, α :: Float64, x_d :: Vector{Float64})
-        @views xₙ, vₙ = yₙ[1:2], yₙ[3:4]
+        @views vₙ, xₙ = yₙ[1:2], yₙ[3:4]
         return (norm(xₙ - x_d, 2)^2 + α * uₙ ^ 2) / 2
     end
 
@@ -128,10 +128,10 @@ module forward_backward_sweep_module
             if (u_update_norm < ϵ || g_norm < ϵ) || k == max_iter
                 #println("||Hu|| = $(g_norm)")
                 return vcat(
-                    (t[1:2] for t in y[2:end])...,
-                    (t[3:4] for t in y[2:end])...,
-                    (t[1:2] for t in p[1:end-1])...,
-                    (t[3:4] for t in p[1:end-1])...,
+                    (t[3:4] for t in y[2:end])..., # x trajectory
+                    (t[1:2] for t in y[2:end])..., # v trajectory
+                    (t[1:2] for t in p[1:end-1])..., # λ trajectory
+                    (t[3:4] for t in p[1:end-1])..., # μ trajectory
                     uᵏ
                 ), costs
             end
@@ -157,7 +157,7 @@ module forward_backward_sweep_module
         local uᵏ = copy(u)
         local gᵏ, gᵏ⁻¹,uᵏ⁻¹
 
-        @views x₀, v₀ = y₀[1:2], y₀[3:4]
+        @views v₀, x₀  = y₀[1:2], y₀[3:4]
         #local l₀ = norm(x₀ - x_d)
         local h = (b - a)/N 
         local αᴮᴮ
@@ -218,12 +218,12 @@ module forward_backward_sweep_module
             g_norm =norm(gᵏ)
 
             if (u_update_norm < ϵ || g_norm < ϵ) || k == max_iter
-                #println("||Hu|| = $(g_norm), α = $(αᴮᴮ)")
+                #println("||Hu|| = $(g_norm)")
                 return vcat(
-                    (t[1:2] for t in y[2:end])...,
-                    (t[3:4] for t in y[2:end])...,
-                    (t[1:2] for t in p[1:end-1])...,
-                    (t[3:4] for t in p[1:end-1])...,
+                    (t[3:4] for t in y[2:end])..., # x trajectory
+                    (t[1:2] for t in y[2:end])..., # v trajectory
+                    (t[1:2] for t in p[1:end-1])..., # λ trajectory
+                    (t[3:4] for t in p[1:end-1])..., # μ trajectory
                     uᵏ
                 ), costs
             end
