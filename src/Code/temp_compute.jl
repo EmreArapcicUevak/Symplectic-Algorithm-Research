@@ -122,12 +122,13 @@ Threads.@threads for i ∈ 1:n_combinations
         ))
     end
 end
+stop!(pbar)
 
 Remote_Status_Notifier.send_message(Dict(
     :progress => "100%",
     :message => "Completed"
 ))
 df = DataFrame(rows)
-CSV.write(joinpath(result_folder, output_file_name), df)
+CSV.write(joinpath(result_folder, "$(output_file_name).csv"), df)
 
 
