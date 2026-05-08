@@ -1,5 +1,8 @@
 module Remote_Status_Notifier
-    using HTTP, JSON3
+    using HTTP, JSON3, DotEnv
+    DotEnv.load!() 
+
+    const NTFY_TOPIC = ENV["NTFY_TOPIC"]
 
     # in Remote_Status_Notifier.jl
     function send_message(data, url = "http://167.99.143.133:3000/data")
@@ -8,6 +11,10 @@ module Remote_Status_Notifier
         catch e
             @warn "notifier failed, continuing" exception=e
         end
+    end
+
+    function send_ntfy_message(msg :: String)
+        run(`curl -d "$(msg)" ntfy.sh/$(NTFY_TOPIC)`)
     end
 end
 
