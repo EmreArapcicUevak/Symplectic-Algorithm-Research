@@ -13,7 +13,7 @@ module Remote_Status_Notifier
         end
     end
 
-    function send_ntfy_message(msg::String; title :: String = "Placeholder title", tags :: String = "Placeholder tags", priority :: String = "low")
+    function send_ntfy_message(msg::String; title :: String = "", tags :: String = "", priority :: String = "low")
         try
             run(`curl -s --max-time 5 
             -H "Title: $(title)"
@@ -25,4 +25,6 @@ module Remote_Status_Notifier
         end
     end
 end
+
+
 
