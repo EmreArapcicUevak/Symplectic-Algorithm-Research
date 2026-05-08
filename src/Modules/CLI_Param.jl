@@ -1,4 +1,5 @@
 module CLI_Param
+  using Pkg; Pkg.instantiate()
   using ArgParse, REPL.TerminalMenus, Serialization
   include("Simple_Promt.jl")
 
@@ -18,53 +19,118 @@ module CLI_Param
     print("\033c")
   end
 
-  function get_parameters(func_names :: Vector{String})
+  const EDUCATED_GUESS_CHOICES = ["Random", "RK4ForwardBackward", "ForwardBackward"]
+
+function prompt_choice_list(parsed_args, key, choices, label)
+    selected = parsed_args[key]
+    if isempty(selected)
+        menu = MultiSelectMenu(choices)
+        picks = request("Select $label:", menu)
+        @assert !isempty(picks) "At least one $label must be selected."
+        selected = choices[collect(picks)]
+    end
+    return selected
+end
+
+function prompt_choice_one(parsed_args, key, choices, label)
+    selected = parsed_args[key]
+    if selected === nothing
+        menu = RadioMenu(choices)
+        pick = request("Select $label:", menu)
+        @assert pick > 0 "A $label must be selected."
+        selected = choices[pick]
+    end
+    return selected
+end
+
+function prompt_range(parsed_args, key_min, key_max, key_num, label)
+    lo = parsed_args[key_min]
+    hi = parsed_args[key_max]
+    n  = parsed_args[key_num]
+
+    while lo === nothing || hi === nothing || n === nothing
+        if lo === nothing
+            lo = Simple_Promt.prompt("Enter value for $key_min:", Float64)
+        end
+        if hi === nothing
+            hi = Simple_Promt.prompt("Enter value for $key_max (must be greater than $lo):", Float64)
+            while hi <= lo
+                println("$key_max must be greater than $key_min ($lo). Please enter again.")
+                hi = Simple_Promt.prompt("Enter value for $key_max (must be greater than $lo):", Float64)
+            end
+        end
+        if n === nothing
+            n = Simple_Promt.prompt("Enter value for $key_num:", Int)
+        end
+
+        clear_terminal()
+        print_slider(lo, hi, "$n points")
+        if !Simple_Promt.prompt("Are these values correct? (yes/no)", Bool)
+            lo = hi = n = nothing
+        end
+    end
+
+    @assert hi > lo "$key_max must be greater than $key_min"
+    @assert n > 1 "$key_num must be greater than 1"
+    return collect(LinRange(lo, hi, n))
+end
+
+function prompt_list(::Type{T}, label) where {T}
+    values = T[]
+    while true
+        push!(values, Simple_Promt.prompt("Enter a value for $label:", T))
+        clear_terminal()
+        print_slider(minimum(values), maximum(values), "$(length(values)) points")
+        Simple_Promt.prompt("Add another value?", Bool) || break
+    end
+    return values
+end
+
+function get_parameters(func_names::Vector{String})
     s = ArgParseSettings()
     @add_arg_table s begin
         "--minX"
-            help = "The lower portion of the interval to consider when trying out different x0 positions"
+            help = "Lower bound for x0 sweep"
             arg_type = Float64
-
-        "--minY"
-            help = "The lower portion of the interval to consider when trying out different y0 positions"
-            arg_type = Float64
-
         "--maxX"
-            help = "The upper portion of the interval to consider when trying out different x0 positions"
+            help = "Upper bound for x0 sweep"
             arg_type = Float64
-
-        "--maxY"
-            help = "The upper portion of the interval to consider when trying out different y0 positions"
-            arg_type = Float64
-
         "--numX"
-            help = "The number of different x0 positions to try from minX to maxX"
+            help = "Number of x0 points from minX to maxX"
             arg_type = Int
 
+        "--minY"
+            help = "Lower bound for y0 sweep"
+            arg_type = Float64
+        "--maxY"
+            help = "Upper bound for y0 sweep"
+            arg_type = Float64
         "--numY"
-            help = "The number of different y0 positions to try from minY to maxY"
+            help = "Number of y0 points from minY to maxY"
             arg_type = Int
 
         "--minHeight"
-            help = "The lower portion of the interval to consider when trying out different xd positions"
+            help = "Lower bound for xd sweep"
             arg_type = Float64
-
         "--maxHeight"
-            help = "The upper portion of the interval to consider when trying out different xd positions"
+            help = "Upper bound for xd sweep"
             arg_type = Float64
-
         "--numHeights"
-            help = "The number of different xd positions to try from minHeight to maxHeight"
+            help = "Number of xd points from minHeight to maxHeight"
             arg_type = Int
 
         "--xValues", "-x"
-            help = "List of x0 positions to try"
+            help = "List of x0 positions (used with --yValues to form a cartesian grid)"
+            arg_type = Float64
+            nargs = '+'
+        "--yValues", "-y"
+            help = "List of y0 positions (used with --xValues to form a cartesian grid)"
             arg_type = Float64
             nargs = '+'
 
-        "--yValues", "-y"
-            help = "List of y0 positions to try"
-            arg_type = Float64
+        "--x0Pairs", "-X"
+            help = "Explicit x0 points as 'x,y' pairs, e.g. -X 1.0,2.0 3.0,4.0 (overrides --xValues/--yValues)"
+            arg_type = String
             nargs = '+'
 
         "--heightValues", "-d"
@@ -85,16 +151,16 @@ module CLI_Param
             nargs = '+'
 
         "--NValues", "-N"
-            help = "List of number of discretization points to try"
+            help = "List of discretization points to try"
             arg_type = Int
-            nargs = '+'
             range_tester = x -> x > 0
+            nargs = '+'
 
         "--alphaValues", "-a"
             help = "List of alpha values to try"
             arg_type = Float64
-            nargs = '+'
             range_tester = x -> x > 0.0
+            nargs = '+'
 
         "--methods", "-M"
             help = "List of method names to try"
@@ -102,8 +168,14 @@ module CLI_Param
             range_tester = x -> x in func_names
             nargs = '+'
 
+        "--educatedGuess", "-g"
+            help = "Initial-guess strategies to try ($(join(EDUCATED_GUESS_CHOICES, ", ")))"
+            arg_type = String
+            range_tester = x -> x in EDUCATED_GUESS_CHOICES
+            
+
         "--output", "-o"
-            help = "Output file name"
+            help = "Output file name (without extension)"
             arg_type = String
             default = "Grid_Search"
     end
@@ -111,174 +183,59 @@ module CLI_Param
     clear_terminal()
     parsed_args = parse_args(s)
 
-    x_values = parsed_args["xValues"]
-    y_values = parsed_args["yValues"]
+    # --- x0 points ---------------------------------------------------------
+    x0_points = Vector{Float64}[]
+    pairs = parsed_args["x0Pairs"]
+    if !isempty(pairs)
+        for p in pairs
+            xs = split(p, ",")
+            @assert length(xs) == 2 "Each --x0Pairs entry must be 'x,y', got '$p'"
+            push!(x0_points, [parse(Float64, xs[1]), parse(Float64, xs[2])])
+        end
+    else
+        x_values = parsed_args["xValues"]
+        y_values = parsed_args["yValues"]
+        if isempty(x_values)
+            x_values = parsed_args["minX"] === nothing && parsed_args["maxX"] === nothing && parsed_args["numX"] === nothing ?
+                prompt_list(Float64, "x0") :
+                prompt_range(parsed_args, "minX", "maxX", "numX", "x0")
+        end
+        if isempty(y_values)
+            y_values = parsed_args["minY"] === nothing && parsed_args["maxY"] === nothing && parsed_args["numY"] === nothing ?
+                prompt_list(Float64, "y0") :
+                prompt_range(parsed_args, "minY", "maxY", "numY", "y0")
+        end
+        x0_points = [Float64[x, y] for x in x_values for y in y_values]
+    end
+
+    # --- xd points ---------------------------------------------------------
     height_values = parsed_args["heightValues"]
-
-
-    if isempty(x_values)
-      minX = parsed_args["minX"]
-      maxX = parsed_args["maxX"]
-      numX = parsed_args["numX"]
-
-      while minX === nothing || maxX === nothing || numX === nothing
-        if minX === nothing
-          minX = Simple_Promt.prompt("Enter value for minX:", Float64)
-        end
-
-        if maxX === nothing
-          maxX = Simple_Promt.prompt("Enter value for maxX (must be greater then $minX):", Float64)
-          while maxX <= minX
-            println("maxX must be greater than minX ($minX). Please enter again.")
-            maxX = Simple_Promt.prompt("Enter value for maxX (must be greater then $minX):", Float64)
-          end
-        end
-
-        if numX === nothing
-          numX = Simple_Promt.prompt("Enter value for numX:", Int)
-        end
-
-        clear_terminal()
-        print_slider(minX, maxX, "$numX points")
-        confirm = Simple_Promt.prompt("Are these values correct? (yes/no)", Bool)
-        if !confirm minX = maxX = numX = nothing end
-      end
-
-      @assert maxX > minX "maxX must be greater than minX"
-      @assert numX > 1 "numX must be greater than 1"
-      x_values = collect(LinRange(minX, maxX, numX))
-    end
-
-    if isempty(y_values)
-      minY = parsed_args["minY"]
-      maxY = parsed_args["maxY"]
-      numY = parsed_args["numY"]
-
-      while minY === nothing || maxY === nothing || numY === nothing
-        
-        if minY === nothing
-          minY = Simple_Promt.prompt("Enter value for minY:", Float64)
-        end
-
-        if maxY === nothing
-          maxY = Simple_Promt.prompt("Enter value for maxY (must be greater then $minY):", Float64)
-          while maxY <= minY
-            println("maxY must be greater than minY ($minY). Please enter again.")
-            maxY = Simple_Promt.prompt("Enter value for maxY (must be greater then $minY):", Float64)
-          end
-        end
-
-        if numY === nothing
-          numY = Simple_Promt.prompt("Enter value for numY:", Int)
-        end
-
-        clear_terminal()
-        print_slider(minY, maxY, "$numY points")
-        confirm = Simple_Promt.prompt("Are these values correct? (yes/no)", Bool)
-        if !confirm minY = maxY = numY = nothing end
-      end
-
-      @assert maxY > minY "maxY must be greater than minY"
-      @assert numY > 1 "numY must be greater than 1"
-      y_values = collect(LinRange(minY, maxY, numY))
-    end
-
     if isempty(height_values)
-      minHeight = parsed_args["minHeight"]
-      maxHeight = parsed_args["maxHeight"]
-      numHeights = parsed_args["numHeights"]
-
-      while minHeight === nothing || maxHeight === nothing || numHeights === nothing
-        if minHeight === nothing
-          minHeight = Simple_Promt.prompt("Enter value for minHeight:", Float64)
-        end
-
-        if maxHeight === nothing
-          maxHeight = Simple_Promt.prompt("Enter value for maxHeight (must be greater then $minHeight):", Float64)
-          while maxHeight <= minHeight
-            println("maxHeight must be greater than minHeight ($minHeight). Please enter again.")
-            maxHeight = Simple_Promt.prompt("Enter value for maxHeight (must be greater then $minHeight):", Float64)
-          end
-        end
-
-        if numHeights === nothing
-          numHeights = Simple_Promt.prompt("Enter value for numHeights:", Int)
-        end
-
-        clear_terminal()
-        print_slider(minHeight, maxHeight, "$numHeights points")
-        confirm = Simple_Promt.prompt("Are these values correct? (yes/no)", Bool)
-        if !confirm minHeight = maxHeight = numHeights = nothing end
-      end
-
-      @assert maxHeight > minHeight "maxHeight must be greater than minHeight"
-      @assert numHeights > 1 "numHeights must be greater than 1"
-      height_values = collect(LinRange(minHeight, maxHeight, numHeights))
+        height_values = parsed_args["minHeight"] === nothing && parsed_args["maxHeight"] === nothing && parsed_args["numHeights"] === nothing ?
+            prompt_list(Float64, "xd") :
+            prompt_range(parsed_args, "minHeight", "maxHeight", "numHeights", "xd")
     end
 
-    selected_methods = parsed_args["methods"]
-    if isempty(selected_methods)
-      method_select_menu = MultiSelectMenu(func_names)
-      choices = request("Select the methods you would like to run:", method_select_menu)
-      @assert !isempty(choices) "At least one method must be selected."
-      selected_methods = func_names[collect(choices)]
-    end
+    # --- scalar lists ------------------------------------------------------
+    alpha_values = parsed_args["alphaValues"]; isempty(alpha_values) && (alpha_values = prompt_list(Float64, "α"))
+    k_values     = parsed_args["kValues"];     isempty(k_values)     && (k_values     = prompt_list(Float64, "k"))
+    mass_values  = parsed_args["massValues"];  isempty(mass_values)  && (mass_values  = prompt_list(Float64, "m"))
+    N_values     = parsed_args["NValues"];     isempty(N_values)     && (N_values     = prompt_list(Int,     "N"))
 
-    alpha_values = parsed_args["alphaValues"]
-    k_values = parsed_args["kValues"]
-    mass_values = parsed_args["massValues"]
-    N_values = parsed_args["NValues"]
-
-    if isempty(alpha_values)
-      alpha_values = Float64[]
-      while true
-        push!(alpha_values, Simple_Promt.prompt("Enter a value for α:", Float64))
-        clear_terminal()
-        print_slider(minimum(alpha_values), maximum(alpha_values), "$(length(alpha_values)) points")
-        Simple_Promt.prompt("Add another value?", Bool) || break
-      end
-    end
-
-    if isempty(k_values)
-      k_values = Float64[]
-      while true
-        push!(k_values, Simple_Promt.prompt("Enter a value for k:", Float64))
-        clear_terminal()
-        print_slider(minimum(k_values), maximum(k_values), "$(length(k_values)) points")
-        Simple_Promt.prompt("Add another value?", Bool) || break
-      end
-    end
-
-    if isempty(mass_values)
-      mass_values = Float64[]
-      while true
-        push!(mass_values, Simple_Promt.prompt("Enter a value for m:", Float64))
-        clear_terminal()
-        print_slider(minimum(mass_values), maximum(mass_values), "$(length(mass_values)) points")
-        Simple_Promt.prompt("Add another value?", Bool) || break
-      end
-    end
-
-    if isempty(N_values)
-      N_values = Int[]
-      while true
-        push!(N_values, Simple_Promt.prompt("Enter a value for N:", Int))
-        clear_terminal()
-        print_slider(minimum(N_values), maximum(N_values), "$(length(N_values)) points")
-        Simple_Promt.prompt("Add another value?", Bool) || break
-      end
-    end
+    # --- categorical lists -------------------------------------------------
+    selected_methods = prompt_choice_list(parsed_args, "methods",        func_names,              "methods to run")
+    educated_guesses = prompt_choice_one(parsed_args, "educatedGuess",  EDUCATED_GUESS_CHOICES,  "initial-guess strategies")
 
     param_grid = Dict(
-      :x_d => [Vector{Float64}([0,y]) for y in height_values],
-      :x₀ => [Vector{Float64}([x,y]) for x in x_values for y in y_values],
-      :k => k_values,
-      :m => mass_values,
-      :N => N_values,
-      :α => alpha_values,
-      :method => selected_methods
-    ) 
-
+        :x_d            => [Float64[0, y] for y in height_values],
+        :x₀             => x0_points,
+        :k              => k_values,
+        :m              => mass_values,
+        :N              => N_values,
+        :α              => alpha_values,
+        :method         => selected_methods,
+        :educated_guess => educated_guesses,
+    )
 
     clear_terminal()
     return param_grid, "$(parsed_args["output"]).jls"
