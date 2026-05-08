@@ -447,4 +447,33 @@ module Systems
     return result
   end
 
+
+  function get_initial_guess(N :: Integer, x₀ :: Vector{Float64}, x_d :: Vector{Float64}, m :: Float64, k :: Float64, l₀ :: Float64) :: Vector{Float64}
+    @assert length(x₀) == 2
+    # Compute educated starting spring pos
+    local temp_f = u -> -k * (norm(x₀ - [u, 0.0]) - l₀) * (x₀[2]) / norm(x₀ - [u, 0.0]) - m
+    local educated_u
+    try
+      if x₀[1] >= x_d[1]
+        educated_u = NewtonMethodModule.QuasiNewtonMethod(temp_f, x₀[1], x₀[1] + 0.5 ; maxIterations = 100, δ = 1e-10, ϵ = 1e-10).c
+      else
+        educated_u = NewtonMethodModule.QuasiNewtonMethod(temp_f, x₀[1], x₀[1] - 0.5 ; maxIterations = 100, δ = 1e-10, ϵ = 1e-10).c
+      end
+    catch e 
+      #@warn "Educated guess computation failed, using 0.0 as guess" x0=x₀
+      educated_u = x₀[1]
+    end
+    local x₀_guess = rand(Float64, 9 * N + 1) * 2
+    local stable_height = l₀ - m / k
+    local stable_final_pos = Float64[0.0, stable_height]
+
+
+    x₀_guess[1:N] .= repeat(x₀, N ÷ 2) # Change x₀ till xₙ/2
+    x₀_guess[N+1:2N] .= repeat(stable_final_pos, N ÷ 2)  # Change xₙ/2 till xₙ
+    x₀_guess[2N+1:2:4N] .= 0.0  # Change x component of v to 0
+    x₀_guess[8N+1:end] .= 0.0  # Change u to 0
+    x₀_guess[8N+1:(17N + 3) ÷ 2] .= LinRange(educated_u, 0.0, (N+3) ÷ 2)  # Change half of the u's to educated guess
+
+    return x₀_guess
   end
+end
