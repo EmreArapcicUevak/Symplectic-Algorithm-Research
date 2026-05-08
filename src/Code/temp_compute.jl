@@ -1,4 +1,5 @@
 using Pkg; Pkg.instantiate()
+using LinearAlgebra; BLAS.set_num_threads(1)
 
 include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); include("../Modules/CLI_Param.jl"); include("../Modules/forward_backward_sweep.jl"); include("../Modules/CLI_Param.jl"); include("../Modules/Settings.jl"); include("../Modules/Remote_Status_Notifier.jl")
 using MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, LinearAlgebra, CSV, DataFrames
@@ -52,14 +53,10 @@ Threads.@threads for i ∈ 1:n_combinations
     local rk4_time = rk4_out[:time]
     local rk4_res, rk4_cost = rk4_out[:value]
 
-    local p = plot(rk4_cost, lw = 3, label="RK4 forward backward") ; plot!(fb_cost, lw=3, label = "forward backward") ; ylabel!("Residual Cost") ; xlabel!("Iteration")
-    savefig(p, joinpath(figure_results_folder, "residual_cost_$(file_name_base).pdf"))
 
     local u_fb = [Systems.u(fb_res, i, N) for i ∈ 0:N]
     local u_rk_fb = [Systems.u(rk4_res, i, N) for i ∈ 0:N]
 
-    local control_plot = plot(u_fb, label="forward backward gradient method", lw=3) ; plot!(u_rk_fb, label="RK4 gradient method", lw=3) ; ylabel!("uₜ") ; xlabel!("t")
-    savefig(control_plot, joinpath(figure_results_folder, "control_plot_$(file_name_base).pdf"))
 
     local H_fb = [
         forward_backward_sweep_module.H(
@@ -89,8 +86,6 @@ Threads.@threads for i ∈ 1:n_combinations
         for i ∈ 0:N
     ]
 
-    hamoltonian_plot = plot(H_fb, lw = 3, label="Forward Backward", xlabel="t", ylabel = "Hₜ") ; plot!(H_rk4_fb, lw = 3, label= "RK4 Forward Backward") 
-    savefig(hamoltonian_plot, joinpath(figure_results_folder, "hamoltonian_plot_$(file_name_base).pdf"))
 
 
     local results = Dict{Symbol, Any}()
@@ -108,6 +103,15 @@ Threads.@threads for i ∈ 1:n_combinations
         push!(rows, results)
         update!(comp_job); render(pbar)
 
+        local control_plot = plot(u_fb, label="forward backward gradient method", lw=3) ; plot!(control_plot, u_rk_fb, label="RK4 gradient method", lw=3) ; ylabel!("uₜ") ; xlabel!("t")
+        savefig(control_plot, joinpath(figure_results_folder, "control_plot_$(file_name_base).pdf"))
+
+        local p = plot(rk4_cost, lw = 3, label="RK4 forward backward") ; plot!(p, fb_cost, lw=3, label = "forward backward") ; ylabel!("Residual Cost") ; xlabel!("Iteration")
+        savefig(p, joinpath(figure_results_folder, "residual_cost_$(file_name_base).pdf"))
+
+        local hamoltonian_plot = plot(H_fb, lw = 3, label="Forward Backward", xlabel="t", ylabel = "Hₜ") ; plot!(hamoltonian_plot, H_rk4_fb, lw = 3, label= "RK4 Forward Backward") 
+        savefig(hamoltonian_plot, joinpath(figure_results_folder, "hamoltonian_plot_$(file_name_base).pdf"))
+
         Remote_Status_Notifier.send_message(Dict(
             :progress => "$(length(rows) / n_combinations * 100)%",
             :message => "finished iteration for $(file_name_base)",
@@ -120,10 +124,10 @@ Threads.@threads for i ∈ 1:n_combinations
 end
 
 Remote_Status_Notifier.send_message(Dict(
-    progress => "100%",
-    message => "Completed"
+    :progress => "100%",
+    :message => "Completed"
 ))
 df = DataFrame(rows)
-CSV.write(joinpath(result_folder, output_file_name))
+CSV.write(joinpath(result_folder, output_file_name), df)
 
 
