@@ -1,15 +1,14 @@
 using Pkg; Pkg.instantiate()
 using LinearAlgebra; BLAS.set_num_threads(1)
+using InteractiveUtils;
 
 include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); include("../Modules/CLI_Param.jl"); include("../Modules/forward_backward_sweep.jl"); include("../Modules/CLI_Param.jl"); include("../Modules/Settings.jl"); include("../Modules/Remote_Status_Notifier.jl")
 using MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, LinearAlgebra, CSV, DataFrames
-using Plots, ArgParse, REPL.TerminalMenus
+using Plots, ArgParse, REPL.TerminalMenus, Printf
 
 param_grid, output_file_name = CLI_Param.get_parameters(sort!(collect(keys(Settings.name_to_func))))
 delete!(param_grid, :method)
 delete!(param_grid, :educated_guess)
-
-println(param_grid)
 
 result_lock = ReentrantLock()
 
@@ -25,7 +24,7 @@ figure_results_folder = joinpath(result_folder, "figure_results/")
 mkpath(figure_results_folder)
 
 pbar = ProgressBar(); comp_job = addjob!(pbar,N = n_combinations, description = "Total Progress")
-start!(pbar); render(pbar)
+versioninfo(); start!(pbar); render(pbar)
 
 rows = Vector{Dict{Symbol, Any}}()
 Threads.@threads for i ∈ 1:n_combinations
@@ -37,19 +36,22 @@ Threads.@threads for i ∈ 1:n_combinations
     local x_d = paramaters[:x_d]
     local m = paramaters[:m]
     local k = paramaters[:k]
-    local l₀ = x_d[2] - m / k
     local α = paramaters[:α]
+
+    local l₀ = x_d[2] - m / k
+    local v₀ = Float64[0, 0]
+    local y₀ = vcat(v₀, x₀)
 
     local file_name_base = "N=$N,x₀=$(x₀),x_d=$(x_d),m=$(m),k=$(k),α=$α,l₀=$(l₀)"
 
     local initial_guess = Systems.get_initial_guess(N, x₀, x_d, m, k, l₀)
     local u_guess = [Systems.u(initial_guess, i, N) for i ∈ 0:N]
 
-    local fb_out = @timed forward_backward_sweep_module.forward_backward_sweep(u_guess, 0., 10.; α = α, y₀ = vcat(x₀, Float64[0, 0]), x_d = x_d, N = N, m = m, k_spring = k, l₀ = l₀, ϵ = 1e-14, max_iter = 500000)
+    local fb_out = @timed forward_backward_sweep_module.forward_backward_sweep(u_guess, 0., 10.; α = α, y₀ = y₀, x_d = x_d, N = N, m = m, k_spring = k, l₀ = l₀, ϵ = 1e-14, max_iter = 500000)
     local fb_time = fb_out[:time]
     local fb_res, fb_cost = fb_out[:value]
 
-    local rk4_out = @timed forward_backward_sweep_module.RK4_forward_backward_sweep(u_guess, 0., 10.; α = α, y₀ = vcat(x₀, Float64[0, 0]), x_d = x_d, N = N, m = m, k_spring = k, l₀ = l₀, ϵ = 1e-14, max_iter = 500000)
+    local rk4_out = @timed forward_backward_sweep_module.RK4_forward_backward_sweep(u_guess, 0., 10.; α = α, y₀ = y₀, x_d = x_d, N = N, m = m, k_spring = k, l₀ = l₀, ϵ = 1e-14, max_iter = 500000)
     local rk4_time = rk4_out[:time]
     local rk4_res, rk4_cost = rk4_out[:value]
 
@@ -60,7 +62,7 @@ Threads.@threads for i ∈ 1:n_combinations
 
     local H_fb = [
         forward_backward_sweep_module.H(
-            yₙ = vcat(Systems.x(fb_res, i, N, x₀), Systems.v(fb_res, i, N)),
+            yₙ = vcat(Systems.v(fb_res, i, N), Systems.x(fb_res, i, N, x₀)),
             pₙ = vcat(Systems.λ(fb_res, i, N), Systems.μ(fb_res, i, N)),
             uₙ = Systems.u(fb_res, i, N),
             k = k,
@@ -74,7 +76,7 @@ Threads.@threads for i ∈ 1:n_combinations
 
     local H_rk4_fb = [
         forward_backward_sweep_module.H(
-            yₙ = vcat(Systems.x(rk4_res, i, N, x₀), Systems.v(rk4_res, i, N)),
+            yₙ = vcat(Systems.v(fb_res, i, N), Systems.x(fb_res, i, N, x₀)),
             pₙ = vcat(Systems.λ(rk4_res, i, N), Systems.μ(rk4_res, i, N)),
             uₙ = Systems.u(rk4_res, i, N),
             k = k,
@@ -97,6 +99,14 @@ Threads.@threads for i ∈ 1:n_combinations
     results[:fb_iterations] = length(fb_cost)
     results[:fb_costs] = fb_cost
     results[:fb_results] = fb_res
+
+    results[:x₀] = x₀
+    results[:x_d] = x_d
+    results[:m] = m
+    results[:k] = k
+    results[:α] = α
+    results[:l₀] = l₀
+    results[:N] = N
     
     # Progress bar update (serialize UI-ish calls)
     lock(result_lock) do
@@ -112,14 +122,40 @@ Threads.@threads for i ∈ 1:n_combinations
         local hamoltonian_plot = plot(H_fb, lw = 3, label="Forward Backward", xlabel="t", ylabel = "Hₜ") ; plot!(hamoltonian_plot, H_rk4_fb, lw = 3, label= "RK4 Forward Backward") 
         savefig(hamoltonian_plot, joinpath(figure_results_folder, "hamoltonian_plot_$(file_name_base).pdf"))
 
+
+        local body = """
+            Results for
+            N = $(N)
+            x₀ = $(x₀)
+            x_d = $(x_d)
+            m = $(m)
+            k = $(k)
+            α = $(α)
+            l₀ = $(l₀)
+
+            =============================
+
+            RK4 forward-backward
+            time:        $(@sprintf("%.2f", results[:rk4_time])) s
+            iterations:  $(results[:rk4_iterations])
+
+            Forward-backward
+            time:        $(@sprintf("%.2f", results[:fb_time])) s
+            iterations:  $(results[:fb_iterations])
+
+            Progress : $(@sprintf("%.2f", length(rows) / n_combinations * 100))%
+        """
+
         Remote_Status_Notifier.send_message(Dict(
-            :progress => "$(length(rows) / n_combinations * 100)%",
+            :progress => @sprintf("%.2f%%", length(rows) / n_combinations * 100),
             :message => "finished iteration for $(file_name_base)",
             :rk4_time => results[:rk4_time],
             :rk4_iterations => results[:rk4_iterations],
             :fb_time => results[:fb_time],
             :fb_iterations => results[:fb_iterations],
         ))
+
+        Remote_Status_Notifier.send_ntfy_message(body; title = "Progress Report")
     end
 end
 stop!(pbar)
@@ -128,7 +164,24 @@ Remote_Status_Notifier.send_message(Dict(
     :progress => "100%",
     :message => "Completed"
 ))
-df = DataFrame(rows)
-CSV.write(joinpath(result_folder, "$(output_file_name).csv"), df)
+Remote_Status_Notifier.send_ntfy_message("Computation Complete"; priority = "high", tags = "tada")
 
+new_df = DataFrame(rows)
+key_cols = [:N, :m, :k, :α, :l₀, :x₀, :x_d]
+jls_path = joinpath(result_folder, "$(output_file_name).jls")
+
+merged_df = if isfile(jls_path)
+    old_df = open(deserialize, jls_path)
+    vcat(antijoin(old_df, new_df, on = key_cols), new_df; cols = :union)
+else
+    new_df
+end
+
+
+scalar_cols = [:rk4_time, :rk4_iterations, :fb_time, :fb_iterations, :N, :m, :k, :α, :l₀, :x₀, :x_d] # columns that are scalar values and can be easily saved in CSV
+CSV.write(joinpath(result_folder, "$(output_file_name).csv"), select(merged_df, scalar_cols))
+
+open(jls_path, "w") do io
+    serialize(io, merged_df)
+end
 
