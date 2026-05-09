@@ -15,7 +15,7 @@ module Remote_Status_Notifier
 
     function send_ntfy_message(msg::String; title :: String = "", tags :: String = "", priority :: String = "low")
         try
-            run(`curl -s --max-time 5 
+            run(`curl -s -o /tmp/ntfy.log --max-time 5 
             -H "Title: $(title)"
             -H "Tags: $(tags)"
             -H "Priority: $(priority)"
