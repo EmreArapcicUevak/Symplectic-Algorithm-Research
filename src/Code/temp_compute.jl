@@ -3,8 +3,29 @@ using LinearAlgebra; BLAS.set_num_threads(1)
 using InteractiveUtils;
 
 include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); include("../Modules/CLI_Param.jl"); include("../Modules/forward_backward_sweep.jl"); include("../Modules/CLI_Param.jl"); include("../Modules/Settings.jl"); include("../Modules/Remote_Status_Notifier.jl")
-using MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, LinearAlgebra, CSV, DataFrames
-using Plots, ArgParse, REPL.TerminalMenus, Printf
+using MAT, Serialization, Base.Threads, BenchmarkTools, LinearAlgebra, CSV, DataFrames
+using Plots, ArgParse, REPL.TerminalMenus, Printf, ProgressMeter
+
+using Dates
+
+const _BLOCKS = ['▁','▂','▃','▄','▅','▆','▇','█']
+function sparkline(xs)
+    isempty(xs) && return ""
+    lo, hi = extrema(xs)
+    hi == lo && return repeat(string(_BLOCKS[end÷2]), length(xs))
+    idx = clamp.(round.(Int, (xs .- lo) ./ (hi - lo) .* (length(_BLOCKS)-1)) .+ 1, 1, length(_BLOCKS))
+    String(_BLOCKS[idx])
+end
+
+fmt_bytes(b) = b < 1<<20 ? (@sprintf "%.0f KiB" b/1024) :
+               b < 1<<30 ? (@sprintf "%.1f MiB" b/(1<<20)) :
+                           (@sprintf "%.2f GiB" b/(1<<30))
+
+const RUNTIMES   = Float64[]      # rolling per-iter wall time
+const HIST_CAP   = 30
+const T_START    = time()
+const GC_BASE    = Base.gc_num()
+
 
 param_grid, output_file_name = CLI_Param.get_parameters(sort!(collect(keys(Settings.name_to_func))))
 delete!(param_grid, :method)
@@ -23,8 +44,10 @@ figure_results_folder = joinpath(result_folder, "figure_results/")
 
 mkpath(figure_results_folder)
 
-pbar = ProgressBar(); comp_job = addjob!(pbar,N = n_combinations, description = "Total Progress")
-versioninfo(); start!(pbar); render(pbar)
+#pbar = ProgressBar(); comp_job = addjob!(pbar,N = n_combinations, description = "Total Progress")
+pbar = Progress(n_combinations; desc = "Total ", showspeed = true, dt = 0.1)
+versioninfo(); println("\n", "─"^80, "\n"); flush(stdout)
+#start!(pbar); render(pbar)
 
 rows = Vector{Dict{Symbol, Any}}()
 Threads.@threads for i ∈ 1:n_combinations
@@ -76,7 +99,7 @@ Threads.@threads for i ∈ 1:n_combinations
 
     local H_rk4_fb = [
         forward_backward_sweep_module.H(
-            yₙ = vcat(Systems.v(fb_res, i, N), Systems.x(fb_res, i, N, x₀)),
+            yₙ = vcat(Systems.v(rk4_res, i, N), Systems.x(rk4_res, i, N, x₀)),
             pₙ = vcat(Systems.λ(rk4_res, i, N), Systems.μ(rk4_res, i, N)),
             uₙ = Systems.u(rk4_res, i, N),
             k = k,
@@ -111,12 +134,37 @@ Threads.@threads for i ∈ 1:n_combinations
     # Progress bar update (serialize UI-ish calls)
     lock(result_lock) do
         push!(rows, results)
-        update!(comp_job); render(pbar)
+
+        push!(RUNTIMES, fb_time + rk4_time)
+        length(RUNTIMES) > HIST_CAP && popfirst!(RUNTIMES)
+
+        let
+            local done       = length(rows)
+            local elapsed    = time() - T_START
+            local rate       = done / max(elapsed, eps())                      # iters/sec (real)
+            local eta_s      = (n_combinations - done) / max(rate, eps())
+            local gcd        = Base.GC_Diff(Base.gc_num(), GC_BASE)
+            local load1,_,_  = Sys.loadavg()
+            local spark      = sparkline(RUNTIMES)
+            local avg_rt     = sum(RUNTIMES)/length(RUNTIMES)
+
+            #update!(comp_job); render(pbar)
+
+            ProgressMeter.next!(pbar; showvalues = [
+                (:runtimes,   sparkline(RUNTIMES)),
+                (:avg,        @sprintf("%.2fs", avg_rt)),
+                (:last,       @sprintf("rk4 %.2fs / fb %.2fs", rk4_time, fb_time)),
+                (:mem,        fmt_bytes(Sys.maxrss())),
+                (:gc,         @sprintf("%d pauses, %.1fs", gcd.pause, gcd.total_time/1e9)),
+                (:load,       @sprintf("%.2f", first(Sys.loadavg()))),
+                (:eta,        string(Dates.canonicalize(Dates.Second(round(Int, eta_s))))),
+            ])
+        end
 
         local control_plot = plot(u_fb, label="forward backward gradient method", lw=3) ; plot!(control_plot, u_rk_fb, label="RK4 gradient method", lw=3) ; ylabel!("uₜ") ; xlabel!("t")
         savefig(control_plot, joinpath(figure_results_folder, "control_plot_$(file_name_base).pdf"))
 
-        local p = plot(rk4_cost, lw = 3, label="RK4 forward backward") ; plot!(p, fb_cost, lw=3, label = "forward backward") ; ylabel!("Residual Cost") ; xlabel!("Iteration")
+        local p =  plot(fb_cost, lw=3, label = "forward backward") ; plot!(p,rk4_cost, lw = 3, label="RK4 forward backward"); ylabel!("Residual Cost") ; xlabel!("Iteration")
         savefig(p, joinpath(figure_results_folder, "residual_cost_$(file_name_base).pdf"))
 
         local hamoltonian_plot = plot(H_fb, lw = 3, label="Forward Backward", xlabel="t", ylabel = "Hₜ") ; plot!(hamoltonian_plot, H_rk4_fb, lw = 3, label= "RK4 Forward Backward") 
@@ -158,7 +206,7 @@ Threads.@threads for i ∈ 1:n_combinations
         Remote_Status_Notifier.send_ntfy_message(body; title = "Progress Report")
     end
 end
-stop!(pbar)
+#stop!(pbar)
 
 Remote_Status_Notifier.send_message(Dict(
     :progress => "100%",
