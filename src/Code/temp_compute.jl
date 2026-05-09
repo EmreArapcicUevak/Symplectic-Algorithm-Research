@@ -1,4 +1,4 @@
-using Pkg; Pkg.instantiate()
+using Pkg; Pkg.instantiate(); Pkg.resolve()
 using LinearAlgebra; BLAS.set_num_threads(1)
 using InteractiveUtils;
 
