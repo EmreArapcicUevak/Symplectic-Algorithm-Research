@@ -8,6 +8,19 @@ using Plots, ArgParse, REPL.TerminalMenus, Printf, ProgressMeter
 
 using Dates
 
+default(
+    titlefontsize    = 16,
+    guidefontsize    = 16,   # axis labels (xlabel/ylabel)
+    tickfontsize     = 14,
+    legendfontsize   = 14,
+    framestyle       = :box,
+    grid             = true,
+    gridalpha        = 0.25,
+    size             = (900, 550),
+    dpi              = 300,
+    margin           = 5Plots.mm,
+)
+
 const _BLOCKS = ['▁','▂','▃','▄','▅','▆','▇','█']
 function sparkline(xs)
     isempty(xs) && return ""
@@ -161,14 +174,14 @@ Threads.@threads for i ∈ 1:n_combinations
             ])
         end
 
-        local control_plot = plot(u_fb, label="forward backward gradient method", lw=3) ; plot!(control_plot, u_rk_fb, label="RK4 gradient method", lw=3) ; ylabel!("uₜ") ; xlabel!("t")
+        local control_plot = plot(LinRange(0., 10., length(u_fb)), u_fb, label="Forward Backward Euler", lw=3) ; plot!(control_plot, LinRange(0., 10., length(u_rk_fb)), u_rk_fb, label="Forward Backward RK4", lw=3) ; ylabel!("uₜ") ; xlabel!("t")
         savefig(control_plot, joinpath(figure_results_folder, "control_plot_$(file_name_base).pdf"))
 
-        local p =  plot(fb_cost, lw=3, label = "forward backward") ; plot!(p,rk4_cost, lw = 3, label="RK4 forward backward"); ylabel!("Residual Cost") ; xlabel!("Iteration")
+        local p =  plot(LinRange(0., 10., length(fb_cost)), fb_cost, lw=3, label = "Forward Backward Euler") ; plot!(p, LinRange(0., 10., length(rk4_cost)), rk4_cost, lw = 3, label="Forward Backward RK4"); ylabel!("Residual Cost") ; xlabel!("Iteration")
         savefig(p, joinpath(figure_results_folder, "residual_cost_$(file_name_base).pdf"))
 
-        local hamoltonian_plot = plot(H_fb, lw = 3, label="Forward Backward", xlabel="t", ylabel = "Hₜ") ; plot!(hamoltonian_plot, H_rk4_fb, lw = 3, label= "RK4 Forward Backward") 
-        savefig(hamoltonian_plot, joinpath(figure_results_folder, "hamoltonian_plot_$(file_name_base).pdf"))
+        local hamiltonian_plot = plot(LinRange(0., 10., length(H_fb)), H_fb, lw = 3, label="Forward Backward Euler", xlabel="t", ylabel = "Hₜ") ; plot!(hamiltonian_plot, LinRange(0., 10., length(H_rk4_fb)), H_rk4_fb, lw = 3, label= "Forward Backward RK4") 
+        savefig(hamiltonian_plot, joinpath(figure_results_folder, "hamiltonian_plot_$(file_name_base).pdf"))
 
 
         local body = """
