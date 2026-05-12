@@ -2,71 +2,31 @@ using Pkg; Pkg.instantiate(); Pkg.resolve()
 using LinearAlgebra; BLAS.set_num_threads(1)
 using InteractiveUtils;
 
-include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); include("../Modules/CLI_Param.jl"); include("../Modules/forward_backward_sweep.jl"); include("../Modules/CLI_Param.jl"); include("../Modules/Settings.jl"); include("../Modules/Remote_Status_Notifier.jl")
+include("../Modules/CLI_Param.jl"); include("../Modules/forward_backward_sweep.jl"); include("../Modules/Settings.jl"); include("../Modules/Remote_Status_Notifier.jl"); include("../Modules/ExperimentHarness.jl"); include("../Modules/Systems.jl")
 using MAT, Serialization, Base.Threads, BenchmarkTools, LinearAlgebra, CSV, DataFrames
-using Plots, ArgParse, REPL.TerminalMenus, Printf, ProgressMeter
+using Plots, Printf
 
-using Dates
 
 default(
-    titlefontsize    = 16,
-    guidefontsize    = 16,   # axis labels (xlabel/ylabel)
-    tickfontsize     = 14,
-    legendfontsize   = 14,
+    #fontfamily       = "Computer Modern",   # matches LaTeX body text; drop if you don't have it
+    titlefontsize    = 20,
+    guidefontsize    = 20,   # axis labels (xlabel/ylabel)
+    tickfontsize     = 18,
+    legendfontsize   = 18,
     framestyle       = :box,
     grid             = true,
-    gridalpha        = 0.25,
+    gridalpha        = 0.1,
     size             = (900, 550),
     dpi              = 300,
     margin           = 5Plots.mm,
+    lw               = 8,
 )
-
-const _BLOCKS = ['▁','▂','▃','▄','▅','▆','▇','█']
-function sparkline(xs)
-    isempty(xs) && return ""
-    lo, hi = extrema(xs)
-    hi == lo && return repeat(string(_BLOCKS[end÷2]), length(xs))
-    idx = clamp.(round.(Int, (xs .- lo) ./ (hi - lo) .* (length(_BLOCKS)-1)) .+ 1, 1, length(_BLOCKS))
-    String(_BLOCKS[idx])
-end
-
-fmt_bytes(b) = b < 1<<20 ? (@sprintf "%.0f KiB" b/1024) :
-               b < 1<<30 ? (@sprintf "%.1f MiB" b/(1<<20)) :
-                           (@sprintf "%.2f GiB" b/(1<<30))
-
-const RUNTIMES   = Float64[]      # rolling per-iter wall time
-const HIST_CAP   = 30
-const T_START    = time()
-const GC_BASE    = Base.gc_num()
-
-
-param_grid, output_file_name = CLI_Param.get_parameters(sort!(collect(keys(Settings.name_to_func))))
-delete!(param_grid, :method)
-delete!(param_grid, :educated_guess)
-
-result_lock = ReentrantLock()
-
-keys_ = collect(keys(param_grid))
-values_ = [param_grid[key] for key in keys_]
-lens = map(length, values_)
-n_combinations = reduce(*, lens)
-space = CartesianIndices(Tuple(lens))
 
 result_folder = "Results/"
 figure_results_folder = joinpath(result_folder, "figure_results/")
-
 mkpath(figure_results_folder)
 
-#pbar = ProgressBar(); comp_job = addjob!(pbar,N = n_combinations, description = "Total Progress")
-pbar = Progress(n_combinations; desc = "Total ", showspeed = true, dt = 0.1)
-versioninfo(); println("\n", "─"^80, "\n"); flush(stdout)
-#start!(pbar); render(pbar)
-
-rows = Vector{Dict{Symbol, Any}}()
-Threads.@threads for i ∈ 1:n_combinations
-    local tup = ntuple(j -> values_[j][space[i][j]], length(values_))
-    local paramaters = NamedTuple{Tuple(keys_)}(tup)
-
+function body(paramaters :: NamedTuple)
     local N = paramaters[:N]
     local x₀ = paramaters[:x₀]
     local x_d = paramaters[:x_d]
@@ -78,23 +38,51 @@ Threads.@threads for i ∈ 1:n_combinations
     local v₀ = Float64[0, 0]
     local y₀ = vcat(v₀, x₀)
 
-    local file_name_base = "N=$N,x₀=$(x₀),x_d=$(x_d),m=$(m),k=$(k),α=$α,l₀=$(l₀)"
-
     local initial_guess = Systems.get_initial_guess(N, x₀, x_d, m, k, l₀)
     local u_guess = [Systems.u(initial_guess, i, N) for i ∈ 0:N]
 
-    local fb_out = @timed forward_backward_sweep_module.forward_backward_sweep(u_guess, 0., 10.; α = α, y₀ = y₀, x_d = x_d, N = N, m = m, k_spring = k, l₀ = l₀, ϵ = 1e-14, max_iter = 500000)
+    local fb_out = @timed forward_backward_sweep_module.forward_backward_sweep(u_guess, 0., 10.; α = α, y₀ = y₀, x_d = x_d, N = N, m = m, k_spring = k, l₀ = l₀, ϵ = 1e-12, max_iter = 500000)
     local fb_time = fb_out[:time]
-    local fb_res, fb_cost = fb_out[:value]
+    local fb_res, fb_cost, fb_g_norm, fb_step_lenghts = fb_out[:value]
 
-    local rk4_out = @timed forward_backward_sweep_module.RK4_forward_backward_sweep(u_guess, 0., 10.; α = α, y₀ = y₀, x_d = x_d, N = N, m = m, k_spring = k, l₀ = l₀, ϵ = 1e-14, max_iter = 500000)
+    local rk4_out = @timed forward_backward_sweep_module.RK4_forward_backward_sweep(u_guess, 0., 10.; α = α, y₀ = y₀, x_d = x_d, N = N, m = m, k_spring = k, l₀ = l₀, ϵ = 1e-12, max_iter = 500000)
     local rk4_time = rk4_out[:time]
-    local rk4_res, rk4_cost = rk4_out[:value]
+    local rk4_res, rk4_cost, rk4_g_norm, rk4_step_lenghts = rk4_out[:value]
 
+    local rk4_residual = Systems.Residual_RK4(rk4_res; N=N, x₀=x₀, x_d=x_d, m=m, k=k, l₀=l₀, α=α, a=Float64[0, -1], t₀ = 0., T = 10.)
+    local fb_residual = Systems.Residual_Euler(fb_res; N=N, x₀=x₀, x_d=x_d, m=m, k=k, l₀=l₀, α=α, a=Float64[0, -1], t₀ = 0., T = 10.)
 
-    local u_fb = [Systems.u(fb_res, i, N) for i ∈ 0:N]
-    local u_rk_fb = [Systems.u(rk4_res, i, N) for i ∈ 0:N]
+    return Dict(
+        :rk4_time => rk4_time,
+        :rk4_iterations => length(rk4_cost),
+        :rk4_costs => rk4_cost,
+        :rk4_results => rk4_res,
+        :rk4_g_norm => rk4_g_norm,
+        :rk4_step_lenghts => rk4_step_lenghts,
+        :rk4_residual_norm => norm(rk4_residual),
+        :fb_time => fb_time,
+        :fb_iterations => length(fb_cost),
+        :fb_costs => fb_cost,
+        :fb_results => fb_res,
+        :fb_g_norm => fb_g_norm,
+        :fb_step_lenghts => fb_step_lenghts,
+        :fb_residual_norm => norm(fb_residual),
+    )
+end
 
+function result_completed(paramaters, results, rows, progress)
+    local N = paramaters[:N]
+    local x₀ = paramaters[:x₀]
+    local x_d = paramaters[:x_d]
+    local m = paramaters[:m]
+    local k = paramaters[:k]
+    local α = paramaters[:α]
+
+    local l₀ = x_d[2] - m / k
+    local file_name_base = "N=$N,x₀=$(x₀),x_d=$(x_d),m=$(m),k=$(k),α=$α,l₀=$(l₀)"   
+
+    local fb_res, rk4_res = results[:fb_results], results[:rk4_results]
+    local fb_cost, rk4_cost = results[:fb_costs], results[:rk4_costs]
 
     local H_fb = [
         forward_backward_sweep_module.H(
@@ -124,67 +112,20 @@ Threads.@threads for i ∈ 1:n_combinations
         for i ∈ 0:N
     ]
 
+    local u_fb = [Systems.u(fb_res, i, N) for i ∈ 0:N]
+    local u_rk_fb = [Systems.u(rk4_res, i, N) for i ∈ 0:N]
 
 
-    local results = Dict{Symbol, Any}()
-    results[:rk4_time] = rk4_time
-    results[:rk4_iterations] = length(rk4_cost)
-    results[:rk4_costs] = rk4_cost
-    results[:rk4_results] = rk4_res
-    results[:fb_time] = fb_time
-    results[:fb_iterations] = length(fb_cost)
-    results[:fb_costs] = fb_cost
-    results[:fb_results] = fb_res
+    local control_plot = plot(LinRange(0., 10., length(u_fb)), u_fb, label="Forward Backward Euler") ; plot!(control_plot, LinRange(0., 10., length(u_rk_fb)), u_rk_fb, label="Forward Backward RK4") ; ylabel!("uₜ") ; xlabel!("t")
+    savefig(control_plot, joinpath(figure_results_folder, "control_plot_$(file_name_base).pdf"))
 
-    results[:x₀] = x₀
-    results[:x_d] = x_d
-    results[:m] = m
-    results[:k] = k
-    results[:α] = α
-    results[:l₀] = l₀
-    results[:N] = N
-    
-    # Progress bar update (serialize UI-ish calls)
-    lock(result_lock) do
-        push!(rows, results)
+    local p =  plot(LinRange(0., 10., length(fb_cost)), fb_cost, label = "Forward Backward Euler") ; plot!(p, LinRange(0., 10., length(rk4_cost)), rk4_cost, label="Forward Backward RK4"); ylabel!("Residual Cost") ; xlabel!("Iteration")
+    savefig(p, joinpath(figure_results_folder, "residual_cost_$(file_name_base).pdf"))
 
-        push!(RUNTIMES, fb_time + rk4_time)
-        length(RUNTIMES) > HIST_CAP && popfirst!(RUNTIMES)
+    local hamiltonian_plot = plot(LinRange(0., 10., length(H_fb)), H_fb, label="Forward Backward Euler", xlabel="t", ylabel = "Hₜ") ; plot!(hamiltonian_plot, LinRange(0., 10., length(H_rk4_fb)), H_rk4_fb, label= "Forward Backward RK4") 
+    savefig(hamiltonian_plot, joinpath(figure_results_folder, "hamiltonian_plot_$(file_name_base).pdf"))
 
-        let
-            local done       = length(rows)
-            local elapsed    = time() - T_START
-            local rate       = done / max(elapsed, eps())                      # iters/sec (real)
-            local eta_s      = (n_combinations - done) / max(rate, eps())
-            local gcd        = Base.GC_Diff(Base.gc_num(), GC_BASE)
-            local load1,_,_  = Sys.loadavg()
-            local spark      = sparkline(RUNTIMES)
-            local avg_rt     = sum(RUNTIMES)/length(RUNTIMES)
-
-            #update!(comp_job); render(pbar)
-
-            ProgressMeter.next!(pbar; showvalues = [
-                (:runtimes,   sparkline(RUNTIMES)),
-                (:avg,        @sprintf("%.2fs", avg_rt)),
-                (:last,       @sprintf("rk4 %.2fs / fb %.2fs", rk4_time, fb_time)),
-                (:mem,        fmt_bytes(Sys.maxrss())),
-                (:gc,         @sprintf("%d pauses, %.1fs", gcd.pause, gcd.total_time/1e9)),
-                (:load,       @sprintf("%.2f", first(Sys.loadavg()))),
-                (:eta,        string(Dates.canonicalize(Dates.Second(round(Int, eta_s))))),
-            ])
-        end
-
-        local control_plot = plot(LinRange(0., 10., length(u_fb)), u_fb, label="Forward Backward Euler", lw=3) ; plot!(control_plot, LinRange(0., 10., length(u_rk_fb)), u_rk_fb, label="Forward Backward RK4", lw=3) ; ylabel!("uₜ") ; xlabel!("t")
-        savefig(control_plot, joinpath(figure_results_folder, "control_plot_$(file_name_base).pdf"))
-
-        local p =  plot(LinRange(0., 10., length(fb_cost)), fb_cost, lw=3, label = "Forward Backward Euler") ; plot!(p, LinRange(0., 10., length(rk4_cost)), rk4_cost, lw = 3, label="Forward Backward RK4"); ylabel!("Residual Cost") ; xlabel!("Iteration")
-        savefig(p, joinpath(figure_results_folder, "residual_cost_$(file_name_base).pdf"))
-
-        local hamiltonian_plot = plot(LinRange(0., 10., length(H_fb)), H_fb, lw = 3, label="Forward Backward Euler", xlabel="t", ylabel = "Hₜ") ; plot!(hamiltonian_plot, LinRange(0., 10., length(H_rk4_fb)), H_rk4_fb, lw = 3, label= "Forward Backward RK4") 
-        savefig(hamiltonian_plot, joinpath(figure_results_folder, "hamiltonian_plot_$(file_name_base).pdf"))
-
-
-        local body = """
+    local body = """
             Results for
             N = $(N)
             x₀ = $(x₀)
@@ -199,50 +140,37 @@ Threads.@threads for i ∈ 1:n_combinations
             RK4 forward-backward
             time:        $(@sprintf("%.2f", results[:rk4_time])) s
             iterations:  $(results[:rk4_iterations])
+            ||Hᵤ||:      $(@sprintf("%.2e", results[:rk4_g_norm]))
+            α_BB:        $(results[:rk4_step_lenghts]) 
+            residual:      $(@sprintf("%.2e", results[:rk4_residual_norm]))
 
             Forward-backward
             time:        $(@sprintf("%.2f", results[:fb_time])) s
             iterations:  $(results[:fb_iterations])
+            ||Hᵤ||:       $(@sprintf("%.2e", results[:fb_g_norm]))
+            α_BB:        $(results[:fb_step_lenghts])
+            residual:      $(@sprintf("%.2e", results[:fb_residual_norm]))
 
-            Progress : $(@sprintf("%.2f", length(rows) / n_combinations * 100))%
+            Progress : $(@sprintf("%.2f", progress * 100))%
         """
 
-        Remote_Status_Notifier.send_message(Dict(
-            :progress => @sprintf("%.2f%%", length(rows) / n_combinations * 100),
-            :message => "finished iteration for $(file_name_base)",
-            :rk4_time => results[:rk4_time],
-            :rk4_iterations => results[:rk4_iterations],
-            :fb_time => results[:fb_time],
-            :fb_iterations => results[:fb_iterations],
-        ))
-
-        Remote_Status_Notifier.send_ntfy_message(body; title = "Progress Report")
-    end
+    Remote_Status_Notifier.send_ntfy_message(body; title = "Progress Report")
 end
-#stop!(pbar)
 
-Remote_Status_Notifier.send_message(Dict(
-    :progress => "100%",
-    :message => "Completed"
-))
-Remote_Status_Notifier.send_ntfy_message("Computation Complete"; priority = "high", tags = "tada")
+param_grid, output_file_name = CLI_Param.get_parameters(sort!(collect(keys(Settings.name_to_func))))
+delete!(param_grid, :method)
+delete!(param_grid, :educated_guess)
 
-new_df = DataFrame(rows)
-key_cols = [:N, :m, :k, :α, :l₀, :x₀, :x_d]
-jls_path = joinpath(result_folder, "$(output_file_name).jls")
-
-merged_df = if isfile(jls_path)
-    old_df = open(deserialize, jls_path)
-    vcat(antijoin(old_df, new_df, on = key_cols), new_df; cols = :union)
+res = ExperimentHarness.run_grid(
+    body,
+    output_file_name;
+    param_grid = param_grid,
+    key_cols = collect(keys(param_grid)),
+    on_iteration = result_completed,
+    scalar_cols = [:rk4_time, :rk4_iterations, :rk4_g_norm, :rk4_step_lenghts, :fb_time, :fb_iterations, :fb_g_norm, :fb_step_lenghts, :rk4_residual_norm, :fb_residual_norm],
+)
+if !isnothing(res)
+    Remote_Status_Notifier.send_ntfy_message("Experiment completed!"; title = "Completion Notice", priority = "high")
 else
-    new_df
+    Remote_Status_Notifier.send_ntfy_message("Experiement Interrupted"; title="Completion Notice", priority="high")
 end
-
-
-scalar_cols = [:rk4_time, :rk4_iterations, :fb_time, :fb_iterations, :N, :m, :k, :α, :l₀, :x₀, :x_d] # columns that are scalar values and can be easily saved in CSV
-CSV.write(joinpath(result_folder, "$(output_file_name).csv"), select(merged_df, scalar_cols))
-
-open(jls_path, "w") do io
-    serialize(io, merged_df)
-end
-
