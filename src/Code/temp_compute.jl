@@ -85,7 +85,7 @@ function result_completed(paramaters, results, rows, progress)
     local fb_cost, rk4_cost = results[:fb_costs], results[:rk4_costs]
 
     local H_fb = [
-        forward_backward_sweep_module.H(
+        Systems.H(
             yₙ = vcat(Systems.v(fb_res, i, N), Systems.x(fb_res, i, N, x₀)),
             pₙ = vcat(Systems.λ(fb_res, i, N), Systems.μ(fb_res, i, N)),
             uₙ = Systems.u(fb_res, i, N),
@@ -99,7 +99,7 @@ function result_completed(paramaters, results, rows, progress)
     ]
 
     local H_rk4_fb = [
-        forward_backward_sweep_module.H(
+        Systems.H(
             yₙ = vcat(Systems.v(rk4_res, i, N), Systems.x(rk4_res, i, N, x₀)),
             pₙ = vcat(Systems.λ(rk4_res, i, N), Systems.μ(rk4_res, i, N)),
             uₙ = Systems.u(rk4_res, i, N),
