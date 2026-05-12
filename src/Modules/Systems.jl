@@ -50,6 +50,155 @@ module Systems
     return Y[index]
   end
 
+  export H
+  function H(; yₙ :: Vector{Float64}, pₙ :: Vector{Float64}, uₙ :: Float64, k :: Float64, l₀ :: Float64, m :: Float64, α :: Float64, x_d :: Vector{Float64} , a :: Vector{Float64} = Float64[0, -1])
+      @views vₙ, xₙ = yₙ[1:2], yₙ[3:4]
+      @views λₙ, μₙ = pₙ[1:2], pₙ[3:4]
+
+      local u_to_x = xₙ - Float64[uₙ, 0.0]
+      local L = norm(u_to_x) 
+
+      local f = (norm(xₙ - x_d)^2 + α*uₙ^2) / 2
+      local δUδx = k * (L - l₀) / L * u_to_x - a
+
+      return f + dot(λₙ, (-1/m) * δUδx) + dot(μₙ, vₙ)
+  end
+
+  function Hp(; yₙ :: Vector{Float64}, uₙ :: Float64, k :: Float64, l₀ :: Float64, m :: Float64, a ::Vector{Float64} = Float64[0,-1])
+      @views vₙ, xₙ = yₙ[1:2], yₙ[3:4]
+
+      local u_to_x = xₙ - Float64[uₙ, 0.0]
+      local L = norm(u_to_x)
+
+      result = similar(yₙ, 4)
+      result[1:2] .= 1/m * a - k / m * ( L - l₀ ) / L * (u_to_x)
+      result[3:4] .= vₙ
+
+      return result
+  end
+
+  function Hy(; yₙ :: Vector{Float64}, pₙ :: Vector{Float64}, uₙ :: Float64, k :: Float64, l₀ :: Float64, m :: Float64, x_d :: Vector{Float64})
+      @views vₙ, xₙ = yₙ[1:2], yₙ[3:4]
+      @views λₙ, μₙ = pₙ[1:2], pₙ[3:4]
+      local u_to_x = xₙ - Float64[uₙ, 0.0]
+      local L = norm(u_to_x) 
+
+      result = similar(pₙ, 4)
+      result[1:2] .= μₙ
+      result[3:4] .= (xₙ - x_d) - (k * l₀ / (m * L^3) * u_to_x * u_to_x' + k/m * (L - l₀)/L * Matrix{Float64}(I, 2, 2)) * λₙ
+
+      return result
+  end
+
+  function Hu(; yₙ :: Vector{Float64}, pₙ :: Vector{Float64}, uₙ :: Float64, k :: Float64, l₀ :: Float64, m :: Float64, α :: Float64)
+      @views vₙ, xₙ = yₙ[1:2], yₙ[3:4]
+      @views λₙ, μₙ = pₙ[1:2], pₙ[3:4]
+      local u_to_x = xₙ - Float64[uₙ, 0.0]
+      local L = norm(u_to_x) 
+
+      local c1 = -k * l₀ / (m * L^3)
+      local c2 = - k / m * (L - l₀) / L 
+      local e1 = Float64[1,0]
+
+      return α * uₙ - dot(λₙ, (c1 * dot(e1, u_to_x)) * u_to_x + c2 * e1)
+  end
+
+  function Loss(; yₙ :: Vector{Float64}, uₙ :: Float64, α :: Float64, x_d :: Vector{Float64})
+    @views vₙ, xₙ = yₙ[1:2], yₙ[3:4]
+    return (norm(xₙ - x_d, 2)^2 + α * uₙ ^ 2) / 2
+  end
+
+
+function Residual_Euler(Y::Vector{Float64}; N::Integer, α::Float64, m::Float64, k::Float64,
+                       a::Vector{Float64}, t₀::Float64, T::Float64,
+                       x₀::Vector{Float64}, l₀::Float64, x_d::Vector{Float64}) :: Vector{Float64}
+    h = (T - t₀) / N
+    result = zeros(Float64, 9N + 1)
+
+    for i in 0:N-1
+        local yᵢ   = vcat(v(Y, i,   N), x(Y, i,   N, x₀))
+        local yᵢ₊₁ = vcat(v(Y, i+1, N), x(Y, i+1, N, x₀))
+        local pᵢ   = vcat(λ(Y, i,   N), μ(Y, i,   N))
+        local pᵢ₊₁ = vcat(λ(Y, i+1, N), μ(Y, i+1, N))
+        local uᵢ   = u(Y, i,   N)
+        local uᵢ₊₁ = u(Y, i+1, N)
+
+        local δy = (yᵢ₊₁ - yᵢ) / h
+        local δp = (pᵢ₊₁ - pᵢ) / h
+
+        # State: forward-Euler stencil — RHS evaluated at the "from" index i.
+        local Hp_i   = Hp(yₙ = yᵢ,   uₙ = uᵢ,                          k = k, l₀ = l₀, m = m, a = a)
+        # Adjoint: backward-Euler stencil — RHS evaluated at the "from" index i+1
+        # (which is i+1 in the forward-indexed residual).
+        local Hy_ip1 = Hy(yₙ = yᵢ₊₁, pₙ = pᵢ₊₁, uₙ = uᵢ₊₁,             k = k, l₀ = l₀, m = m, x_d = x_d)
+        # Control residual at node i.
+        local Hu_i   = Hu(yₙ = yᵢ,   pₙ = pᵢ,   uₙ = uᵢ,                k = k, l₀ = l₀, m = m, α = α)
+
+        result[9i+1 : 9i+4] = yᵢ₊₁ - yᵢ - h * Hp_i
+        result[9i+5 : 9i+8] = pᵢ - pᵢ₊₁ - h * Hy_ip1
+        result[9i+9]        = Hu_i
+    end
+
+    # Final-node control residual
+    local yₙ = vcat(v(Y, N, N), x(Y, N, N, x₀))
+    local pₙ = vcat(λ(Y, N, N), μ(Y, N, N))
+    local uₙ = u(Y, N, N)
+    result[end] = Hu(yₙ = yₙ, pₙ = pₙ, uₙ = uₙ, k = k, l₀ = l₀, m = m, α = α)
+
+    return result
+end
+
+function Residual_RK4(Y::Vector{Float64}; N::Integer, α::Float64, m::Float64, k::Float64,
+                     a::Vector{Float64}, t₀::Float64, T::Float64,
+                     x₀::Vector{Float64}, l₀::Float64, x_d::Vector{Float64}) :: Vector{Float64}
+    h = (T - t₀) / N
+    result = zeros(Float64, 9N + 1)
+
+    for i in 0:N-1
+        local yᵢ   = vcat(v(Y, i,   N), x(Y, i,   N, x₀))
+        local yᵢ₊₁ = vcat(v(Y, i+1, N), x(Y, i+1, N, x₀))
+        local pᵢ   = vcat(λ(Y, i,   N), μ(Y, i,   N))
+        local pᵢ₊₁ = vcat(λ(Y, i+1, N), μ(Y, i+1, N))
+        local uᵢ   = u(Y, i,   N)
+        local uᵢ₊₁ = u(Y, i+1, N)
+
+        # Midpoint quantities — linear interpolation, matching the solver convention.
+        local u_mid = (uᵢ + uᵢ₊₁) / 2
+        local y_mid = (yᵢ + yᵢ₊₁) / 2
+
+        # ---- RK4 STATE residual:  δy − (k₁+2k₂+2k₃+k₄)/6 = 0 ----
+        local k1 = Hp(yₙ = yᵢ,                uₙ = uᵢ,    k = k, l₀ = l₀, m = m, a = a)
+        local k2 = Hp(yₙ = yᵢ + (h/2) * k1,   uₙ = u_mid, k = k, l₀ = l₀, m = m, a = a)
+        local k3 = Hp(yₙ = yᵢ + (h/2) * k2,   uₙ = u_mid, k = k, l₀ = l₀, m = m, a = a)
+        local k4 = Hp(yₙ = yᵢ + h * k3,       uₙ = uᵢ₊₁, k = k, l₀ = l₀, m = m, a = a)
+        local state_res = yᵢ₊₁ - yᵢ - (k1 + 2*k2 + 2*k3 + k4) * h/6
+
+        # ---- RK4 ADJOINT residual:  δp + (m₁+2m₂+2m₃+m₄)/6 = 0 ----
+        # Backward RK4 from p_{i+1} (known) to p_i, expressed in forward-index form.
+        # m_j = H_y at the j-th adjoint stage; equivalent to ℓ_j = −H_y in the thesis.
+        local l₁ = -Hy(yₙ = yᵢ₊₁,  uₙ = uᵢ₊₁, pₙ = pᵢ₊₁,              k = k, l₀ = l₀, m = m, x_d = x_d)
+        local l₂ = -Hy(yₙ = y_mid, uₙ = u_mid, pₙ = pᵢ₊₁ - h/2 * l₁,  k = k, l₀ = l₀, m = m, x_d = x_d)
+        local l₃ = -Hy(yₙ = y_mid, uₙ = u_mid, pₙ = pᵢ₊₁ - h/2 * l₂,  k = k, l₀ = l₀, m = m, x_d = x_d)
+        local l₄ = -Hy(yₙ = yᵢ,    uₙ = uᵢ,    pₙ = pᵢ₊₁ - h   * l₃,  k = k, l₀ = l₀, m = m, x_d = x_d)
+        local adj_res = pᵢ - pᵢ₊₁ + h/6 * (l₁ + 2*l₂ + 2*l₃ + l₄)
+
+        # ---- Control residual at node i ----
+        local Hu_i = Hu(yₙ = yᵢ, pₙ = pᵢ, uₙ = uᵢ, k = k, l₀ = l₀, m = m, α = α)
+
+        result[9i+1 : 9i+4] = state_res
+        result[9i+5 : 9i+8] = adj_res
+        result[9i+9]        = Hu_i
+    end
+
+    # Final-node control residual
+    local yₙ = vcat(v(Y, N, N), x(Y, N, N, x₀))
+    local pₙ = vcat(λ(Y, N, N), μ(Y, N, N))
+    local uₙ = u(Y, N, N)
+    result[end] = Hu(yₙ = yₙ, pₙ = pₙ, uₙ = uₙ, k = k, l₀ = l₀, m = m, α = α)
+
+    return result
+end
+  
   export SE1
   function SE1(Y::Vector{Float64}; N :: Integer, α :: Float64, m :: Float64, k :: Float64, a :: Vector{Float64}, t₀ :: Float64, T :: Float64, x₀ :: Vector{Float64} ,l₀ :: Float64, x_d :: Vector{Float64}) :: Vector{Float64}
     h = (T - t₀)/N
