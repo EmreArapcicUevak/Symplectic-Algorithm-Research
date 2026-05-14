@@ -1,5 +1,6 @@
 module CLI_Param
-  using Pkg; Pkg.instantiate()
+  include("Settings.jl")
+  
   using ArgParse, REPL.TerminalMenus, Serialization
   include("Simple_Promt.jl")
 
@@ -239,5 +240,27 @@ function get_parameters(func_names::Vector{String})
 
     clear_terminal()
     return param_grid, parsed_args["output"]
+  end
+
+  function get_input_file()
+    s = ArgParseSettings()
+    @add_arg_table s begin
+        "--input", "-i"
+            help = "Input jls file containing data to visualize (must be in Results/Computation_Results/)"
+            arg_type = String
+            range_tester = x -> endswith(lowercase(x) , ".jls") && isfile(joinpath(Settings.COMPUTATION_RESULTS_FOLDER, x))
+            nargs = '+'
+            required = true
+
+        "-d"
+            help = "Display the results after finishing"
+            action = :store_true
+            nargs = 0
+    end
+
+    clear_terminal()
+    parsed_args = parse_args(s)
+    parsed_args["input"] = [joinpath(Settings.COMPUTATION_RESULTS_FOLDER, f) for f in parsed_args["input"]]
+    return parsed_args["input"], parsed_args["d"]
   end
 end
