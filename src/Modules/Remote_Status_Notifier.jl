@@ -1,6 +1,6 @@
 module Remote_Status_Notifier
-    using HTTP, JSON3
     include("Settings.jl")
+    using HTTP, JSON3
 
     # in Remote_Status_Notifier.jl
     function send_message(data)
