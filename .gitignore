@@ -399,9 +399,7 @@ Manifest.toml
 *.png
 
 
-results*
 Simulations/*
-ThesisPaper/Images/*
 
 # Created by https://www.toptal.com/developers/gitignore/api/pycharm+all
 # Edit at https://www.toptal.com/developers/gitignore?templates=pycharm+all
@@ -496,8 +494,23 @@ fabric.properties
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm+all
 
-Images/
+Results/
+
+# Top-level scratch outputs of Plot_Results.ipynb.
+# Leading slash anchors to the repo root, so ThesisPaper/Images/ is unaffected.
+/Images/
 
 # Ignore compiled library files
-*.so 
+*.so
 #src/GPU-Modules/Test
+
+Results/Figures/
+Results/Simulations
+ThesisPaper/Images
+ThesisPaper/tables
+
+!Results/
+!Results/Computation_Results/
+!Results/Computation_Results/**
+
+.env
