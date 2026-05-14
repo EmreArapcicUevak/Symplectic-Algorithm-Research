@@ -1,19 +1,11 @@
-include("../Modules/NewSystem.jl")
-using GLMakie, VideoIO, Serialization, Base.Threads, ColorSchemes, LinearAlgebra
-wanted_l₀ = 5.0
-wanted_x₀ = Float64[5.3, 2]
-wanted_a = Float64[0, -1]
-wanted_m = 1.0
-wanted_k = 1.0
-T = Observable(20.0)
-t₀ = Observable(0.0)
+include("../Modules/Settings.jl")
 
-# Load data
-function round_vector(v::Vector{Float64}, digits::Integer = 2) :: String
-    return "[$(join([round(x, digits=digits) for x in v], ", "))]"
-end
-load_file_name = "results_old_cost_x0$(round_vector(wanted_x₀,2))_l0$(round(wanted_l₀, digits = 2))_m$(round(wanted_m, digits = 2))_k$(round(wanted_k, digits = 2)).jls"
-func_number_of_iterations, func_results = deserialize(load_file_name)
+using GLMakie, VideoIO, Serialization, Base.Threads, ColorSchemes, LinearAlgebra, DataFrames, Term.Progress
+import Term.Progress as Progress
+include("../Modules/CLI_Param.jl") ; include("../Modules/Systems.jl")
+using CairoMakie
+CairoMakie.activate!()
+
 function spring_points(A::Point2f, B::Point2f; coils=12, amp=0.08f0, n=200, straight_frac=0.10f0)
     v   = B - A
     L   = LinearAlgebra.norm(v)
@@ -38,125 +30,249 @@ function spring_points(A::Point2f, B::Point2f; coils=12, amp=0.08f0, n=200, stra
 end
 
 # --- 2) Color mapping from stretch/energy to a single color ---
-stress_color(ℓ) = get(ColorSchemes.plasma, clamp(abs(ℓ - wanted_l₀)/wanted_l₀, 0, 1))
+stress_color(ℓ, l₀) = get(ColorSchemes.plasma, clamp(abs(ℓ - l₀)/l₀, 0, 1))
+
+# Force a perpendicular vector to point upward, so labels stay on the same side of the spring.
+flip_up(v::Point2f) = v[2] < 0 ? -v : v
+
+function round_vector(v::Vector{Float64}, digits::Integer = 2) :: String
+    return "[$(join([round(x, digits=digits) for x in v], ", "))]"
+end
+
+function open_with_default(path)
+    if Sys.isapple()
+        run(`open $path`)
+    elseif Sys.iswindows()
+        run(`cmd /c start "" $path`)
+    else
+        run(`xdg-open $path`)
+    end
+end
 
 
-for (meta_data, func_result) ∈ func_results
-  if length(func_result) == 0 continue end
-  println("Simulating for $meta_data")
-  i = Observable(1)
-  playing = Observable(false)
-  choosen_N = Observable(meta_data[1])
-  choosen_α = Observable(meta_data[2])
-  choosen_method = Observable(meta_data[3])
-  h = @lift(($T - $t₀)/$choosen_N)
+input_files, display_results = CLI_Param.get_input_file()
+println("Input files: ", input_files)
+println("Display results after finishing: ", display_results)
+
+pbar = ProgressBar(; columns=:detailed)
+file_job = addjob!(pbar; N=length(input_files), description = "Processing files")
 
 
-  pendulum_positions = @lift([Point2f(pos) for pos ∈ [Systems.x(func_results[($choosen_N, $choosen_α, $choosen_method)], i, $choosen_N, wanted_x₀) for i ∈ 0:$choosen_N-1]])
-  cart_positions = @lift([Point2f(u, 0) for u ∈ [Systems.u(func_results[($choosen_N, $choosen_α, $choosen_method)], i, $choosen_N) for i ∈ 0:$choosen_N-1]])
-  Xᵢ = @lift($pendulum_positions[$i])
-  Uᵢ = @lift($cart_positions[$i])
+plock = ReentrantLock()
+a = Float64[0, -1]
 
-  spring_pts = @lift(spring_points($Uᵢ, $Xᵢ))
-  curr_len = @lift(LinearAlgebra.norm($Xᵢ - $Uᵢ))
+const forward_backward_simulation_folder = joinpath(Settings.SIMULATIONS_FOLDER, "Forward_Backward_Simulations/")
+mkpath(forward_backward_simulation_folder) 
 
 
-  R = @lift(maximum(norm, $pendulum_positions))
-  max_cart_pos = @lift(maximum(norm, $cart_positions))
+with(pbar) do
+  for file in input_files
+      df = deserialize(file)
+      row_job = addjob!(pbar; N=nrow(df), description="Simulating...", transient=true)
 
-  spring_color = @lift(stress_color($curr_len))
+      Threads.@threads for row in eachrow(df)
+        local rk4_norm = row[:rk4_g_norm]
+        local fb_norm = row[:fb_g_norm]
 
-  f = Figure(size = (1000,700))
+        if rk4_norm > 1e-5 || fb_norm > 1e-5
+          lock(plock) do
+            Progress.update!(row_job)
+            Progress.render(pbar)
+          end
+          continue
+        end
+        
+        local l₀ = row[:l₀]
+        local x₀ = row[:x₀]
+        local x_d = row[:x_d]
+        local m = row[:m]
+        local k = row[:k]
+        local N = row[:N]
+        local α = row[:α]
+        local t₀ = row[:t₀]
+        local T = row[:T]
+        
+        local h = (T - t₀) / N
+        
+        local fb_res = row[:fb_results]
+        local rk4_res = row[:rk4_results]
 
-  main_axis = Axis(f[1,1], title = "Inverted Pendulum Simulation", xlabel = "X", ylabel = "Y")
-  xlims!(main_axis, -R[] - 2, R[] + 2)
-  ylims!(main_axis, -R[] - 2, R[] + 2)
-  hidespines!(main_axis)
+        local i = Observable(1)
 
-  hlines!(main_axis, [0.0], color = (:black, 0.4))
+        local pendulum_positions_euler = [Point2f(Systems.x(fb_res, k, N, x₀)) for k in 0:N]
+        local cart_positions_euler     = [Point2f(Systems.u(fb_res, k, N), 0)  for k in 0:N]
 
+        local pendulum_positions_rk4   = [Point2f(Systems.x(rk4_res, k, N, x₀)) for k in 0:N]
+        local cart_positions_rk4       = [Point2f(Systems.u(rk4_res, k, N), 0)  for k in 0:N]
 
-  # draw pendulum spring
-  lines!(main_axis, spring_pts, color = spring_color, linewidth = 3)
-  # draw pendulum bob
-  scatter!(main_axis, @lift([$Xᵢ]), markersize = 20, color = :orange)
+        local Xᵢ_euler = @lift(pendulum_positions_euler[$i])
+        local Uᵢ_euler = @lift(cart_positions_euler[$i])
 
-  # draw pivot
-  scatter!(main_axis, @lift([$Uᵢ]), markersize = 20, color = :gray, marker = :circle)
-  scatter!(main_axis, @lift([$Uᵢ]), markersize = 10, color = :white, marker = :xcross)
+        local Xᵢ_rk4 = @lift(pendulum_positions_rk4[$i])
+        local Uᵢ_rk4 = @lift(cart_positions_rk4[$i])
 
-  # Stress colorbar
-  Colorbar(
-    f[1, 2],
-    colormap = ColorSchemes.plasma,
-    limits = (0, 0.5),  # your max_stretch value
-    label = "|ℓ - l₀| / l₀"
-  )
+        local spring_pts_euler = @lift(spring_points($Uᵢ_euler, $Xᵢ_euler))
+        local curr_len_euler = @lift(LinearAlgebra.norm($Xᵢ_euler - $Uᵢ_euler))
 
-  # Draw lenght of spring arrow
-  L = @lift(norm($Xᵢ - $Uᵢ))
-  L_vec = @lift(($Xᵢ - $Uᵢ))
-  P_vec = @lift(Point2f(-$L_vec[2], $L_vec[1]) / norm($L_vec))
-  lenght_offset_amount = 0.2f0
-
-  arrows2d!(main_axis,
-    @lift[$Uᵢ + $P_vec * lenght_offset_amount, $Xᵢ + $P_vec * lenght_offset_amount],
-    @lift([$L_vec, -$L_vec]),
-    color = :red
-  )
+        local spring_pts_rk4 = @lift(spring_points($Uᵢ_rk4, $Xᵢ_rk4))
+        local curr_len_rk4 = @lift(LinearAlgebra.norm($Xᵢ_rk4 - $Uᵢ_rk4))
 
 
-  lenght_text_label_pos = @lift(($Uᵢ + $Xᵢ)/2 + ($P_vec * (lenght_offset_amount + 0.2f0)))
-  lenght_text_label_rotation_angle = @lift(atan($L_vec[2], $L_vec[1]))
+        local R = max(maximum(norm, pendulum_positions_euler),
+                      maximum(norm, pendulum_positions_rk4))
 
-  lenght_text_label = textlabel!(main_axis,
-    lenght_text_label_pos,
-    text = @lift("L = $(round($L, digits=4))"),
-    text_rotation = lenght_text_label_rotation_angle,
-    fontsize = 14,
-    alpha = 0.0,
-    text_color = :red
-  )
+        local spring_color_euler = @lift(stress_color($curr_len_euler, l₀))
+        local spring_color_rk4 = @lift(stress_color($curr_len_rk4, l₀))
 
-  time_label = Label(f[1,1],
-    @lift("Time: $(round($t₀ + $h * ($i - 1), digits=2)) s"),
-    halign = :left,
-    valign = :top,
-    padding = (10,10,10,10),
-    fontsize = 25,
-    color = :black,
-    tellwidth = false,
-    tellheight = false
-  )
+        local f = Figure(size = (1000,700))
+        local main_axis = Axis(f[1,1], title = "Inverted Pendulum Simulation", xlabel = "X", ylabel = "Y")
+        xlims!(main_axis, -R - 2, R + 2)
+        ylims!(main_axis, -R - 2, R + 2)
+        hidespines!(main_axis)
+        hlines!(main_axis, [0.0], color = (:black, 0.4))
 
-  meta_data_label = Label(f[1,1],
-    @lift("N = $($choosen_N)\nα = $($choosen_α)\nMethod = $($choosen_method)\nx₀ = [$(round(wanted_x₀[1], digits = 2)), $(round(wanted_x₀[2], digits = 2))]\nl₀ = $(round(wanted_l₀, digits = 2))\na = [$(round(wanted_a[1], digits = 2)), $(round(wanted_a[2], digits = 2))]"),
-    halign = :right,
-    valign = :top,
-    padding = (10,10,10,10),
-    fontsize = 12,
-    color = :firebrick,
-    tellwidth = false,
-    tellheight = false,
-    lineheight = 1.2
-  )
 
-  pivot_position_label = textlabel!(main_axis,
-    @lift($Uᵢ + Point2f(0,  $Xᵢ[2] < 0 ? 0.5 : -0.5)),
-    text = @lift("($(round($Uᵢ[1], digits=2)), $(round($Uᵢ[2], digits=2)))"),
-  )
 
-  pendulum_positions_label = textlabel!(main_axis,
-    @lift($Xᵢ + Point2f(0.7, 0)),
-    text = @lift("($(round($Xᵢ[1], digits=2)), $(round($Xᵢ[2], digits=2)))"),
-  )
+        # draw pendulum spring
+        lines!(main_axis, spring_pts_euler, color = spring_color_euler, linewidth = 3)
+        lines!(main_axis, spring_pts_rk4, color = spring_color_rk4, linewidth = 3)
+        # draw pendulum bob
+        scatter!(main_axis, @lift([$Xᵢ_euler]), markersize = 20, color = :blue)
+        scatter!(main_axis, @lift([$Xᵢ_rk4]), markersize = 20, color = :orange)
 
-  framerate = max(choosen_N[]/(T[] - t₀[]), 1)          # fps you want
-  simulation_file_name = "old_cost_pendulumx0=$(round_vector(wanted_x₀))l0=$(round(wanted_l₀, digits=2))N=$(choosen_N[])α=$(choosen_α[])method=$(choosen_method[]).mp4"
-  record(f, "Simulations/$simulation_file_name", 1:choosen_N[]; framerate = framerate) do frame
-      i[] = frame
-      nothing  # block must return nothing
+        # draw pivot
+        scatter!(main_axis, @lift([$Uᵢ_euler]), markersize = 20, color = :gray, marker = :circle)
+        scatter!(main_axis, @lift([$Uᵢ_euler]), markersize = 10, color = :white, marker = :xcross)
+        scatter!(main_axis, @lift([$Uᵢ_rk4]), markersize = 20, color = :gray, marker = :circle)
+        scatter!(main_axis, @lift([$Uᵢ_rk4]), markersize = 10, color = :white, marker = :xcross)
+
+        # draw target position
+        scatter!(main_axis, Point2f(x_d...), markersize = 10, color = :red, marker = :xcross)
+
+        ## Stress colorbar
+        #Colorbar(
+          #f[1, 2],
+          #colormap = ColorSchemes.plasma,
+          #limits = (0, 0.5),  # your max_stretch value
+          #label = "|ℓ - l₀| / l₀"
+        #)
+
+        # Draw lenght of spring arrow
+        local L_euler = @lift(norm($Xᵢ_euler - $Uᵢ_euler))
+        local L_vec_euler = @lift(($Xᵢ_euler - $Uᵢ_euler))
+        local P_vec_euler = @lift(flip_up(Point2f(-$L_vec_euler[2], $L_vec_euler[1]) / norm($L_vec_euler)))
+        local lenght_offset_amount = 0.05f0 * R
+
+        arrows2d!(main_axis,
+          @lift[$Uᵢ_euler + $P_vec_euler * lenght_offset_amount, $Xᵢ_euler + $P_vec_euler * lenght_offset_amount],
+          @lift([$L_vec_euler, -$L_vec_euler]),
+          color = :red
+        )
+
+        local L_rk4 = @lift(norm($Xᵢ_rk4 - $Uᵢ_rk4))
+        local L_vec_rk4 = @lift(($Xᵢ_rk4 - $Uᵢ_rk4))
+        local P_vec_rk4 = @lift(flip_up(Point2f(-$L_vec_rk4[2], $L_vec_rk4[1]) / norm($L_vec_rk4)))
+
+        arrows2d!(main_axis,
+          @lift[$Uᵢ_rk4 + $P_vec_rk4 * lenght_offset_amount, $Xᵢ_rk4 + $P_vec_rk4 * lenght_offset_amount],
+          @lift([$L_vec_rk4, -$L_vec_rk4]),
+          color = :red
+        )
+
+        local lenght_text_label_pos_euler = @lift(($Uᵢ_euler + $Xᵢ_euler)/2 + ($P_vec_euler * 2 * lenght_offset_amount))
+        local lenght_text_label_rotation_angle = @lift(atan($L_vec_euler[2], $L_vec_euler[1]))
+
+        local lenght_text_label_euler = textlabel!(main_axis,
+          lenght_text_label_pos_euler,
+          text = @lift("L = $(round($L_euler, digits=4))"),
+          text_rotation = lenght_text_label_rotation_angle,
+          fontsize = 14,
+          alpha = 0.0,
+          text_color = :red
+        )
+
+        local lenght_text_label_pos_rk4 = @lift(($Uᵢ_rk4 + $Xᵢ_rk4)/2 + ($P_vec_rk4 * 2 * lenght_offset_amount))
+        local lenght_text_label_rotation_angle = @lift(atan($L_vec_rk4[2], $L_vec_rk4[1]))
+
+        local lenght_text_label_rk4 = textlabel!(main_axis,
+          lenght_text_label_pos_rk4,
+          text = @lift("L = $(round($L_rk4, digits=4))"),
+          text_rotation = lenght_text_label_rotation_angle,
+          fontsize = 14,
+          alpha = 0.0,
+          text_color = :red
+        )
+
+
+        local time_label = Label(f[1,1],
+          @lift("Time: $(round(t₀ + h * ($i - 1), digits=2)) s"),
+          halign = :left,
+          valign = :top,
+          padding = (10,10,10,10),
+          fontsize = 25,
+          color = :black,
+          tellwidth = false,
+          tellheight = false
+        )
+
+        
+        local meta_data_label = Label(f[1,1],
+          "N = $(N)\nα = $(α)\nx₀ = $(round_vector(x₀))\nl₀ = $(round(l₀, digits=2))\na = $(round_vector(a))\n|Hᵤ| = $(round(row[:fb_g_norm], digits=4)) (FB), $(round(row[:rk4_g_norm], digits=4)) (RK4)",
+          halign = :right,
+          valign = :top,
+          padding = (10,10,10,10),
+          fontsize = 12,
+          color = :firebrick,
+          tellwidth = false,
+          tellheight = false,
+          lineheight = 1.2
+        )
+
+        local pivot_position_label_euler = textlabel!(main_axis,
+          @lift($Uᵢ_euler + Point2f(lenght_offset_amount,  $Xᵢ_euler[2] < 0 ? 0.5 : -0.5)),
+          text = @lift("Euler ($(round($Uᵢ_euler[1], digits=2)), $(round($Uᵢ_euler[2], digits=2)))"),
+          text_align = (:left, :center),
+        )
+        local pivot_position_label_rk4 = textlabel!(main_axis,
+          @lift($Uᵢ_rk4 + Point2f(lenght_offset_amount,  $Xᵢ_rk4[2] < 0 ? 0.5 : -0.5)),
+          text = @lift("RK4 ($(round($Uᵢ_rk4[1], digits=2)), $(round($Uᵢ_rk4[2], digits=2)))"),
+          text_align = (:right, :center),
+        )
+
+        local pendulum_positions_label_euler = textlabel!(main_axis,
+          @lift($Xᵢ_euler + Point2f(lenght_offset_amount, 0)),
+          text = @lift("Euler ($(round($Xᵢ_euler[1], digits=2)), $(round($Xᵢ_euler[2], digits=2)))"),
+          text_align = (:left, :center),
+        )
+
+        local pendulum_positions_label_rk4 = textlabel!(main_axis,
+          @lift($Xᵢ_rk4 - Point2f(lenght_offset_amount, 0)),
+          text = @lift("RK4 ($(round($Xᵢ_rk4[1], digits=2)), $(round($Xᵢ_rk4[2], digits=2)))"),
+          text_align = (:right, :center),
+        )
+
+        target_fps = 60.0
+        duration   = T - t₀
+        frames_to_render = max(1, round(Int, target_fps * duration))
+        step             = max(1, N ÷ frames_to_render)
+        frame_indices    = 1:step:N
+
+        simulation_file_name = joinpath(forward_backward_simulation_folder, "simulation_forward_backward_N=$(N),x0=$(round_vector(x₀)),x_d=$(round_vector(x_d)),l0=$(round(l₀, digits=2)),α=$(α).mp4")
+        record(f, simulation_file_name, frame_indices; framerate = target_fps) do frame
+            i[] = frame
+            nothing  # block must return nothing
+        end
+        
+        lock(plock) do
+          Progress.update!(row_job)
+          Progress.render(pbar)
+        end
+
+        display_results && open_with_default(simulation_file_name)
+
+
+      end
+
+      Progress.update!(file_job); Progress.render(pbar)
   end
-
-  println("Saved Simulations/$simulation_file_name")
 end
