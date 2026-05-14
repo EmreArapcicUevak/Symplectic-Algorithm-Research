@@ -1,9 +1,9 @@
 module Settings 
-    include("Systems.jl")
-    using DotEnv
+    const PROJECT_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
+    import Pkg ; Pkg.activate(PROJECT_ROOT) ; Pkg.instantiate()
+    using DotEnv ; DotEnv.load!() 
 
-    DotEnv.load!() 
-
+    include("Systems.jl") 
     const name_to_func = Dict(
         "SE1" => Systems.SE1,
         "SE2" => Systems.SE2,
@@ -13,7 +13,17 @@ module Settings
         "Modified MidPoint" => Systems.Modified_MidPoint,
     )
 
+
     const BATCH_SAVE_SIZE = parse(Int, get(ENV, "BATCH_SAVE_SIZE", "5"))
     const NTFY_TOPIC = get(ENV, "NTFY_TOPIC", nothing)
     const HTTP_URL = get(ENV, "HTTP_URL", nothing)
+
+    const RESULTS_FOLDER = joinpath(PROJECT_ROOT, "Results")
+    const COMPUTATION_RESULTS_FOLDER = joinpath(RESULTS_FOLDER, "Computation_Results/")
+    const FIGURE_RESULTS_FOLDER = joinpath(RESULTS_FOLDER, "Figure_Results/")
+    const SIMULATIONS_FOLDER = joinpath(RESULTS_FOLDER, "Simulations/")
+    
+    mkpath(COMPUTATION_RESULTS_FOLDER)
+    mkpath(FIGURE_RESULTS_FOLDER)
+    mkpath(SIMULATIONS_FOLDER)
 end
