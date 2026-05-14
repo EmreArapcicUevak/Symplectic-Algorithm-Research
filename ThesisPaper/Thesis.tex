@@ -1,160 +1,209 @@
 \documentclass[a4paper, 10pt]{article}
 
-\usepackage[margin = 1in]{geometry} % for spacing around
-\usepackage{tabularx}
-\usepackage{graphicx} % for including images in your pdfs
-\usepackage{xcolor} % for including colors in your pdf
-\usepackage{soul} % for text decoration
-\usepackage[utf8]{inputenc} % for encoded text
+% --- Layout ---------------------------------------------------------------
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{placeins}   % \FloatBarrier at every \subsection
+\usepackage{float}
+\usepackage{fancyhdr}
+
+% --- Encoding & fonts -----------------------------------------------------
+\usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage{setspace} % for setting different line spacings between paragrafs.
+
+% --- Math -----------------------------------------------------------------
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{mathtools}
 \usepackage{bm}
-\usepackage{enumerate} % for letting us get more detailed enumerate lists
-\usepackage{multirow} % to let us combine more rows together
-\usepackage{colortbl} % for decorating tables
-\usepackage{supertabular}
-\usepackage{longtable} % both of these packages are used to making really big tables
-\usepackage{wrapfig} % allows us to wrap text around figures
-\usepackage{fancyhdr} % for making fancy headers
-%\usepackage{bibtex} % for making better bibliographies
-\usepackage[pdftex]{hyperref} % for letting us make links
-\usepackage{lscape} % Allows us to flip from portrait to landspace
-\usepackage{tikz} % for high detailed drawing
-\usepackage{multicol} % To put things side by side
-\usepackage{rotating} % For rotating objects
-% \usepackage{draftwatermark} % For adding watermarks
-\usepackage{MnSymbol} % for using multiple symbols
-\usepackage{xfrac} % For more complciated fractions and to add derivitives
-\usepackage{enumitem} % for better enum lists
-\usepackage{tcolorbox} % for adding colored text boxes
-\usepackage{pgfplots} % Used for plotting functions
-\usepackage{pgfplotstable} % Used for plotting tables
-\usepackage{booktabs} % for nicer tables
-\usepackage[toc,page]{appendix} % for adding appendices
+
+% --- Tables ---------------------------------------------------------------
 \usepackage{array}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{colortbl}
+
+% --- Figures --------------------------------------------------------------
+\usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
-\usepackage{minted}
-\usepackage{listings}
-\usepackage{media9}
-\usepackage{qrcode}
-\usepackage{float}
-\usepackage{amsopn}
-\usepackage{amstext}
+\usepackage{xcolor}
+\definecolor{invalidRow}{rgb}{1.0,0.85,0.85}
 
-\usepackage[subsection]{placeins}   % barrier at \subsection too
+% --- Lists / boxes --------------------------------------------------------
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+
+% --- Hyperlinks (load last among the user-facing packages) ---------------
+\usepackage[hidelinks]{hyperref}
+
+% --- Macros / parameter handling -----------------------------------------
 \usepackage{pgfkeys}
-%%%%%%%%%%%%%%%%%%%%5
 
+%--------------------------------------------------------------------------
+% Macros
+%--------------------------------------------------------------------------
+\newcommand{\vect}[1]{\mathbf{#1}}
+\newcommand{\vecx}[2]{\begin{bmatrix}#1\\#2\end{bmatrix}}
+\newcommand{\fbplot}[5]{%
+  \detokenize{Images/}#1\detokenize{_N=}#2\detokenize{,x₀=[}#3\detokenize{, }#4%
+  \detokenize{],x_d=[0.0, 10.0],m=1.0,k=1.0,α=}#5\detokenize{,l₀=9.0}%
+}
+\definecolor{invalidRow}{rgb}{1.0,0.85,0.85}
 
-%\graphicspath{./Images/}
-\newcommand{\vect}[1]{\mathbf{#1}}   % or \boldsymbol{#1}
+% Convenience macros for the four scheme names — keeps notation consistent.
+\newcommand{\SEoo}{SE1_1}
+\newcommand{\SEot}{SE1_2}
+\newcommand{\SEto}{SE2_1}
+\newcommand{\SEtt}{SE2_2}
 
 \pgfkeys{
   /algoAnalysis/.is family, /algoAnalysis,
-	method/.initial=,
-	k/.initial=1.0,
-	h/.initial=10.0,
-	N/.initial=100,
-	m/.initial=1.0,
-	xA/.initial=,
-	xB/.initial=,
-	xC/.initial=,
-}
-\newcommand{\vecx}[2]{\begin{bmatrix}#1\\#2\end{bmatrix}}
-
-\newcommand{\plotAnalysis}[6]{
-	\edef\AlgoName{#1}
-	\edef\kval{#2}
-	\edef\hval{#3}
-	\edef\Nval{#4}
-	\edef\mval{#5}
-	\edef\x{#6}
-
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\x}
-			\caption{Modified \AlgoName}
-		\end{subfigure}
-
-		\vspace{0.5cm}
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\x}
-			\caption{\AlgoName}
-		\end{subfigure}
-
-		\caption{Control trajectories for $\mathbf{x_0}=(\x)$ with
-		$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	\end{figure}
-
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\textwidth]{../Images/Projection_Comparison_PyPlots/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\x}
-		\caption{Trajectory comparison for $\mathbf{x_0}=(\x)$ with
-		$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-	\end{figure}
+    method/.initial=,
+    k/.initial=1.0,
+    h/.initial=10.0,
+    N/.initial=100,
+    m/.initial=1.0,
+    xA/.initial=,
+    xB/.initial=,
+    xC/.initial=,
 }
 
-\newcommand{\algoAnalysis}[1][]{
-	\pgfkeys{/algoAnalysis, xA=,xB=,xC=,#1}
+\newcommand{\plotAnalysis}[6]{%
+    \edef\AlgoName{#1}%
+    \edef\kval{#2}%
+    \edef\hval{#3}%
+    \edef\Nval{#4}%
+    \edef\mval{#5}%
+    \edef\x{#6}%
+    \begin{figure}[H]
+       \centering
+       \begin{subfigure}{\textwidth}
+          \centering
+          \includegraphics[width=\textwidth]{Images/ControlPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\x}
+          \caption{Modified \AlgoName}
+       \end{subfigure}
+       \vspace{0.5cm}
+       \begin{subfigure}{\textwidth}
+          \centering
+          \includegraphics[width=\textwidth]{Images/ControlPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\x}
+          \caption{\AlgoName}
+       \end{subfigure}
+       \caption{Control trajectories for $\mathbf{x_0}=(\x)$ with
+       $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+    \end{figure}
 
-	\edef\AlgoName{\pgfkeysvalueof{/algoAnalysis/method}}
-	\edef\kval{\pgfkeysvalueof{/algoAnalysis/k}}
-	\edef\hval{\pgfkeysvalueof{/algoAnalysis/h}}
-	\edef\Nval{\pgfkeysvalueof{/algoAnalysis/N}}
-	\edef\mval{\pgfkeysvalueof{/algoAnalysis/m}}
-	\edef\xA{\pgfkeysvalueof{/algoAnalysis/xA}}
-	\edef\xB{\pgfkeysvalueof{/algoAnalysis/xB}}
-	\edef\xC{\pgfkeysvalueof{/algoAnalysis/xC}}
-
-	\begin{figure}[H]
-		\centering
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-		\end{subfigure}
-
-		\medskip
-
-		\begin{subfigure}{\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
-		\end{subfigure}
-
-		\caption{Iteration plots for \AlgoName and its modified variant with
-		$k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
-		\label{fig:\AlgoName_iter_compare}
-	\end{figure}
-
-
-	\ifx\xA\empty
-	\else
-		\plotAnalysis{\AlgoName}{\kval}{\hval}{\Nval}{\mval}{\xA}
-	\fi
-
-
-	\ifx\xB\empty
-	\else
-		\plotAnalysis{\AlgoName}{\kval}{\hval}{\Nval}{\mval}{\xB}
-	\fi
-
-	\ifx\xC\empty
-	\else
-		\plotAnalysis{\AlgoName}{\kval}{\hval}{\Nval}{\mval}{\xC}
-	\fi
+    \begin{figure}[H]
+       \centering
+       \includegraphics[width=\textwidth]{Images/Projection_Comparison_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval_x0=\x}
+       \caption{Trajectory comparison for $\mathbf{x_0}=(\x)$ with
+       $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+    \end{figure}
 }
 
+\newcommand{\algoAnalysis}[1][]{%
+    \pgfkeys{/algoAnalysis, xA=,xB=,xC=,#1}%
+    \edef\AlgoName{\pgfkeysvalueof{/algoAnalysis/method}}%
+    \edef\kval{\pgfkeysvalueof{/algoAnalysis/k}}%
+    \edef\hval{\pgfkeysvalueof{/algoAnalysis/h}}%
+    \edef\Nval{\pgfkeysvalueof{/algoAnalysis/N}}%
+    \edef\mval{\pgfkeysvalueof{/algoAnalysis/m}}%
+    \edef\xA{\pgfkeysvalueof{/algoAnalysis/xA}}%
+    \edef\xB{\pgfkeysvalueof{/algoAnalysis/xB}}%
+    \edef\xC{\pgfkeysvalueof{/algoAnalysis/xC}}%
 
+    \begin{figure}[H]
+       \centering
+       \begin{subfigure}{\textwidth}
+          \centering
+          \includegraphics[width=\textwidth]{Images/IterationPlot_Modified \AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
+       \end{subfigure}
+       \medskip
+       \begin{subfigure}{\textwidth}
+          \centering
+          \includegraphics[width=\textwidth]{Images/IterationPlot_\AlgoName_k=\kval_h=\hval_N=\Nval_m=\mval}
+       \end{subfigure}
+       \caption{Iteration plots for \AlgoName{} and its modified variant with
+       $k=\kval$, $h=\hval$, $N=\Nval$, $m=\mval$.}
+       % Make the label unique per parameter set to avoid duplicate labels
+       % when \algoAnalysis is invoked several times for the same method.
+       \label{fig:\AlgoName-iter-k\kval-h\hval-N\Nval}
+    \end{figure}
 
+    \ifx\xA\empty\else
+       \plotAnalysis{\AlgoName}{\kval}{\hval}{\Nval}{\mval}{\xA}
+    \fi
+    \ifx\xB\empty\else
+       \plotAnalysis{\AlgoName}{\kval}{\hval}{\Nval}{\mval}{\xB}
+    \fi
+    \ifx\xC\empty\else
+       \plotAnalysis{\AlgoName}{\kval}{\hval}{\Nval}{\mval}{\xC}
+    \fi
+}
+
+% --- 4-panel grid for one quantity at fixed (α, x₀) over four Δt values --
+% Args: #1 = α, #2 = x01, #3 = x02
+\newcommand{\HsweepFig}[3]{%
+  \begin{figure}[!htbp]
+    \centering
+    \begin{subfigure}{0.49\textwidth}\centering
+      \includegraphics[width=\textwidth]{\fbplot{hamiltonian\_plot}{100}{#2}{#3}{#1}}
+      \caption{$\Delta t = 0.1$}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.49\textwidth}\centering
+      \includegraphics[width=\textwidth]{\fbplot{hamiltonian\_plot}{200}{#2}{#3}{#1}}
+      \caption{$\Delta t = 0.05$}
+    \end{subfigure}
+
+    \medskip
+    \begin{subfigure}{0.49\textwidth}\centering
+      \includegraphics[width=\textwidth]{\fbplot{hamiltonian\_plot}{400}{#2}{#3}{#1}}
+      \caption{$\Delta t = 0.025$}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.49\textwidth}\centering
+      \includegraphics[width=\textwidth]{\fbplot{hamiltonian\_plot}{800}{#2}{#3}{#1}}
+      \caption{$\Delta t = 0.0125$}
+    \end{subfigure}
+    \caption{Hamiltonian profile for $\alpha = #1$,
+      $\mathbf{x_0} = (#2,\,#3)^{T}$, as the time step is refined.
+      $H_i$ flattens with smaller $\Delta t$, in agreement with its
+      first-integral character along the optimal trajectory.}
+    \label{fig:fb-H-a#1-x#2-#3}
+  \end{figure}
+}
+
+\newcommand{\UsweepFig}[3]{%
+  \begin{figure}[!htbp]
+    \centering
+    \begin{subfigure}{0.49\textwidth}\centering
+      \includegraphics[width=\textwidth]{\fbplot{control\_plot}{100}{#2}{#3}{#1}}
+      \caption{$\Delta t = 0.1$}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.49\textwidth}\centering
+      \includegraphics[width=\textwidth]{\fbplot{control\_plot}{200}{#2}{#3}{#1}}
+      \caption{$\Delta t = 0.05$}
+    \end{subfigure}
+
+    \medskip
+    \begin{subfigure}{0.49\textwidth}\centering
+      \includegraphics[width=\textwidth]{\fbplot{control\_plot}{400}{#2}{#3}{#1}}
+      \caption{$\Delta t = 0.025$}
+    \end{subfigure}\hfill
+    \begin{subfigure}{0.49\textwidth}\centering
+      \includegraphics[width=\textwidth]{\fbplot{control\_plot}{800}{#2}{#3}{#1}}
+      \caption{$\Delta t = 0.0125$}
+    \end{subfigure}
+    \caption{Control $u_i$ for $\alpha = #1$,
+      $\mathbf{x_0} = (#2,\,#3)^{T}$, as the time step is refined.
+      Boundary-layer transients sharpen and the bulk profile stabilises
+      with smaller $\Delta t$.}
+    \label{fig:fb-u-a#1-x#2-#3}
+  \end{figure}
+}
+
+%==========================================================================
 \begin{document}
 
 \section{Introduction}
@@ -162,696 +211,679 @@ In this study, we numerically address an optimal control problem employing the H
 
 Consider the following optimal control problem:
 \begin{equation}
-	\begin{aligned}
-		\min \quad & J(v,u) = \int_{0}^{T} \left( \frac{v^2}{2} + \frac{\alpha}{2}u^2 \right) dt, \\
-		 & \dot{v} = g + \frac{u}{m} - \frac{k}{m}v, \\
-		& v(0) = v_{0}.
-	\end{aligned}
-	\label{eq:optimal_problem}
+    \begin{aligned}
+       \min \quad & J(v,u) = \int_{0}^{T} \left( \frac{v^2}{2} + \frac{\alpha}{2}u^2 \right) dt, \\
+        & \dot{v} = g + \frac{u}{m} - \frac{k}{m}v, \\
+       & v(0) = v_{0}.
+    \end{aligned}
+    \label{eq:optimal_problem}
 \end{equation}
- The Hamiltonian, defined as
+The Hamiltonian, defined as
 \[
 \mathcal{H}(v,u,\lambda)  = \frac{v^2}{2} + \frac{\alpha}{2}u^2 + \lambda \left( g + \frac{u}{m} - \frac{k}{m}v \right),
 \]
-   is utilized to write the necessary optimality  conditions for the above optimal control problem  as follows:
+is utilized to write the necessary optimality conditions for the above optimal control problem as follows:
 \begin{equation}
-	\begin{aligned}
-		& \dot{v} = \frac{\partial \mathcal{H}}{\partial \lambda} (v,u,\lambda) =  g + \frac{u}{m} - \frac{k}{m}v, \\ &
-		\dot{\lambda} = - \frac{\partial \mathcal{H}}{\partial v} (v,u,\lambda) = -v + \frac{k}{m} \lambda, \\ &
-		0 =  \frac{\partial \mathcal{H}}{\partial u} (v,u,\lambda) = \alpha u + \frac{k}{m}\lambda \\ &
-		v(0) = v_{0}, \; \lambda(T) = 0.
-		\label{eq:necessary_coditions}
-	\end{aligned}
+    \begin{aligned}
+       & \dot{v} = \frac{\partial \mathcal{H}}{\partial \lambda} (v,u,\lambda) =  g + \frac{u}{m} - \frac{k}{m}v, \\
+       & \dot{\lambda} = - \frac{\partial \mathcal{H}}{\partial v} (v,u,\lambda) = -v + \frac{k}{m} \lambda, \\
+       & 0 =  \frac{\partial \mathcal{H}}{\partial u} (v,u,\lambda) = \alpha u + \frac{k}{m}\lambda, \\
+       & v(0) = v_{0}, \; \lambda(T) = 0.
+    \end{aligned}
+    \label{eq:necessary_coditions}
 \end{equation}
-To solve the resulting system of equations, we apply four numerical techniques, specifically the $SE1_1, SE1_2, SE2_1$ and $SE2_2$  methods. Each method begins with three initial points $\mathbf{z}_1 = (v_1(0),\lambda_1(0)), \mathbf{z}_2 =(v_2(0),\lambda_2(0))$ and $\mathbf{z}_3 = (v_3(0),\lambda_3(0))$, which form a triangle in the phase space. The area of this triangle is computed at the initial time $t = 0$, and the methods are applied, respectively, to determine the area of the triangle at the final time $t = T$. So, it allows us to identify which method effectively preserves the geometric properties of the triangle, particularly its area. 
+To solve the resulting system of equations, we apply four numerical techniques, specifically the $\SEoo$, $\SEot$, $\SEto$ and $\SEtt$ methods. Each method begins with three initial points $\mathbf{z}_1 = (v_1(0),\lambda_1(0))$, $\mathbf{z}_2 =(v_2(0),\lambda_2(0))$ and $\mathbf{z}_3 = (v_3(0),\lambda_3(0))$, which form a triangle in the phase space. The area of this triangle is computed at the initial time $t = 0$, and the methods are applied, respectively, to determine the area of the triangle at the final time $t = T$. So, it allows us to identify which method effectively preserves the geometric properties of the triangle, particularly its area.
 
-Preserving the triangle's area is important in this context, as it serves as a test for identifying symplectic algorithms. Symplectic algorithms are numerical methods designed to preserve the symplectic structure of Hamiltonian systems, which is directly related to the conservation of geometric properties like area in phase space. 
+Preserving the triangle's area is important in this context, as it serves as a test for identifying symplectic algorithms. Symplectic algorithms are numerical methods designed to preserve the symplectic structure of Hamiltonian systems, which is directly related to the conservation of geometric properties like area in phase space.
 
-By applying the $SE1_1, SE1_2, SE2_1$ and $SE2_2$ methods to   \eqref{eq:necessary_coditions}, respectively,  the resulting  equations  are as follows: 
+By applying the $\SEoo$, $\SEot$, $\SEto$ and $\SEtt$ methods to \eqref{eq:necessary_coditions}, respectively, the resulting equations are as follows:
 \begin{equation}
-	\begin{aligned}
-		& SE1_1 = \begin{cases}
-			\frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n+1},u_{n},\lambda_{n}) \\
-			\frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v}  (v_{n+1},u_{n},\lambda_{n}) \\ 
-			0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\ 
-			v(0) = v_0,\; \lambda(0) = \lambda_0. 
-		\end{cases} \\ &
-		SE1_2 =  \begin{cases}
-			  \frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n+1},u_{n+1},\lambda_{n}) \\
-			  \frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v} (v_{n+1},u_{n+1},\lambda_{n})  \\ 
-			  	0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\ 
-			  v(0) = v_0,\; \lambda(0) = \lambda_0. 
-		       	\end{cases} \\ &
-		       	SE2_1 = \begin{cases}
-		       		\frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n},u_{n+1},\lambda_{n+1}) \\
-		       		\frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v} (v_{n},u_{n+1},\lambda_{n+1}) \\ 
-		       			0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\ 
-		       		v(0) = v_0,\; \lambda(0) = \lambda_0. 
-		       	\end{cases} \\&
-		       	SE2_2 = \begin{cases}
-		       			\frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n},u_{n},\lambda_{n+1}) \\
-		       		\frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v} (v_{n},u_{n},\lambda_{n+1}) \\ 
-		       			0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\ 
-		       		v(0) = v_0,\; \lambda(0) = \lambda_0. 
-		       	\end{cases}
-	\end{aligned}
-	\label{eq:equation3}
+    \begin{aligned}
+       & \SEoo = \begin{cases}
+          \frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n+1},u_{n},\lambda_{n}) \\
+          \frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v}  (v_{n+1},u_{n},\lambda_{n}) \\
+          0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\
+          v(0) = v_0,\; \lambda(0) = \lambda_0.
+       \end{cases} \\
+       & \SEot =  \begin{cases}
+            \frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n+1},u_{n+1},\lambda_{n}) \\
+            \frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v} (v_{n+1},u_{n+1},\lambda_{n})  \\
+            0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\
+            v(0) = v_0,\; \lambda(0) = \lambda_0.
+       \end{cases} \\
+       & \SEto = \begin{cases}
+          \frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n},u_{n+1},\lambda_{n+1}) \\
+          \frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v} (v_{n},u_{n+1},\lambda_{n+1}) \\
+          0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\
+          v(0) = v_0,\; \lambda(0) = \lambda_0.
+       \end{cases} \\
+       & \SEtt = \begin{cases}
+          \frac{\Delta v}{\Delta t} = \frac{v_{n+1} - v_{n}}{\Delta t}= \frac{\partial \mathcal{H}}{\partial \lambda} (v_{n},u_{n},\lambda_{n+1}) \\
+          \frac{\Delta \lambda}{\Delta t} =\frac{\lambda_{n+1} - \lambda_{n}}{\Delta t} =  - \frac{\partial \mathcal{H}}{\partial v} (v_{n},u_{n},\lambda_{n+1}) \\
+          0 =  \frac{\partial \mathcal{H}}{\partial u} (v_n,u_n,\lambda_n) = \alpha u_n + \frac{k}{m}\lambda_n \\
+          v(0) = v_0,\; \lambda(0) = \lambda_0.
+       \end{cases}
+    \end{aligned}
+    \label{eq:equation3}
 \end{equation}
-Before presenting numerical results, we first demonstrate that the numerical methods $SE1_1$ and $SE2_2$ are symplectic integrators, which means that they exactly preserve the symplectic condition. In contrast, $SE1_2$ and $SE2_2$ are not symplectic integrators.
+Before presenting numerical results, we first demonstrate that the numerical methods $\SEoo$ and $\SEto$ are symplectic integrators, which means that they exactly preserve the symplectic condition. In contrast, $\SEot$ and $\SEtt$ are not symplectic integrators.
 
-$\mathbf{SE1_1:}$
+$\bm{\SEoo:}$
 \begin{align}
-&	v_{n+1} = v_{v} +\Delta{t} g + \frac{\Delta t}{m} u_{n} - \frac{k\Delta t}{m}v_{n+1} \Rightarrow 
+&   v_{n+1} = v_{n} +\Delta{t} g + \frac{\Delta t}{m} u_{n} - \frac{k\Delta t}{m}v_{n+1} \Rightarrow
 \frac{m+ k \Delta t}{m} v_{n+1} = v_{n} + \Delta{t}g +  \frac{\Delta t}{m} u_{n} \Rightarrow  \nonumber \\ &
 \boxed{v_{n+1} = \frac{m}{m + k\Delta{t}} v_{n}  + \frac{m\Delta{t}}{m + k\Delta{t}}g + \frac{-k\Delta{t}}{m\alpha (m+k\Delta{t})} \lambda_{n}.}  \label{eq:boxed1}\\ &
-\lambda_{n+1} = \lambda_{n} - \Delta{t}v_{n+1} + \frac{k\Delta{t}}{m}\lambda_{n} \Rightarrow  
+\lambda_{n+1} = \lambda_{n} - \Delta{t}v_{n+1} + \frac{k\Delta{t}}{m}\lambda_{n} \Rightarrow
 \boxed{\lambda_{n+1} =\frac{m+k\Delta{t}}{m}\lambda_{n} - \Delta{t} v_{n+1}.} \label{eq:boxed2}
 \end{align}
-Taking differentials of both sides of equations \eqref{eq:boxed1} and \eqref{eq:boxed2} and using the linearity of wedge product,  we have
+Taking differentials of both sides of equations \eqref{eq:boxed1} and \eqref{eq:boxed2} and using the linearity of the wedge product, we have
 \begin{align*}
-&	dv_{n+1} = \frac{m}{m + k\Delta{t}} dv_{n} + \frac{-k\Delta{t}}{m\alpha (m+k\Delta{t})} d\lambda_{n}, \\ &
-d\lambda_{n+1} =\frac{m+k\Delta{t}}{m} d\lambda_{n} - \Delta{t} d v_{n+1}, \\ &
-d\lambda_{n+1} \wedge dv_{n+1} = \frac{m + k\Delta{t}}{m} d\lambda_{n} \wedge dv_{n+1} =  \frac{m+k\Delta{t}}{m} d\lambda_{n}  \wedge \left( 
- \frac{m}{m + k\Delta{t}} dv_{n} + \frac{-k\Delta{t}}{m\alpha (m+k\Delta{t})} d\lambda_{n} \right) \Rightarrow   \\ &
-\boxed{ d\lambda_{n+1} \wedge dv_{n+1} =  \frac{m+k\Delta{t}}{m} d\lambda_{n}  \wedge  \frac{m}{m + k\Delta{t}} dv_{n} 
+&   dv_{n+1} = \frac{m}{m + k\Delta{t}} dv_{n} + \frac{-k\Delta{t}}{m\alpha (m+k\Delta{t})} d\lambda_{n}, \\
+& d\lambda_{n+1} =\frac{m+k\Delta{t}}{m} d\lambda_{n} - \Delta{t} d v_{n+1}, \\
+& d\lambda_{n+1} \wedge dv_{n+1} = \frac{m + k\Delta{t}}{m} d\lambda_{n} \wedge dv_{n+1} =  \frac{m+k\Delta{t}}{m} d\lambda_{n}  \wedge \left(
+ \frac{m}{m + k\Delta{t}} dv_{n} + \frac{-k\Delta{t}}{m\alpha (m+k\Delta{t})} d\lambda_{n} \right) \Rightarrow   \\
+& \boxed{ d\lambda_{n+1} \wedge dv_{n+1} =  \frac{m+k\Delta{t}}{m} d\lambda_{n}  \wedge  \frac{m}{m + k\Delta{t}} dv_{n}
  =  d\lambda_{n} \wedge dv_{n}}.
 \end{align*}
-$\mathbf{SE2_1}:$ 
+
+$\bm{\SEto:}$
 \begin{align}
-&	v_{n+1} = \frac{m-k\Delta{t}}{m} v_{n} + \Delta{t}g + \frac{\Delta{t}}{m} u_{n+1} \Rightarrow \nonumber \\ &
-	\boxed{v_{n+1} = \frac{m-k\Delta{t}}{m} v_{n}  + \Delta{t}g + \frac{-k\Delta{t}}{m^2\alpha} \lambda_{n+1}.}  \label{eq:boxed3}\\ &
-	\boxed{\lambda_{n+1} = \frac{m}{m-\Delta{t}k}(-\Delta{t})v_{n} + \frac{m}{m-\Delta{t}k}\lambda_{n}.}  \label{eq:boxed4}
+&   v_{n+1} = \frac{m-k\Delta{t}}{m} v_{n} + \Delta{t}g + \frac{\Delta{t}}{m} u_{n+1} \Rightarrow \nonumber \\ &
+    \boxed{v_{n+1} = \frac{m-k\Delta{t}}{m} v_{n}  + \Delta{t}g + \frac{-k\Delta{t}}{m^2\alpha} \lambda_{n+1}.}  \label{eq:boxed3}\\ &
+    \boxed{\lambda_{n+1} = \frac{m}{m-\Delta{t}k}(-\Delta{t})v_{n} + \frac{m}{m-\Delta{t}k}\lambda_{n}.}  \label{eq:boxed4}
 \end{align}
-Similar to $SE1_1$, by taking differentials of both sides of equations \eqref{eq:boxed3} and \eqref{eq:boxed4} and using wedge product,  we have
+Similar to $\SEoo$, by taking differentials of both sides of equations \eqref{eq:boxed3} and \eqref{eq:boxed4} and using the wedge product, we have
 \begin{align*}
-& dv_{n+1} = \frac{m-k\Delta{t}}{m} dv_{n} + \frac{-k\Delta{t}}{m^2\alpha} d\lambda_{n+1},	 \\ &
-d\lambda_{n+1} = \frac{m}{m-\Delta{t}k}(-\Delta{t}) dv_{n} + \frac{m}{m-\Delta{t}k} d\lambda_{n}, \\ &
-\boxed{dv_{n+1} \wedge d\lambda_{n+1} = \frac{m-k\Delta{t}}{m} dv_{n} \wedge d\lambda_{n+1} = dv_{n} \wedge d\lambda_{n}.}
+& dv_{n+1} = \frac{m-k\Delta{t}}{m} dv_{n} + \frac{-k\Delta{t}}{m^2\alpha} d\lambda_{n+1}, \\
+& d\lambda_{n+1} = \frac{m}{m-\Delta{t}k}(-\Delta{t}) dv_{n} + \frac{m}{m-\Delta{t}k} d\lambda_{n}, \\
+& \boxed{dv_{n+1} \wedge d\lambda_{n+1} = \frac{m-k\Delta{t}}{m} dv_{n} \wedge d\lambda_{n+1} = dv_{n} \wedge d\lambda_{n}.}
 \end{align*}
 
-$\mathbf{SE1_2}:$
+$\bm{\SEot:}$
 \begin{align}
-&	v_{n+1} = \frac{m}{m + k\Delta{t}} v_{n} +  \frac{m}{m + k\Delta{t}}\Delta{t}g + \frac{\Delta{t}}{m + k\Delta{t}} u_{n+1} \Rightarrow  \nonumber \\ &
+&   v_{n+1} = \frac{m}{m + k\Delta{t}} v_{n} +  \frac{m}{m + k\Delta{t}}\Delta{t}g + \frac{\Delta{t}}{m + k\Delta{t}} u_{n+1} \Rightarrow  \nonumber \\ &
 \boxed{v_{n+1}  = \frac{m}{m + k\Delta{t}} v_{n} + \frac{m}{m + k\Delta{t}}\Delta{t}g + \frac{-k\Delta{t}}{m\alpha(m + k\Delta{t})} \lambda_{n+1}.} \label{eq:boxed5} \\ &
 \boxed{\lambda_{n+1} = \frac{m+k\Delta{t}}{m} \lambda_{n} + (-\Delta{t})v_{n+1}.} \label{eq:boxed6}
 \end{align}
-Now by taking  differentials of both sides of equations \eqref{eq:boxed5} and \eqref{eq:boxed6}, we have 
+Now by taking differentials of both sides of equations \eqref{eq:boxed5} and \eqref{eq:boxed6}, we have
 \begin{align}
-	&	dv_{n+1}  = \frac{m}{m + k\Delta{t}} dv_{n}  + \frac{-k\Delta{t}}{m\alpha(m + k\Delta{t})} d\lambda_{n+1} \label{eq:boxed7}, \\ &
-	d\lambda_{n+1} = \frac{m+k\Delta{t}}{m} d\lambda_{n} + (-\Delta{t}) dv_{n+1}. \label{eq:boxed8}
+    &  dv_{n+1}  = \frac{m}{m + k\Delta{t}} dv_{n}  + \frac{-k\Delta{t}}{m\alpha(m + k\Delta{t})} d\lambda_{n+1} \label{eq:boxed7}, \\
+    & d\lambda_{n+1} = \frac{m+k\Delta{t}}{m} d\lambda_{n} + (-\Delta{t}) dv_{n+1}. \label{eq:boxed8}
 \end{align}
-From equations \eqref{eq:boxed7} and \eqref{eq:boxed8}, $dv_{n+1}$ and $d\lambda_{n+1}$ can be expressed in terms of $dv_{n}$ and $d\lambda_{n}$ so we have:
+From equations \eqref{eq:boxed7} and \eqref{eq:boxed8}, $dv_{n+1}$ and $d\lambda_{n+1}$ can be expressed in terms of $dv_{n}$ and $d\lambda_{n}$, so we have:
 \begin{align}
-	&	dv_{n+1}  = \frac{m^2\alpha}{m\alpha(m + k\Delta{t})-k(\Delta{t})^2} dv_{n}  +  \frac{-k\Delta{t}(m+k\Delta{t})}{m^2\alpha(m+k\Delta{t})-km(\Delta{t})^2}d\lambda_{n} \label{eq_9} \\ &
-	d\lambda_{n+1} = \frac{\alpha(m+k\Delta{t})^2}{m\alpha(m+k\Delta{t})-k(\Delta{t})^2}d\lambda_{n} + \frac{-m^2\alpha\Delta{t}}{m\alpha(m+k\Delta{t})-k(\Delta{t})^2} dv_{n} \label{eq_10}
+    &  dv_{n+1}  = \frac{m^2\alpha}{m\alpha(m + k\Delta{t})-k(\Delta{t})^2} dv_{n}  +  \frac{-k\Delta{t}(m+k\Delta{t})}{m^2\alpha(m+k\Delta{t})-km(\Delta{t})^2}d\lambda_{n} \label{eq_9} \\
+    & d\lambda_{n+1} = \frac{\alpha(m+k\Delta{t})^2}{m\alpha(m+k\Delta{t})-k(\Delta{t})^2}d\lambda_{n} + \frac{-m^2\alpha\Delta{t}}{m\alpha(m+k\Delta{t})-k(\Delta{t})^2} dv_{n} \label{eq_10}
 \end{align}
-If we take the wedge product of \eqref{eq_9} with \eqref{eq_10},  we get 
+If we take the wedge product of \eqref{eq_9} with \eqref{eq_10}, we get
 \begin{align}
-	\boxed{dv_{n+1} \wedge d\lambda_{n+1} = \left(1 + \frac{k(\Delta{t})^2}{m\alpha(m+k\Delta{t})-k(\Delta{t})^2}\right) dv_{n} \wedge d\lambda_{n}. }
-\end{align}
-
-$\mathbf{SE2_2:}$
-\begin{align}
-  &	v_{n+1} = g\Delta{t} + (\frac{m-k\Delta{t}}{m}) v_{n} + (\frac{-k\Delta{t}}{m^2\alpha})\lambda_{n}, \label{eq:se2_2_11} \\ &
-  \lambda_{n+1} = (\frac{-m\Delta{t}}{m-k\Delta{t}})v_{n} + (\frac{m}{m-k\Delta{t}})\lambda_{n}  \label{eq:se2_2_12}.
+    \boxed{dv_{n+1} \wedge d\lambda_{n+1} = \left(1 + \frac{k(\Delta{t})^2}{m\alpha(m+k\Delta{t})-k(\Delta{t})^2}\right) dv_{n} \wedge d\lambda_{n}. }
 \end{align}
 
-Taking differentials of both sides of equations \eqref{eq:se2_2_11} and \eqref{eq:se2_2_12} and using wedge product,  we have
+$\bm{\SEtt:}$
+\begin{align}
+  & v_{n+1} = g\Delta{t} + \tfrac{m-k\Delta{t}}{m} v_{n} + \tfrac{-k\Delta{t}}{m^2\alpha}\lambda_{n}, \label{eq:se2_2_11} \\
+  & \lambda_{n+1} = \tfrac{-m\Delta{t}}{m-k\Delta{t}}v_{n} + \tfrac{m}{m-k\Delta{t}}\lambda_{n}. \label{eq:se2_2_12}
+\end{align}
+Taking differentials of both sides of equations \eqref{eq:se2_2_11} and \eqref{eq:se2_2_12} and using the wedge product, we have
 \begin{equation}
-	dv_{n+1} \wedge d\lambda_{n+1} = \left(1 - \frac{k(\Delta{t})^2}{m\alpha(m-k\Delta{t})}\right) dv_{n} \wedge d\lambda_{n}.
-	\label{eq:equation4}
+    dv_{n+1} \wedge d\lambda_{n+1} = \left(1 - \frac{k(\Delta{t})^2}{m\alpha(m-k\Delta{t})}\right) dv_{n} \wedge d\lambda_{n}.
+    \label{eq:equation4}
 \end{equation}
+
 \subsection{Linear optimal control problem}
 Let us consider the following linear optimal control problem:
-
 \begin{equation}
-	\label{eq_18}
+    \label{eq_18}
 \begin{aligned}
-	J(\bm{v},\bm{u}) & = \frac{1}{2} \int_{a}^b \bm{v}(t)^{T} \bm{Q} \bm{v}(t) + \bm{u}(t)^{T} \bm{R} \bm{u}(t)\; dt \\ &
-	\dot{\bm{v}}(t) = \bm{A} \bm{v}(t) + \bm{B}\bm{u}(t), \\ &
-	\bm{v}(a) = \bm{v}_{0},
+    J(\bm{v},\bm{u}) & = \frac{1}{2} \int_{a}^b \bm{v}(t)^{T} \bm{Q} \bm{v}(t) + \bm{u}(t)^{T} \bm{R} \bm{u}(t)\; dt \\
+    & \dot{\bm{v}}(t) = \bm{A} \bm{v}(t) + \bm{B}\bm{u}(t), \\
+    & \bm{v}(a) = \bm{v}_{0},
 \end{aligned}
 \end{equation}
-where $\bm{Q}$ is a real symmetric positive semi-definite matrix and $\bm{R}$ is a real symmetric positive definite matrix. 
+where $\bm{Q}$ is a real symmetric positive semi-definite matrix and $\bm{R}$ is a real symmetric positive definite matrix.
 
 The Hamiltonian is
 \begin{equation}\label{eq_19}
-	\mathcal{H}(\bm{v},\bm{u},\bm{\lambda}) =  \frac{1}{2} \bm{v}(t)^{T} \bm{Q} \bm{v}(t) + \frac{1}{2} \bm{u}(t)^{T} \bm{R} \bm{u}(t) + \bm{\lambda}^{T} \bm{A}\bm{v}(t) + \bm{\lambda}^{T} \bm{B}\bm{u}(t), 
+    \mathcal{H}(\bm{v},\bm{u},\bm{\lambda}) =  \frac{1}{2} \bm{v}(t)^{T} \bm{Q} \bm{v}(t) + \frac{1}{2} \bm{u}(t)^{T} \bm{R} \bm{u}(t) + \bm{\lambda}^{T} \bm{A}\bm{v}(t) + \bm{\lambda}^{T} \bm{B}\bm{u}(t),
 \end{equation}
-and necessary conditions for optimality are 
+and necessary conditions for optimality are
 \begin{align}
-	& \dot{\bm{v}}(t) = \frac{\partial \mathcal{H}(\bm{v},\bm{u},\bm{\lambda})}{\bm{\partial\bm{\lambda}}}  = \bm{A} \bm{v}(t) + \bm{B}\bm{u}(t), \label{eq_20} \\ &
-	\dot{\bm{\lambda}}(t) =  -\frac{\partial \mathcal{H}(\bm{v},\bm{u},\bm{\lambda})}{\bm{\partial \bm{v}}} = -\bm{Q}\bm{v}(t) - \mathbf{A}^{T}\bm{\lambda}(t), \label{eq_21} \\ &
-	\bm{0} =  \frac{\partial \mathcal{H}(\bm{v},\bm{u},\bm{\lambda})}{\bm{\partial \bm{u}}} = \bm{R}\bm{u}(t) + \bm{B}^{T}\bm{\lambda}(t) \label{eq_22}.
+    & \dot{\bm{v}}(t) = \frac{\partial \mathcal{H}(\bm{v},\bm{u},\bm{\lambda})}{\partial\bm{\lambda}}  = \bm{A} \bm{v}(t) + \bm{B}\bm{u}(t), \label{eq_20} \\
+    & \dot{\bm{\lambda}}(t) =  -\frac{\partial \mathcal{H}(\bm{v},\bm{u},\bm{\lambda})}{\partial \bm{v}} = -\bm{Q}\bm{v}(t) - \bm{A}^{T}\bm{\lambda}(t), \label{eq_21} \\
+    & \bm{0} =  \frac{\partial \mathcal{H}(\bm{v},\bm{u},\bm{\lambda})}{\partial \bm{u}} = \bm{R}\bm{u}(t) + \bm{B}^{T}\bm{\lambda}(t). \label{eq_22}
 \end{align}
-Equation \eqref{eq_22} can be solved for $\mathbf{u}$ to give
+Equation \eqref{eq_22} can be solved for $\bm{u}$ to give
 \begin{align}
-	\bm{u}(t) = -\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}(t), 
+    \bm{u}(t) = -\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}(t),
 \end{align}
 the existence of $\bm{R}^{-1}$ is assured, since $\bm{R}$ is a positive definite matrix.
 
-Let us apply  $SE11$  and $SE21$ schemes to equations \eqref{eq_20}-\eqref{eq_22}, respectively. we want to   show that both are symplectic integrators, that is, they preserve the symplectic condition, i.e. $d\bm{v}_{n+1} \wedge d\bm{\lambda}_{n+1} = d\bm{v}_{n} \wedge d\bm{\lambda}_{n}$ or $det(\frac{\partial(\bm{v}_{n+1},\bm{\lambda}_{n+1})}{\partial(\bm{v}_{n},\bm{\lambda}_{n})}) = 1.$    
+Let us apply the $\SEoo$ and $\SEto$ schemes to equations \eqref{eq_20}--\eqref{eq_22}, respectively. We want to show that both are symplectic integrators, that is, they preserve the symplectic condition, i.e.\ $d\bm{v}_{n+1} \wedge d\bm{\lambda}_{n+1} = d\bm{v}_{n} \wedge d\bm{\lambda}_{n}$ or $\det\!\left(\frac{\partial(\bm{v}_{n+1},\bm{\lambda}_{n+1})}{\partial(\bm{v}_{n},\bm{\lambda}_{n})}\right) = 1.$
 
-$\mathbf{SE1_1:}$
+$\bm{\SEoo:}$
 \begin{align}
-&	\frac{\bm{v}_{n+1} - \bm{v}_n}{\Delta{t}} = \bm{A}\bm{v}_{n+1} + \bm{B}\bm{u}_{n} =  \bm{A}\bm{v}_{n+1} - \bm{B}\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}_{n} \Rightarrow \nonumber \\ &
-	\bm{v}_{n+1} = (\bm{I} - \Delta{t}\bm{A})^{-1} \bm{v}_{n} - \Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}_{n}, \label{eq_24} \\ &
-		\frac{\bm{\lambda}_{n+1} - \bm{\lambda}_n}{\Delta{t}} = -\mathbf{Q}\mathbf{v}_{n+1} - \mathbf{A}^{T}\bm{\lambda}_{n} \Rightarrow \nonumber \\ &
-		\bm{\lambda}_{n+1} = -\Delta{t}\bm{Q}\bm{v}_{n+1} +(\bm{I} - \Delta{t}\bm{A}^{T})\bm{\lambda}_{n}, \label{eq_25}
+&   \frac{\bm{v}_{n+1} - \bm{v}_n}{\Delta{t}} = \bm{A}\bm{v}_{n+1} + \bm{B}\bm{u}_{n} =  \bm{A}\bm{v}_{n+1} - \bm{B}\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}_{n} \Rightarrow \nonumber \\ &
+    \bm{v}_{n+1} = (\bm{I} - \Delta{t}\bm{A})^{-1} \bm{v}_{n} - \Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}_{n}, \label{eq_24} \\ &
+       \frac{\bm{\lambda}_{n+1} - \bm{\lambda}_n}{\Delta{t}} = -\bm{Q}\bm{v}_{n+1} - \bm{A}^{T}\bm{\lambda}_{n} \Rightarrow \nonumber \\ &
+       \bm{\lambda}_{n+1} = -\Delta{t}\bm{Q}\bm{v}_{n+1} +(\bm{I} - \Delta{t}\bm{A}^{T})\bm{\lambda}_{n}. \label{eq_25}
 \end{align}
-
 Taking differentials of \eqref{eq_24} and \eqref{eq_25}, respectively, we obtain the following implicit system of equations:
 \begin{align}
-	& 	d\bm{v}_{n+1} = (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} - \Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n}, \label{eq_26} \\ &
-	d\bm{\lambda}_{n+1} = -\Delta{t}\bm{Q}d\bm{v}_{n+1} +(\bm{I} - \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n}. \label{eq_27}
+    &  d\bm{v}_{n+1} = (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} - \Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n}, \label{eq_26} \\
+    & d\bm{\lambda}_{n+1} = -\Delta{t}\bm{Q}d\bm{v}_{n+1} +(\bm{I} - \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n}. \label{eq_27}
 \end{align}
-
-By taking the wedge product of \eqref{eq_26} with \eqref{eq_27} from the right, we have 
-
+By taking the wedge product of \eqref{eq_26} with \eqref{eq_27} from the right, we have
 \begin{align}
-		d\bm{v}_{n+1} \wedge 	d\bm{\lambda}_{n+1}  = &  (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} \wedge  \left(-\Delta{t}\bm{Q}d\bm{v}_{n+1}\right) +   (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} \wedge (\bm{I} - \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n}  +  \nonumber \\ &
-	      \left(-\Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n}\right) \wedge \left(-\Delta{t}\bm{Q}d\bm{v}_{n+1} \right) \label{eq_28}.
-\end{align} 
-
+       d\bm{v}_{n+1} \wedge   d\bm{\lambda}_{n+1}  = &  (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} \wedge  \left(-\Delta{t}\bm{Q}d\bm{v}_{n+1}\right) +   (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} \wedge (\bm{I} - \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n}  +  \nonumber \\ &
+          \left(-\Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n}\right) \wedge \left(-\Delta{t}\bm{Q}d\bm{v}_{n+1} \right). \label{eq_28}
+\end{align}
 Upon plugging \eqref{eq_26} into \eqref{eq_28} and using $d\bm{a} \wedge d(\bm{M}d\bm{b}) = (\bm{M}^{T}d\bm{a}) \wedge d\bm{b}$, we obtain the following equality
 \begin{align}
-	d\bm{v}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} \wedge \Delta{t}^2\bm{Q}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} + d\bm{v}_{n} \wedge d\bm{\lambda}_{n} + \nonumber \\ &
-  - \Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} \wedge -\Delta{t}\bm{Q}(\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_n   \nonumber \\ &
-   =  d\bm{v}_{n} \wedge d\bm{\lambda}_{n} - \Delta{t}^{2}(\bm{I}- \Delta{t}A)^{-T}\bm{Q}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} \wedge d\bm{v}_n + \nonumber \\ &
-    \Delta{t}^{2}(\bm{I}- \Delta{t}A)^{-T}\bm{Q}^{T}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} \wedge d\bm{v}_n  \nonumber \\ &
-    =  d\bm{v}_n \wedge d\bm{\lambda}_{n}.
+    d\bm{v}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  (\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_{n} \wedge \Delta{t}^2\bm{Q}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} + d\bm{v}_{n} \wedge d\bm{\lambda}_{n} + \nonumber \\
+    & - \Delta{t}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} \wedge -\Delta{t}\bm{Q}(\bm{I} - \Delta{t}\bm{A})^{-1} d\bm{v}_n   \nonumber \\
+    & =  d\bm{v}_{n} \wedge d\bm{\lambda}_{n} - \Delta{t}^{2}(\bm{I}- \Delta{t}\bm{A})^{-T}\bm{Q}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} \wedge d\bm{v}_n + \nonumber \\
+    & \Delta{t}^{2}(\bm{I}- \Delta{t}\bm{A})^{-T}\bm{Q}^{T}(\bm{I} - \Delta{t}\bm{A})^{-1}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n} \wedge d\bm{v}_n  \nonumber \\
+    & =  d\bm{v}_n \wedge d\bm{\lambda}_{n}.
 \end{align}
 
-$\mathbf{SE2_1:}$
+$\bm{\SEto:}$
 \begin{align}
-	&	\bm{v}_{n+1} = (\bm{I} + \Delta{t}\bm{A}) \bm{v}_{n} - \Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}_{n+1}, \label{eq_30} \\ &
-	\bm{\lambda}_{n+1} = -\Delta{t}(\bm{I}+\Delta{t}A^{T})^{-1}\bm{Q}\bm{v}_{n} +(\bm{I} + \Delta{t}\bm{A}^{T})^{-1}\bm{\lambda}_{n}, \label{eq_31} \\ &
-	d\bm{v}_{n+1} = (\bm{I} + \Delta{t}\bm{A}) d\bm{v}_{n} - \Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n+1}, \label{eq_32} \\ &
-	d\bm{\lambda}_{n+1} = -\Delta{t}(\bm{I}+\Delta{t}A^{T})^{-1}\bm{Q}d\bm{v}_{n} +(\bm{I} + \Delta{t}\bm{A}^{T})^{-1}d\bm{\lambda}_{n}. \label{eq_33}
+    &  \bm{v}_{n+1} = (\bm{I} + \Delta{t}\bm{A}) \bm{v}_{n} - \Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}\bm{\lambda}_{n+1}, \label{eq_30} \\
+    & \bm{\lambda}_{n+1} = -\Delta{t}(\bm{I}+\Delta{t}\bm{A}^{T})^{-1}\bm{Q}\bm{v}_{n} +(\bm{I} + \Delta{t}\bm{A}^{T})^{-1}\bm{\lambda}_{n}, \label{eq_31} \\
+    & d\bm{v}_{n+1} = (\bm{I} + \Delta{t}\bm{A}) d\bm{v}_{n} - \Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n+1}, \label{eq_32} \\
+    & d\bm{\lambda}_{n+1} = -\Delta{t}(\bm{I}+\Delta{t}\bm{A}^{T})^{-1}\bm{Q}d\bm{v}_{n} +(\bm{I} + \Delta{t}\bm{A}^{T})^{-1}d\bm{\lambda}_{n}. \label{eq_33}
 \end{align}
-
 By taking the wedge product of \eqref{eq_32} with \eqref{eq_33} we obtain
-
 \begin{align}
-	d\bm{\lambda}_{n+1} \wedge 	d\bm{v}_{n+1} = &  \left(-\Delta{t}(\bm{I}+\Delta{t}A^{T})^{-1}\bm{Q}d\bm{v}_{n}\right) \wedge  \left(- \Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n+1} \right) + \nonumber \\ &
-	 (\bm{I} + \Delta{t}\bm{A}^{T})^{-1}d\bm{\lambda}_{n} \wedge (\bm{I} + \Delta{t}\bm{A})d\bm{v}_{n} + \nonumber \\ &
-	 (\bm{I} + \Delta{t}\bm{A}^{T})^{-1}d\bm{\lambda}_{n} \wedge \left(-\Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n+1}\right). \label{eq_34}
+    d\bm{\lambda}_{n+1} \wedge     d\bm{v}_{n+1} = &  \left(-\Delta{t}(\bm{I}+\Delta{t}\bm{A}^{T})^{-1}\bm{Q}d\bm{v}_{n}\right) \wedge  \left(- \Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n+1} \right) + \nonumber \\
+    & (\bm{I} + \Delta{t}\bm{A}^{T})^{-1}d\bm{\lambda}_{n} \wedge (\bm{I} + \Delta{t}\bm{A})d\bm{v}_{n} + \nonumber \\
+    & (\bm{I} + \Delta{t}\bm{A}^{T})^{-1}d\bm{\lambda}_{n} \wedge \left(-\Delta{t}\bm{B}\bm{R}^{-1}\bm{B}^{T}d\bm{\lambda}_{n+1}\right). \label{eq_34}
 \end{align}
-
 Upon plugging \eqref{eq_33} into \eqref{eq_34}, we obtain the desired equality \eqref{eq_35}.
 \begin{align}
-		d\bm{\lambda}_{n+1} \wedge 	d\bm{v}_{n+1}  = &	d\bm{\lambda}_{n} \wedge d\bm{v}_{n} + \nonumber \\ & -\Delta{t}^2\left((\bm{I} + \Delta{t}\bm{A}^{T})^{-1}\bm{Q}\right)^{T}\bm{B}\bm{R}^{-1}\bm{B}^{T}(\bm{I} + \Delta{t}\bm{A}^{T})^{-1} d\bm{\lambda}_{n} \wedge d\bm{v}_{n}  + \nonumber \\ &
-		\Delta{t}^2 \left(\bm{B}\bm{R}^{-1}\bm{B}^{T}(\bm{I} + \Delta{t}\bm{A}^{T})^{-1}\bm{Q}\right)^{T} (\bm{I} + \Delta{t}\bm{A}^{T})^{-1} d\bm{\lambda}_{n} \wedge d\bm{v}_{n}  = \nonumber \\ &
-		 d\bm{\lambda}_{n} \wedge d\bm{v}_{n}. \label{eq_35}
+       d\bm{\lambda}_{n+1} \wedge     d\bm{v}_{n+1}  = & d\bm{\lambda}_{n} \wedge d\bm{v}_{n} + \nonumber \\
+       & -\Delta{t}^2\left((\bm{I} + \Delta{t}\bm{A}^{T})^{-1}\bm{Q}\right)^{T}\bm{B}\bm{R}^{-1}\bm{B}^{T}(\bm{I} + \Delta{t}\bm{A}^{T})^{-1} d\bm{\lambda}_{n} \wedge d\bm{v}_{n}  + \nonumber \\
+       & \Delta{t}^2 \left(\bm{B}\bm{R}^{-1}\bm{B}^{T}(\bm{I} + \Delta{t}\bm{A}^{T})^{-1}\bm{Q}\right)^{T} (\bm{I} + \Delta{t}\bm{A}^{T})^{-1} d\bm{\lambda}_{n} \wedge d\bm{v}_{n}  = \nonumber \\
+       & d\bm{\lambda}_{n} \wedge d\bm{v}_{n}. \label{eq_35}
 \end{align}
-	
 
 \section{Numerical Results (linear case)}
 
-In this section, we present numerical results (summarized in Table \ref{tab:table1}) that compare the initial and final areas computed by each method. Figures \ref{figse11}-\ref{figse22} depict the area of the triangles calculated in discrete time steps $(t = i\Delta{t},\; \Delta{t} = 0.1)$ with different $\alpha$ over the interval $[0, 10]$.  This stepwise analysis highlights how the area varies in the time range for each approach.
+In this section, we present numerical results (summarized in Table~\ref{tab:area-linear}) that compare the initial and final areas computed by each method. Figures~\ref{fig:se11}--\ref{fig:se22} depict the area of the triangles calculated in discrete time steps $(t = i\Delta{t},\; \Delta{t} = 0.1)$ with different $\alpha$ over the interval $[0, 10]$. This stepwise analysis highlights how the area varies in the time range for each approach.
 
-\begin{table}[ht!]\label{table1}
-\begin{center}
-	\begin{tabular}{ |c|c|c| c|} 
-		\hline
-	Method	& $\alpha$ & $A_0$ & $A_T$ \\
-		\hline
-		\multirow{3}{3em}{$SE1_1$}
-		& 10 & 0.1000  & 0.1000 \\ 
-        & 7  & 0.1000  & 0.1000  \\
-		& 5  & 0.1000  & 0.1000  \\ 
-		& 2  & 0.1000  & 0.1000   \\
-		& 1  &  0.1000 & 0.1000    \\
-		&0.5 &  0.1000 & 0.0991          \\
-		\hline 
-		\multirow{3}{3em}{$SE1_2$}
-		& 10  & 0.1000  & 0.1095 \\ 
-        &  7  & 0.1000  & 0.1139   \\
-		& 5   & 0.1000  & 0.1200  \\ 
-		& 2   & 0.1000 & 0.1577   \\
-		& 1   & 0.1000  & 0.2493    \\
-		& 0.5 & 0.1000  & 0.4609        \\
-		\hline
-		\multirow{3}{3em} {$SE2_1$} 
-        & 10   & 0.1000  & 0.1000 \\ 
-        &  7   & 0.1000  & 0.1000  \\
-		& 5    & 0.1000  & 0.1000 \\ 
-		& 2    & 0.1000  & 0.1000 \\
-		& 1    & 0.1000  & 0.1001\\
-		& 0.5  & 0.1000  & 0.2500 \\
-		\hline
-		\multirow{3}{3em}{$SE2_2$} 
-        & 10 & 0.1000 & 0.0895 \\ 
-        & 7  & 0.1000 & 0.0853  \\
-		& 5   & 0.1000  & 0.0801  \\ 
-		& 2   & 0.1000  &  0.0573 \\ 
-		& 1   & 0.1000  & 0.0327 \\
-		& 0.5 & 0.1000  & 0.0117 \\
-		\hline		
-	\end{tabular}
-\end{center}
-\caption{Application of methods $SE1_1, SE1_2, SE2_1$ and $SE2_2$  to system \eqref{eq:necessary_coditions} on  the interval $[0,10]$ with three initial points  $\mathbf{z}_1 = (10,0.1)^{T}, \mathbf{z}_2 =(11,0.1)^{T}$ and $\mathbf{z}_3 = (10,-0.1)^{T}$, in addition,  $k =1, m =1, \Delta t =0.1, T = 10$. $A_0$ and $A_T$ denote the areas of the triangle at time $t = 0$ and $t = T = 10$, respectively.}  
-\label{tab:table2}
+\begin{table}[ht!]
+\centering
+\begin{tabular}{|c|c|c|c|}
+   \hline
+Method & $\alpha$ & $A_0$ & $A_T$ \\
+   \hline
+   \multirow{6}{3em}{$\SEoo$}
+   & 10  & 0.1000  & 0.1000 \\
+   & 7   & 0.1000  & 0.1000 \\
+   & 5   & 0.1000  & 0.1000 \\
+   & 2   & 0.1000  & 0.1000 \\
+   & 1   & 0.1000  & 0.1000 \\
+   & 0.5 & 0.1000  & 0.0991 \\
+   \hline
+   \multirow{6}{3em}{$\SEot$}
+   & 10  & 0.1000  & 0.1095 \\
+   & 7   & 0.1000  & 0.1139 \\
+   & 5   & 0.1000  & 0.1200 \\
+   & 2   & 0.1000  & 0.1577 \\
+   & 1   & 0.1000  & 0.2493 \\
+   & 0.5 & 0.1000  & 0.4609 \\
+   \hline
+   \multirow{6}{3em}{$\SEto$}
+   & 10  & 0.1000  & 0.1000 \\
+   & 7   & 0.1000  & 0.1000 \\
+   & 5   & 0.1000  & 0.1000 \\
+   & 2   & 0.1000  & 0.1000 \\
+   & 1   & 0.1000  & 0.1001 \\
+   & 0.5 & 0.1000  & 0.2500 \\
+   \hline
+   \multirow{6}{3em}{$\SEtt$}
+   & 10  & 0.1000  & 0.0895 \\
+   & 7   & 0.1000  & 0.0853 \\
+   & 5   & 0.1000  & 0.0801 \\
+   & 2   & 0.1000  & 0.0573 \\
+   & 1   & 0.1000  & 0.0327 \\
+   & 0.5 & 0.1000  & 0.0117 \\
+   \hline
+\end{tabular}
+\caption{Application of methods $\SEoo$, $\SEot$, $\SEto$ and $\SEtt$ to system \eqref{eq:necessary_coditions} on the interval $[0,10]$ with three initial points $\mathbf{z}_1 = (10,0.1)^{T}$, $\mathbf{z}_2 =(11,0.1)^{T}$ and $\mathbf{z}_3 = (10,-0.1)^{T}$; in addition, $k =1$, $m =1$, $\Delta t =0.1$, $T = 10$. $A_0$ and $A_T$ denote the areas of the triangle at time $t = 0$ and $t = T = 10$, respectively.}
+\label{tab:area-linear}
 \end{table}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+
 \begin{figure}[ht]
-	\centering
-	\includegraphics[width=1\textwidth]{Images/se11.pdf}
-	\caption{$SE1_1$ method. Triangle area vs. time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10].$}\label{figse11}
+    \centering
+    \includegraphics[width=\textwidth]{Images/se11.pdf}
+    \caption{$\SEoo$ method. Triangle area vs.\ time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10]$.}
+    \label{fig:se11}
 \end{figure}
 
 \begin{figure}[ht]
-	\centering
-	\includegraphics[width=1\textwidth]{Images/se12.pdf}
-	\caption{$SE1_2$ method. Triangle area vs. time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10].$}\label{figse12}
+    \centering
+    \includegraphics[width=\textwidth]{Images/se12.pdf}
+    \caption{$\SEot$ method. Triangle area vs.\ time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10]$.}
+    \label{fig:se12}
 \end{figure}
 
 \begin{figure}[ht]
-	\centering
-	\includegraphics[width=1\textwidth]{Images/se21.pdf}
-	\caption{$SE2_1$ method. Triangle area vs. time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10].$}\label{figse21}
+    \centering
+    \includegraphics[width=\textwidth]{Images/se21.pdf}
+    \caption{$\SEto$ method. Triangle area vs.\ time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10]$.}
+    \label{fig:se21}
 \end{figure}
 
 \begin{figure}[ht]
-	\centering
-	\includegraphics[width=1\textwidth]{Images/se22.pdf}
-	\caption{$SE2_2$ method.Triangle area vs. time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10].$}\label{figse22}
+    \centering
+    \includegraphics[width=\textwidth]{Images/se22.pdf}
+    \caption{$\SEtt$ method. Triangle area vs.\ time, computed at discrete steps, $t = i\Delta{t},\; \Delta{t} = 0.1$, over interval $[0,10]$.}
+    \label{fig:se22}
 \end{figure}
 
 \section{Optimal control problem}
 
 Consider the following basic optimal control problem,
 \begin{equation}
-	\begin{aligned}
-		& \min \int_{a}^b\, j(\bm{y},\bm{u})\, dt \\ &
-		\bm{\dot{y}} = \bm{f}(\bm{y},\bm{u}) \\ &
-		\bm{y}(0) = \bm{y}_{0}
-	\end{aligned}
-	\label{eq:equation5}
+    \begin{aligned}
+       & \min \int_{a}^b\, j(\bm{y},\bm{u})\, dt \\
+       & \dot{\bm{y}} = \bm{f}(\bm{y},\bm{u}) \\
+       & \bm{y}(0) = \bm{y}_{0}.
+    \end{aligned}
+    \label{eq:equation5}
 \end{equation}
 
-The necessary conditions from the Hamiltonian $H$, which is defined as follows are generated
+The necessary conditions are derived from the Hamiltonian $H$, defined as
 \begin{align}
-	H(\bm{y},\bm{u},\bm{\lambda}) = j(\bm{y},\bm{u}) + \bm{\lambda}^{T}\bm{f}(\bm{y},\bm{u})
-\end{align} 
-The necessary optimality conditions can be written in term of the Hamiltonian: 
-\begin{align}
-	& \bm{\dot{y}} = H_{\bm{\lambda}}  = \frac{\partial H}{\partial \bm{\lambda}}(\bm{y},\bm{u},\bm{\lambda})\\ &
-	\bm{\dot{\lambda}} = -H_{\bm{y}} = - \frac{\partial H}{\partial \bm{y}}(\bm{y},\bm{u},\bm{\lambda})  \\ &
-	\bm{0} = H_{\bm{u}}= \frac{\partial H}{\partial \bm{u}}(\bm{y},\bm{u},\bm{\lambda}). \label{eq_40}
+    H(\bm{y},\bm{u},\bm{\lambda}) = j(\bm{y},\bm{u}) + \bm{\lambda}^{T}\bm{f}(\bm{y},\bm{u}).
 \end{align}
-We want to show that $SE11$ and $SE21$  schemes are simplistic integrators, that is $d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = d\bm{y}_{n} \wedge d\bm{\lambda}_{n}$ if $H_{\bm{yu}} = \frac{\partial^{2}H}{\partial \bm{u}\partial\bm{y}} = \bm{0}$.
-
-$\mathbf{SE1_1:}$
-Let $\bm{u}$  be a function of $\bm{y}$ and $\bm{\lambda}$, i.e. $\bm{u} = \bm{g}(\bm{y},\bm{\lambda})$ so from \eqref{eq_40} we have 
+The necessary optimality conditions can be written in terms of the Hamiltonian:
 \begin{align}
-	& H_{\bm{uy}} + H_{\bm{uu}}\bm{g_y} = 0 \Rightarrow \bm{g_y} = - H_{\bm{uu}}^{-1}H_{\bm{uy}}  \label{eq_41} \\ &
-	 H_{\bm{u\lambda}} + H_{\bm{uu}}\bm{g_{\lambda}} = 0 \Rightarrow \bm{g_{\lambda}} = - H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}, \label{eq_42} \\ &
-	 d\bm{u} =  - H_{\bm{uu}}^{-1}H_{\bm{uy}} d\bm{y}  - H_{\bm{uu}}^{-1}H_{\bm{u\lambda}} d\bm{\lambda} \label{eq_43}
+    & \dot{\bm{y}} = H_{\bm{\lambda}}  = \frac{\partial H}{\partial \bm{\lambda}}(\bm{y},\bm{u},\bm{\lambda})\\
+    & \dot{\bm{\lambda}} = -H_{\bm{y}} = - \frac{\partial H}{\partial \bm{y}}(\bm{y},\bm{u},\bm{\lambda})  \\
+    & \bm{0} = H_{\bm{u}}= \frac{\partial H}{\partial \bm{u}}(\bm{y},\bm{u},\bm{\lambda}). \label{eq_40}
 \end{align}
-where $\bm{g_y} = \frac{\partial\bm{g}}{\partial\bm{y}}$ and $\bm{g_{\lambda}} = \frac{\partial\bm{g}}{\partial\bm{\lambda}}$, respectively. 
+We want to show that $\SEoo$ and $\SEto$ schemes are symplectic integrators, that is, $d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = d\bm{y}_{n} \wedge d\bm{\lambda}_{n}$ if $H_{\bm{yu}} = \frac{\partial^{2}H}{\partial \bm{u}\partial\bm{y}} = \bm{0}$.
+
+$\bm{\SEoo:}$
+Let $\bm{u}$ be a function of $\bm{y}$ and $\bm{\lambda}$, i.e.\ $\bm{u} = \bm{g}(\bm{y},\bm{\lambda})$, so from \eqref{eq_40} we have
 \begin{align}
-	 \bm{y}_{n+1} = \bm{y}_n + \Delta{t} H_{\bm{\lambda}}(\bm{y}_{n+1},\bm{u}_n,\bm{\lambda}_n) \label{eq_44}. 
+    & H_{\bm{uy}} + H_{\bm{uu}}\bm{g_y} = 0 \Rightarrow \bm{g_y} = - H_{\bm{uu}}^{-1}H_{\bm{uy}}  \label{eq_41} \\
+    & H_{\bm{u\lambda}} + H_{\bm{uu}}\bm{g_{\lambda}} = 0 \Rightarrow \bm{g_{\lambda}} = - H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}, \label{eq_42} \\
+    & d\bm{u} =  - H_{\bm{uu}}^{-1}H_{\bm{uy}} d\bm{y}  - H_{\bm{uu}}^{-1}H_{\bm{u\lambda}} d\bm{\lambda} \label{eq_43}
 \end{align}
- Taking  differential of \eqref{eq_44} and plugging \eqref{eq_41}-\eqref{eq_43} into \eqref{eq_45}  we obtain the equation:
+where $\bm{g_y} = \frac{\partial\bm{g}}{\partial\bm{y}}$ and $\bm{g_{\lambda}} = \frac{\partial\bm{g}}{\partial\bm{\lambda}}$, respectively.
 \begin{align}
-	d\bm{y}_{n+1} = d\bm{y}_n + \Delta{t}(H_{\bm{\lambda y}}d\bm{y}_{n+1} + H_{\bm{\lambda u}}d\bm{u}_{n} + H_{\bm{\lambda \lambda}}d\bm{\lambda}_{n}), \label{eq_45} 
+     \bm{y}_{n+1} = \bm{y}_n + \Delta{t} H_{\bm{\lambda}}(\bm{y}_{n+1},\bm{u}_n,\bm{\lambda}_n). \label{eq_44}
+\end{align}
+Taking the differential of \eqref{eq_44} and plugging \eqref{eq_41}--\eqref{eq_43} into \eqref{eq_45} we obtain the equation:
+\begin{align}
+    d\bm{y}_{n+1} = d\bm{y}_n + \Delta{t}(H_{\bm{\lambda y}}d\bm{y}_{n+1} + H_{\bm{\lambda u}}d\bm{u}_{n} + H_{\bm{\lambda \lambda}}d\bm{\lambda}_{n}), \label{eq_45}
 \end{align}
 \begin{align}
-	&	d\bm{y}_{n+1} = d\bm{y}_n + \Delta{t}H_{\bm{\lambda y}}d\bm{y}_{n+1} -  \Delta{t} H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_n - \Delta{t} H_{\bm{\lambda u}} H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d\bm{\lambda}_n + \Delta{t} H_{\bm{\lambda \lambda}}d\bm{\lambda}_{n} \\ &
-		\boxed{d\bm{y}_{n+1} = (\bm{I} - \Delta{t}H_{\bm{\lambda y}})^{-1}(\bm{I} - \Delta{t}\bm{A}) d\bm{y}_n +\Delta{t}(\bm{I} - \Delta{t}H_{\bm{\lambda y}})^{-1}(-\bm{B} + H_{\bm{\lambda \lambda}})d\bm{\lambda}_{n}}, \label{eq_47}
+    &  d\bm{y}_{n+1} = d\bm{y}_n + \Delta{t}H_{\bm{\lambda y}}d\bm{y}_{n+1} -  \Delta{t} H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_n - \Delta{t} H_{\bm{\lambda u}} H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d\bm{\lambda}_n + \Delta{t} H_{\bm{\lambda \lambda}}d\bm{\lambda}_{n} \\
+    & \boxed{d\bm{y}_{n+1} = (\bm{I} - \Delta{t}H_{\bm{\lambda y}})^{-1}(\bm{I} - \Delta{t}\bm{A}) d\bm{y}_n +\Delta{t}(\bm{I} - \Delta{t}H_{\bm{\lambda y}})^{-1}(-\bm{B} + H_{\bm{\lambda \lambda}})d\bm{\lambda}_{n}}, \label{eq_47}
 \end{align}
-where $\bm{A} = H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}$ and $\bm{B} = H_{\bm{\lambda u}} H_{\bm{uu}}^{-1}H_{\bm{u\lambda}} $.
+where $\bm{A} = H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}$ and $\bm{B} = H_{\bm{\lambda u}} H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}$.
 \begin{align}
-	& \bm{\lambda}_{n+1} = \bm{\lambda}_n - \Delta{t} H_{\bm{y}}(\bm{y}_{n+1},\bm{u}_n,\bm{\lambda}_n) \\ &
-		d\bm{\lambda}_{n+1} = d\bm{\lambda}_n - \Delta{t}(H_{\bm{yy}}d\bm{y}_{n+1} + H_{\bm{y u}}d\bm{u}_{n} + H_{\bm{y \lambda}}d\bm{\lambda}_{n}) \label{eq_49}
-		\end{align}
-		Upon plugging \eqref{eq_41}-\eqref{eq_43} into \eqref{eq_49}, we have 
-		\begin{align}
-			& 	d\bm{\lambda}_{n+1} = d\bm{\lambda}_n - \Delta{t}H_{\bm{yy}}d\bm{y}_{n+1} + \Delta{t} H_{\bm{y u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_{n} + \Delta{t} H_{\bm{y u}}H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d \bm{\lambda}_{n} -\Delta{t}  H_{\bm{y \lambda}}d\bm{\lambda}_{n} \\ &
-			d\bm{\lambda}_{n+1} = (I-\Delta{t}H_{\bm{y\lambda}} + \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n} + \Delta{t}\bm{D} d\bm{y}_n - \Delta{t}H_{\bm{yy}}d\bm{y}_{n+1} \label{eq_51}
-		\end{align}
-		where $D = H_{\bm{yu}}H^{-1}_{\bm{uu}}H_{\bm{uy}}$.
-		
-		By taking the wedge product of \eqref{eq_51} with $d\bm{y}_{n+1}$ we obtain
-		\begin{align*}
-			d\bm{\lambda}_{n+1} \wedge d\bm{y}_{n+1} = & (\bm{I} - \Delta{t}H_{\bm{y\lambda}} + \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n}\wedge (\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-1}(\bm{I} - \Delta{t}\bm{A})d\bm{y}_{n} + \\ &
-			\Delta{t}(\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-1}(\bm{B} - H_{\bm{\lambda \lambda}}) d\bm{\lambda}_{n} \wedge \Delta{t}\bm{D} d\bm{y}_{n}.
-		\end{align*}
-		If $H_{\bm{yu}} = \bm{0}$, then $\bm{A} = \bm{0},\; \bm{A}^{T} = \bm{0},\;\bm{D} = \bm{0}$ so we have
-		\begin{align}
-			d\bm{\lambda}_{n+1} \wedge d\bm{y}_{n+1} = &(\bm{I} - \Delta{t}H_{\bm{y\lambda}})d\bm{\lambda}_{n}\wedge (\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-1}d\bm{y}_{n}  =  \\ &
-			(\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-T}(\bm{I} - \Delta{t}H_{\bm{y\lambda}}) d\bm{\lambda}_{n} \wedge d\bm{y}_{n} = \\&
-			(\underbrace{\bm{I}- \Delta{t}H_{\bm{\lambda y}}^{T}}_{H_{\bm{y\lambda}} = H_{\bm{\lambda y}}^{T}})^{-1}(\bm{I} - \Delta{t}H_{\bm{y\lambda}}) d\bm{\lambda}_{n} \wedge d\bm{y}_{n}= \\&
-			(\bm{I}- \Delta{t}H_{\bm{y \lambda}})^{-1}(\bm{I} - \Delta{t}H_{\bm{y\lambda}}) d\bm{\lambda}_{n} \wedge d\bm{y}_{n} \\ &
-			d\bm{\lambda}_{n} \wedge d\bm{y}_{n}.
-		\end{align}
-		$\mathbf{SE2_1}$: 
-		\begin{align}
-				\bm{y}_{n+1} = \bm{y}_n + \Delta{t} H_{\bm{\lambda}}(\bm{y}_{n},\bm{u}_{n+1},\bm{\lambda}_{n+1})
-		\end{align}
-		\begin{equation}\label{eq_58}
-	\begin{aligned}
-			d\bm{y}_{n+1} =  & d\bm{y}_n + \Delta{t}H_{\bm{\lambda y}}d\bm{y}_{n} -  \Delta{t} H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_{n+1} -  \\ &
-			 \Delta{t} H_{\bm{\lambda u}} H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d\bm{\lambda}_{n+1} + \Delta{t} H_{\bm{\lambda \lambda}}d\bm{\lambda}_{n+1} \\ &
-		    = (\bm{I} + \Delta{t}H_{\bm{\lambda u}}H^{-1}_{\bm{uu}}H_{\bm{uy}})^{-1}(\bm{I} + \Delta{t}H_{\lambda y}) d\bm{y}_n + \\ & (\bm{I} + \Delta{t}H_{\bm{\lambda u}}H^{-1}_{\bm{uu}}H_{\bm{uy}})^{-1}(-\Delta{t}H_{\bm{\lambda u}}H_{\bm{uu}}H_{\bm{u\lambda}} + \Delta{t}H_{\lambda\lambda})  d\bm{\lambda}_{n+1}, 
-	\end{aligned}
-	\end{equation}
-	\begin{align}
-			\bm{\lambda}_{n+1} = \bm{\lambda}_n - \Delta{t} H_{\bm{y}}(\bm{y}_{n},\bm{u}_{n+1},\bm{\lambda}_{n+1})
-	\end{align}
-	\begin{equation}\label{eq_60}
-		\begin{aligned}
-				d\bm{\lambda}_{n+1} =  & d\bm{\lambda}_n -\Delta{t}H_{\bm{y y}}d\bm{y}_{n} + \Delta{t} H_{\bm{yu}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_{n+1} +  \\ &
-			\Delta{t} H_{\bm{yu}}H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d\bm{\lambda}_{n+1} - \Delta{t} H_{\bm{y \lambda}}d\bm{\lambda}_{n+1} \\ &
-			=  (\bm{I} - \Delta{t}H_{\bm{yu}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}}+\Delta{t}H_{\bm{y\lambda}})^{-1} d\bm{\lambda}_n - \\ &  \Delta{t} (\bm{I} - \Delta{t}H_{\bm{y u}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}}+\Delta{t}H_{\bm{y\lambda}})^{-1}H_{\bm{yy}}d\bm{y}_{n} + \\ &
-			\Delta{t}(\bm{I} - \Delta{t}H_{\bm{y u}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}}+\Delta{t}H_{\bm{y\lambda}})^{-1}H_{\bm{yu}}H^{-1}_{\bm{uu}}H_{\bm{uy}}d\bm{y}_{n+1}.
-			\end{aligned}
-	\end{equation}
-	
-	If $H_{\bm{uy}} = \bm{0}$, the equations \eqref{eq_58} and \eqref{eq_60} simplify  to 
-	\begin{align}
-			& d\bm{y}_{n+1} = (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} + (-\Delta{t}H_{\bm{\lambda u}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}} + \Delta{t} H_{\bm{\lambda\lambda}}) d\bm{\lambda}_{n+1} \label{eq_61}  \\ & 
-			d\bm{\lambda}_{n+1} = (\bm{I} + \Delta{t}H_{\bm{y\lambda}})^{-1} d\bm{y}_{n} -\Delta{t}(\bm{I} + \Delta{t}H_{\bm{y\lambda}})^{-1}H_{\bm{yy}}d\bm{y}_n \label{eq_62}
-	\end{align}
-	Taking the wedge product of \eqref{eq_61} with $d\bm{\lambda}_{n+1}$ and  substituting  equation \eqref{eq_62} into the resulting  expression, we obtain: 
-	\begin{equation}
-	\begin{aligned}
-		 d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} \wedge  (\bm{I} + \Delta{t}H_{\bm{y\lambda}})^{-1} d\bm{\lambda}_{n}   \\ & 
-		 = (\underbrace{\bm{I} + \Delta{t}H_{\bm{y\lambda}}^{T}}_{H_{\bm{y\lambda}}^{T}=H_{\bm{\lambda y}}})^{-1} (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} \wedge d\bm{\lambda}_n \\ &
-		  = d\bm{y}_n \wedge d\bm{\lambda}_n.
-	\end{aligned}
-	\label{eq:equation6}
-	\end{equation}
+    & \bm{\lambda}_{n+1} = \bm{\lambda}_n - \Delta{t} H_{\bm{y}}(\bm{y}_{n+1},\bm{u}_n,\bm{\lambda}_n) \\
+    & d\bm{\lambda}_{n+1} = d\bm{\lambda}_n - \Delta{t}(H_{\bm{yy}}d\bm{y}_{n+1} + H_{\bm{y u}}d\bm{u}_{n} + H_{\bm{y \lambda}}d\bm{\lambda}_{n}) \label{eq_49}
+\end{align}
+Upon plugging \eqref{eq_41}--\eqref{eq_43} into \eqref{eq_49}, we have
+\begin{align}
+    &  d\bm{\lambda}_{n+1} = d\bm{\lambda}_n - \Delta{t}H_{\bm{yy}}d\bm{y}_{n+1} + \Delta{t} H_{\bm{y u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_{n} + \Delta{t} H_{\bm{y u}}H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d \bm{\lambda}_{n} -\Delta{t}  H_{\bm{y \lambda}}d\bm{\lambda}_{n} \\
+    & d\bm{\lambda}_{n+1} = (\bm{I}-\Delta{t}H_{\bm{y\lambda}} + \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n} + \Delta{t}\bm{D} d\bm{y}_n - \Delta{t}H_{\bm{yy}}d\bm{y}_{n+1} \label{eq_51}
+\end{align}
+where $\bm{D} = H_{\bm{yu}}H^{-1}_{\bm{uu}}H_{\bm{uy}}$.
 
-    \textbf{Modified MidPoint:} $(\mathbf{M.M.P})$
-    \begin{align}
-        & \bm{y}_{n+1} = \bm{y}_{n} + \Delta{t}H_{\bm{\lambda}}(\bm{y_{n+\frac{1}{2}}}, \bm{u}(\bm{y_{n+\frac{1}{2}}},\bm{\lambda_{n+\frac{1}{2}}}),\bm{\lambda_{n+\frac{1}{2}}}), \nonumber \\ &
-        d\bm{y}_{n+1} = d\bm{y}_{n} + \frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{y}}(d\bm{y}_{n+1}+d\bm{y}_{n})+ \frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{u}}d\bm{u}+ \underbrace{\frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{\lambda}}(d\bm{\lambda}_{n+1}+d\bm{\lambda}_{n})}_{\bm{0}}, \nonumber \\ &
-        d\bm{y}_{n+1} = d\bm{y}_{n}  +  \frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{y}}(d\bm{y}_{n+1}+d\bm{y}_{n})
-        + \frac{\Delta{t}}{2}H_{\bm{\lambda}\bm{u}}\left( -H_{\bm{uu}}^{-1}H_{\bm{uy}}d(d\bm{y}_{n+1}+d\bm{y}_{n})-H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}(d\bm{\lambda}_{n+1}+d\bm{\lambda}_{n}) \right), \nonumber \\ &
-        \boxed{ d\bm{y}_{n+1} = (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} + (-\frac{\Delta{t}}{2}) (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} + 
-          (-\frac{\Delta{t}}{2}) (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1},} \label{m.m.p_eq_1}
-    \end{align}
-    where $\bm{A} = H_{\bm{\lambda y}} - H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}},\; \bm{B} = H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}.$
-    
-    Applying a similar procedure, we obtain:
-    \begin{align}
-       \boxed{d\bm{\lambda}_{n+1} = (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})d\bm{\lambda}_{n} + (-\frac{\Delta{t}}{2}) (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + 
-          (-\frac{\Delta{t}}{2}) (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n},} \label{m.m.p_eq_2} 
-    \end{align}
-    where $\bm{C} = H_{\bm{yy}} - H_{\bm{yu}}H_{\bm{uu}}^{-1}H_{\bm{uy}}$ and 
-    \begin{align*}
-        \bm{\lambda}_{n+1} = \bm{\lambda}_{n} - \Delta{t}H_{\bm{y}}(\bm{y_{n+\frac{1}{2}}}, \bm{u}(\bm{y_{n+\frac{1}{2}}},\bm{\lambda_{n+\frac{1}{2}}}),\bm{\lambda_{n+\frac{1}{2}}}).
-    \end{align*}
+By taking the wedge product of \eqref{eq_51} with $d\bm{y}_{n+1}$ we obtain
+\begin{align*}
+    d\bm{\lambda}_{n+1} \wedge d\bm{y}_{n+1} = & (\bm{I} - \Delta{t}H_{\bm{y\lambda}} + \Delta{t}\bm{A}^{T})d\bm{\lambda}_{n}\wedge (\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-1}(\bm{I} - \Delta{t}\bm{A})d\bm{y}_{n} + \\
+    & \Delta{t}(\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-1}(\bm{B} - H_{\bm{\lambda \lambda}}) d\bm{\lambda}_{n} \wedge \Delta{t}\bm{D} d\bm{y}_{n}.
+\end{align*}
+If $H_{\bm{yu}} = \bm{0}$, then $\bm{A} = \bm{0}$, $\bm{A}^{T} = \bm{0}$, $\bm{D} = \bm{0}$ so we have
+\begin{align}
+    d\bm{\lambda}_{n+1} \wedge d\bm{y}_{n+1} = & (\bm{I} - \Delta{t}H_{\bm{y\lambda}})d\bm{\lambda}_{n}\wedge (\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-1}d\bm{y}_{n}  =  \\
+    & (\bm{I}- \Delta{t}H_{\bm{\lambda y}})^{-T}(\bm{I} - \Delta{t}H_{\bm{y\lambda}}) d\bm{\lambda}_{n} \wedge d\bm{y}_{n} = \\
+    & (\underbrace{\bm{I}- \Delta{t}H_{\bm{\lambda y}}^{T}}_{H_{\bm{y\lambda}} = H_{\bm{\lambda y}}^{T}})^{-1}(\bm{I} - \Delta{t}H_{\bm{y\lambda}}) d\bm{\lambda}_{n} \wedge d\bm{y}_{n}= \\
+    & (\bm{I}- \Delta{t}H_{\bm{y \lambda}})^{-1}(\bm{I} - \Delta{t}H_{\bm{y\lambda}}) d\bm{\lambda}_{n} \wedge d\bm{y}_{n} \\
+    & =  d\bm{\lambda}_{n} \wedge d\bm{y}_{n}.
+\end{align}
 
-    By taking the wedge product of \eqref{m.m.p_eq_1} with $d\bm{\lambda}_{n+1}$ we have the following:
-    \begin{align}
-        d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} =  & (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge  d\bm{\lambda}_{n+1} + \nonumber \\ &
-        (-\frac{\Delta{t}}{2}) (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge d\bm{\lambda}_{n+1}  = \nonumber \\ &
-         (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})d\bm{\lambda}_{n} + \nonumber \\ & 
-        (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge   (-\frac{\Delta{t}}{2}) (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + \nonumber \\ &
-        (-\frac{\Delta{t}}{2}) (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2}) (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + \nonumber \\ &
-        (-\frac{\Delta{t}}{2}) (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2}) (\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n}. \label{m.m.p_eq_0}
-    \end{align}
-    Using the facts $d\bm{a} \wedge d\bm{c} = -d\bm{c} \wedge d\bm{a}$ and $d\bm{a} \wedge \bm{M}d\bm{c} = \bm{M}^{T}d\bm{a} \wedge d\bm{c} $, equation \eqref{m.m.p_eq_0}  can be written as: 
-    \begin{align}
-        d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  (\bm{I}-\frac{\Delta{t}}{2}\bm{A})(\bm{I}+\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})  d\bm{y}_{n} \wedge d\bm{\lambda}_{n} + \nonumber \\ &
-        (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1} (\bm{I}+\frac{\Delta{t}}{2}\bm{A})^{-1} d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\ &
-        (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\ &
-        (\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n}. \label{m.m.p_eq_3}
-    \end{align}
-    Since $(\bm{I} - \frac{\Delta{t}}{2}\bm{A})(\bm{I} + \frac{\Delta{t}}{2}\bm{A}) = (\bm{I} + \frac{\Delta{t}}{2}\bm{A})(\bm{I} - \frac{\Delta{t}}{2}\bm{A})$, it follows that  $(\bm{I} - \frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I} + \frac{\Delta{t}}{2}\bm{A})^{-1} = (\bm{I} + \frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I} - \frac{\Delta{t}}{2}\bm{A})^{-1}$, So the equation \eqref{m.m.p_eq_3} can be rewritten as:
-    \begin{align}
-         d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  d\bm{y}_{n} \wedge d\bm{\lambda}_{n} + \nonumber \\ &
-        (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1} (\bm{I}+\frac{\Delta{t}}{2}\bm{A})^{-1} d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\ &
-        (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\ &
-        (\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n}. \label{m.m.p_eq_4}
-    \end{align}
-    \begin{align}
-         d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = & \bm{I}-\frac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n} \wedge d\bm{\lambda}_{n}  + \nonumber \\ &
-          (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1} (\bm{I}+\frac{\Delta{t}}{2}\bm{A})^{-1} d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\ &
-        (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1}. \label{m.m.p_eq_5}  
-    \end{align}
-    By taking the wedge product of  $d\bm{y}_{n+1}$ with $(-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}$ we have the following: 
-    \begin{align}
-       \underbrace{d\bm{y}_{n+1} \wedge  (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}}_{\bm{0}} =& (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} +\nonumber \\ &
-       (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}  + \nonumber \\ &
-       (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}. \label{m.m.p_eq_6}
-    \end{align}
-    Rewriting the equation \eqref{m.m.p_eq_6} by isolating  $ (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}$, we obtain the following equivalent form:
-    \begin{multline}\label{m.m.p_eq_7}
-     (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} \wedge (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1} = \\ 
-     (\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + \\ 
-       (-\frac{\Delta{t}}{2})(\bm{I}-\frac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\frac{\Delta{t}}{2})(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}. 
-    \end{multline}
-    Upon plugging  \eqref{m.m.p_eq_7} into  \eqref{m.m.p_eq_5}, we get:
-    \begin{multline}\label{m.m.p_eq_8}
-        d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = \bm{I}-\frac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n} \wedge d\bm{\lambda}_{n} \\ 
-        +  \frac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1}
-    \end{multline}
-    By solving \eqref{m.m.p_eq_8} for $ d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1}$, we have:
-    \begin{multline}\label{m.m.p_eq_9}
-        \left(\bm{I}-\frac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}\right) d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1}  = \\ 
-          \left(\bm{I}-\frac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\frac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}\right) d\bm{y}_{n} \wedge d\bm{\lambda}_{n}.
-    \end{multline}
+$\bm{\SEto:}$
+\begin{align}
+      \bm{y}_{n+1} = \bm{y}_n + \Delta{t} H_{\bm{\lambda}}(\bm{y}_{n},\bm{u}_{n+1},\bm{\lambda}_{n+1})
+\end{align}
+\begin{equation}\label{eq_58}
+\begin{aligned}
+    d\bm{y}_{n+1} =  & d\bm{y}_n + \Delta{t}H_{\bm{\lambda y}}d\bm{y}_{n} -  \Delta{t} H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_{n+1} -  \\
+    & \Delta{t} H_{\bm{\lambda u}} H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d\bm{\lambda}_{n+1} + \Delta{t} H_{\bm{\lambda \lambda}}d\bm{\lambda}_{n+1} \\
+    & = (\bm{I} + \Delta{t}H_{\bm{\lambda u}}H^{-1}_{\bm{uu}}H_{\bm{uy}})^{-1}(\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_n + \\
+    & (\bm{I} + \Delta{t}H_{\bm{\lambda u}}H^{-1}_{\bm{uu}}H_{\bm{uy}})^{-1}(-\Delta{t}H_{\bm{\lambda u}}H_{\bm{uu}}H_{\bm{u\lambda}} + \Delta{t}H_{\bm{\lambda\lambda}})  d\bm{\lambda}_{n+1},
+\end{aligned}
+\end{equation}
+\begin{align}
+      \bm{\lambda}_{n+1} = \bm{\lambda}_n - \Delta{t} H_{\bm{y}}(\bm{y}_{n},\bm{u}_{n+1},\bm{\lambda}_{n+1})
+\end{align}
+\begin{equation}\label{eq_60}
+   \begin{aligned}
+         d\bm{\lambda}_{n+1} =  & d\bm{\lambda}_n -\Delta{t}H_{\bm{y y}}d\bm{y}_{n} + \Delta{t} H_{\bm{yu}}H_{\bm{uu}}^{-1}H_{\bm{uy}}d\bm{y}_{n+1} +  \\
+      & \Delta{t} H_{\bm{yu}}H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}d\bm{\lambda}_{n+1} - \Delta{t} H_{\bm{y \lambda}}d\bm{\lambda}_{n+1} \\
+      & =  (\bm{I} - \Delta{t}H_{\bm{yu}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}}+\Delta{t}H_{\bm{y\lambda}})^{-1} d\bm{\lambda}_n - \\
+      & \Delta{t} (\bm{I} - \Delta{t}H_{\bm{y u}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}}+\Delta{t}H_{\bm{y\lambda}})^{-1}H_{\bm{yy}}d\bm{y}_{n} + \\
+      & \Delta{t}(\bm{I} - \Delta{t}H_{\bm{y u}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}}+\Delta{t}H_{\bm{y\lambda}})^{-1}H_{\bm{yu}}H^{-1}_{\bm{uu}}H_{\bm{uy}}d\bm{y}_{n+1}.
+   \end{aligned}
+\end{equation}
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    \subsection{Numerical results (nonlinear case)}
-	\label{subsec:numerical-results-(nonlinear-case)}
-We consider the following nonlinear optimal control problems and  apply $SE11, SE21$, and implicit midpoint methods. As analytically proven, condition $H_{yu} = \vect{0}$ in Problem \eqref{eq_65} ensures the symplecticity of $SE11$ and $SE21$, thus guaranteeing the preservation of the phase-space area.  This property is numerically validated  in Table \ref{Table:2}, which compares the absolute relative errors in the preserved area at the initial and final times. In contrast, problem \eqref{eq_64} does not satisfy the condition $H_{yu} = \vect{0}$, and as shown in Table \ref{Table:2}, the $SE11$ and $SE21$ methods lose their symplectic property in this case, leading to nonpreservation of the phase-space area.
+If $H_{\bm{uy}} = \bm{0}$, the equations \eqref{eq_58} and \eqref{eq_60} simplify to
+\begin{align}
+      & d\bm{y}_{n+1} = (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} + (-\Delta{t}H_{\bm{\lambda u}}H^{-1}_{\bm{uu}}H_{\bm{u\lambda}} + \Delta{t} H_{\bm{\lambda\lambda}}) d\bm{\lambda}_{n+1} \label{eq_61}  \\
+      & d\bm{\lambda}_{n+1} = (\bm{I} + \Delta{t}H_{\bm{y\lambda}})^{-1} d\bm{y}_{n} -\Delta{t}(\bm{I} + \Delta{t}H_{\bm{y\lambda}})^{-1}H_{\bm{yy}}d\bm{y}_n \label{eq_62}
+\end{align}
+Taking the wedge product of \eqref{eq_61} with $d\bm{\lambda}_{n+1}$ and substituting equation \eqref{eq_62} into the resulting expression, we obtain:
+\begin{equation}
+\begin{aligned}
+    d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} \wedge  (\bm{I} + \Delta{t}H_{\bm{y\lambda}})^{-1} d\bm{\lambda}_{n}   \\
+    & = (\underbrace{\bm{I} + \Delta{t}H_{\bm{y\lambda}}^{T}}_{H_{\bm{y\lambda}}^{T}=H_{\bm{\lambda y}}})^{-1} (\bm{I} + \Delta{t}H_{\bm{\lambda y}}) d\bm{y}_{n} \wedge d\bm{\lambda}_n \\
+    & = d\bm{y}_n \wedge d\bm{\lambda}_n.
+\end{aligned}
+\label{eq:equation6}
+\end{equation}
 
-These simulations employ three distinct initial points to construct a triangular shape at the initial time see Figure \ref{triangle}. To compute the area of this triangle, we split it into four smaller non-overlapping triangles, calculate their individual areas, and add them to determine the total area. 
+\textbf{Modified MidPoint:} $(\bm{M.M.P})$
+\begin{align}
+    & \bm{y}_{n+1} = \bm{y}_{n} + \Delta{t}H_{\bm{\lambda}}(\bm{y_{n+\frac{1}{2}}}, \bm{u}(\bm{y_{n+\frac{1}{2}}},\bm{\lambda_{n+\frac{1}{2}}}),\bm{\lambda_{n+\frac{1}{2}}}), \nonumber \\
+    & d\bm{y}_{n+1} = d\bm{y}_{n} + \tfrac{\Delta{t}}{2}H_{\bm{\lambda}\bm{y}}(d\bm{y}_{n+1}+d\bm{y}_{n})+ \tfrac{\Delta{t}}{2}H_{\bm{\lambda}\bm{u}}d\bm{u}+ \underbrace{\tfrac{\Delta{t}}{2}H_{\bm{\lambda}\bm{\lambda}}(d\bm{\lambda}_{n+1}+d\bm{\lambda}_{n})}_{\bm{0}}, \nonumber \\
+    & d\bm{y}_{n+1} = d\bm{y}_{n}  +  \tfrac{\Delta{t}}{2}H_{\bm{\lambda}\bm{y}}(d\bm{y}_{n+1}+d\bm{y}_{n})
+    + \tfrac{\Delta{t}}{2}H_{\bm{\lambda}\bm{u}}\!\left( -H_{\bm{uu}}^{-1}H_{\bm{uy}}(d\bm{y}_{n+1}+d\bm{y}_{n})-H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}(d\bm{\lambda}_{n+1}+d\bm{\lambda}_{n}) \right), \nonumber \\
+    & \boxed{ d\bm{y}_{n+1} = (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} + (-\tfrac{\Delta{t}}{2}) (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} +
+      (-\tfrac{\Delta{t}}{2}) (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1},} \label{m.m.p_eq_1}
+\end{align}
+where $\bm{A} = H_{\bm{\lambda y}} - H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{uy}}$, $\bm{B} = H_{\bm{\lambda u}}H_{\bm{uu}}^{-1}H_{\bm{u\lambda}}$.
+
+Applying a similar procedure, we obtain:
+\begin{align}
+   \boxed{d\bm{\lambda}_{n+1} = (\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A}^{T})d\bm{\lambda}_{n} + (-\tfrac{\Delta{t}}{2}) (\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} +
+      (-\tfrac{\Delta{t}}{2}) (\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n},} \label{m.m.p_eq_2}
+\end{align}
+where $\bm{C} = H_{\bm{yy}} - H_{\bm{yu}}H_{\bm{uu}}^{-1}H_{\bm{uy}}$ and
+\begin{align*}
+    \bm{\lambda}_{n+1} = \bm{\lambda}_{n} - \Delta{t}H_{\bm{y}}(\bm{y_{n+\frac{1}{2}}}, \bm{u}(\bm{y_{n+\frac{1}{2}}},\bm{\lambda_{n+\frac{1}{2}}}),\bm{\lambda_{n+\frac{1}{2}}}).
+\end{align*}
+
+By taking the wedge product of \eqref{m.m.p_eq_1} with $d\bm{\lambda}_{n+1}$ we have:
+\begin{align}
+    d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} =  & (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge  d\bm{\lambda}_{n+1} + \nonumber \\
+    & (-\tfrac{\Delta{t}}{2}) (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge d\bm{\lambda}_{n+1}  = \nonumber \\
+    & (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge (\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A}^{T})d\bm{\lambda}_{n} + \nonumber \\
+    & (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge   (-\tfrac{\Delta{t}}{2}) (\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + \nonumber \\
+    & (-\tfrac{\Delta{t}}{2}) (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\tfrac{\Delta{t}}{2}) (\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + \nonumber \\
+    & (-\tfrac{\Delta{t}}{2}) (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\tfrac{\Delta{t}}{2}) (\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n}. \label{m.m.p_eq_0}
+\end{align}
+Using the facts $d\bm{a} \wedge d\bm{c} = -d\bm{c} \wedge d\bm{a}$ and $d\bm{a} \wedge \bm{M}d\bm{c} = \bm{M}^{T}d\bm{a} \wedge d\bm{c}$, equation \eqref{m.m.p_eq_0} can be written as:
+\begin{align}
+    d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})  d\bm{y}_{n} \wedge d\bm{\lambda}_{n} + \nonumber \\
+    & (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1} (\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})^{-1} d\bm{y}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\
+    & (-\tfrac{\Delta{t}}{2})(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\
+    & (\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n}. \label{m.m.p_eq_3}
+\end{align}
+Since $(\bm{I} - \tfrac{\Delta{t}}{2}\bm{A})(\bm{I} + \tfrac{\Delta{t}}{2}\bm{A}) = (\bm{I} + \tfrac{\Delta{t}}{2}\bm{A})(\bm{I} - \tfrac{\Delta{t}}{2}\bm{A})$, it follows that $(\bm{I} - \tfrac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I} + \tfrac{\Delta{t}}{2}\bm{A})^{-1} = (\bm{I} + \tfrac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I} - \tfrac{\Delta{t}}{2}\bm{A})^{-1}$, so equation \eqref{m.m.p_eq_3} can be rewritten as:
+\begin{align}
+     d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = &  d\bm{y}_{n} \wedge d\bm{\lambda}_{n} + \nonumber \\
+    & (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1} (\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})^{-1} d\bm{y}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\
+    & (-\tfrac{\Delta{t}}{2})(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\
+    & (\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n}. \label{m.m.p_eq_4}
+\end{align}
+\begin{align}
+     d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = & \left(\bm{I}-\tfrac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}\right) d\bm{y}_{n} \wedge d\bm{\lambda}_{n}  + \nonumber \\
+     & (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1} (\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})^{-1} d\bm{y}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} + \nonumber \\
+    & (-\tfrac{\Delta{t}}{2})(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B} d\bm{\lambda}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1}. \label{m.m.p_eq_5}
+\end{align}
+By taking the wedge product of $d\bm{y}_{n+1}$ with $(-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}$ we have the following:
+\begin{align}
+   \underbrace{d\bm{y}_{n+1} \wedge  (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}}_{\bm{0}} = & (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} +\nonumber \\
+   & (-\tfrac{\Delta{t}}{2})(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}  + \nonumber \\
+   & (-\tfrac{\Delta{t}}{2})(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}. \label{m.m.p_eq_6}
+\end{align}
+Rewriting equation \eqref{m.m.p_eq_6} by isolating $(-\tfrac{\Delta{t}}{2})(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}$, we obtain the following equivalent form:
+\begin{multline}\label{m.m.p_eq_7}
+ (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n+1} = \\
+ (\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A})d\bm{y}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1} + \\
+ (-\tfrac{\Delta{t}}{2})(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A})^{-1}\bm{B}d\bm{\lambda}_{n} \wedge (-\tfrac{\Delta{t}}{2})(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}d\bm{y}_{n+1}.
+\end{multline}
+Upon plugging \eqref{m.m.p_eq_7} into \eqref{m.m.p_eq_5}, we get:
+\begin{multline}\label{m.m.p_eq_8}
+    d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1} = \left(\bm{I}-\tfrac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}\right) d\bm{y}_{n} \wedge d\bm{\lambda}_{n} \\
+    +  \tfrac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C} d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1}.
+\end{multline}
+By solving \eqref{m.m.p_eq_8} for $d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1}$, we have:
+\begin{multline}\label{m.m.p_eq_9}
+    \left(\bm{I}-\tfrac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}\right) d\bm{y}_{n+1} \wedge d\bm{\lambda}_{n+1}  = \\
+    \left(\bm{I}-\tfrac{\Delta{t}^2}{4}\bm{B}^{T}(\bm{I}-\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}(\bm{I}+\tfrac{\Delta{t}}{2}\bm{A}^{T})^{-1}\bm{C}\right) d\bm{y}_{n} \wedge d\bm{\lambda}_{n}.
+\end{multline}
+
+\subsection{Numerical results (nonlinear case)}
+\label{subsec:numerical-results-nonlinear}
+We consider the following nonlinear optimal control problems and apply $\SEoo$, $\SEto$, and the implicit midpoint method. As analytically proven, the condition $H_{yu} = \bm{0}$ in Problem~\eqref{eq_65} ensures the symplecticity of $\SEoo$ and $\SEto$, thus guaranteeing the preservation of the phase-space area. This property is numerically validated in Table~\ref{tab:area-nonlinear}, which compares the absolute relative errors in the preserved area at the initial and final times. In contrast, problem~\eqref{eq_64} does not satisfy the condition $H_{yu} = \bm{0}$, and as shown in Table~\ref{tab:area-nonlinear}, the $\SEoo$ and $\SEto$ methods lose their symplectic property in this case, leading to nonpreservation of the phase-space area.
+
+These simulations employ three distinct initial points to construct a triangular shape at the initial time; see Figure~\ref{fig:triangle}. To compute the area of this triangle, we split it into four smaller non-overlapping triangles, calculate their individual areas, and add them to determine the total area.
 
 \begin{minipage}{0.45\textwidth}
 \begin{align}
-     \min & \int_{0}^2\, \frac{1}{2}v^{2} + \frac{\alpha}{2}u^2\, dt \nonumber \\ &
-     \dot{v} = g + \frac{u}{m} - \frac{k}{m}v^2 \label{eq_64} \\ &
-     v(0) = v_0 \nonumber
+     \min & \int_{0}^2\, \tfrac{1}{2}v^{2} + \tfrac{\alpha}{2}u^2\, dt \nonumber \\
+     & \dot{v} = g + \tfrac{u}{m} - \tfrac{k}{m}v^2 \label{eq_64} \\
+     & v(0) = v_0 \nonumber
 \end{align}
-\label{eq:einstein}
 \end{minipage}
 \hfill
 \begin{minipage}{0.45\textwidth}
 \begin{align}
-\min & \int_{0}^2 \, \frac{1}{2}v^{2}+ \frac{\alpha}{2}u^2\, dt \nonumber \\ &
-\dot{v} = g + \frac{u}{m} - \frac{k}{m}uv \label{eq_65} \\ &
-     v(0) = v_0 \nonumber
+\min & \int_{0}^2 \, \tfrac{1}{2}v^{2}+ \tfrac{\alpha}{2}u^2\, dt \nonumber \\
+& \dot{v} = g + \tfrac{u}{m} - \tfrac{k}{m}uv \label{eq_65} \\
+& v(0) = v_0 \nonumber
 \end{align}
 \end{minipage}
-Necessary optimality conditions for \eqref{eq_64} and \eqref{eq_65}, respectively, 
 
-\begin{minipage}{0.4\textwidth}
+Necessary optimality conditions for \eqref{eq_64} and \eqref{eq_65}, respectively,
+
+\begin{minipage}{0.45\textwidth}
 \begin{align}
-     & H(v,u,\lambda) = \frac{1}{2} v^2 + \frac{\alpha}{2} u^2 + \lambda (g + \frac{1}{m} u - \frac{k}{m}v^2) \nonumber \\ &
-     \begin{cases}
-         \dot{v} = H_{\lambda}(v,u,\lambda) =  g + \frac{u}{m} - \frac{k}{m}v^2  \\ 
-     \dot{\lambda} =  - H_{v}(v,u,\lambda) = -v + \frac{2k}{m} \lambda v  \\ 
-      0 =  H_{u}(v,u,\lambda) = \alpha u + \frac{1}{m}\lambda 
-     \end{cases} \label{eq_66} \\ &
-      H_{vu} = 0 \nonumber.
+     & H(v,u,\lambda) = \tfrac{1}{2} v^2 + \tfrac{\alpha}{2} u^2 + \lambda (g + \tfrac{1}{m} u - \tfrac{k}{m}v^2) \nonumber \\
+     & \begin{cases}
+         \dot{v} = H_{\lambda}(v,u,\lambda) =  g + \tfrac{u}{m} - \tfrac{k}{m}v^2  \\
+         \dot{\lambda} =  - H_{v}(v,u,\lambda) = -v + \tfrac{2k}{m} \lambda v  \\
+         0 =  H_{u}(v,u,\lambda) = \alpha u + \tfrac{1}{m}\lambda
+     \end{cases} \label{eq_66} \\
+     & H_{vu} = 0. \nonumber
 \end{align}
 \end{minipage}
 \hfill
-\begin{minipage}{0.4\textwidth}
+\begin{minipage}{0.45\textwidth}
 \begin{align}
- & H(v,u,\lambda) = \frac{1}{2} v^2 + \frac{\alpha}{2} u^2 + \lambda (g + \frac{1}{m} u - \frac{k}{m} uv) \nonumber \\ &
- \begin{cases}
-     \dot{v} = H_{\lambda}(v,u,\lambda) =  g + \frac{u}{m} - \frac{k}{m}uv  \\ 
-     \dot{\lambda} =  - H_{v}(v,u,\lambda) = -v + \frac{k}{m} \lambda u  \\ 
-      0 =  H_{u}(v,u,\lambda) = \alpha u + \frac{1}{m}\lambda - \frac{k}{m}\lambda v 
- \end{cases} \label{eq_67} \\ &
-      H_{vu} \neq 0. \nonumber
+ & H(v,u,\lambda) = \tfrac{1}{2} v^2 + \tfrac{\alpha}{2} u^2 + \lambda (g + \tfrac{1}{m} u - \tfrac{k}{m} uv) \nonumber \\
+ & \begin{cases}
+     \dot{v} = H_{\lambda}(v,u,\lambda) =  g + \tfrac{u}{m} - \tfrac{k}{m}uv  \\
+     \dot{\lambda} =  - H_{v}(v,u,\lambda) = -v + \tfrac{k}{m} \lambda u  \\
+     0 =  H_{u}(v,u,\lambda) = \alpha u + \tfrac{1}{m}\lambda - \tfrac{k}{m}\lambda v
+ \end{cases} \label{eq_67} \\
+ & H_{vu} \neq 0. \nonumber
 \end{align}
 \end{minipage}
 
-\begin{table}
-\begin{center}
+\begin{table}[ht!]
+\centering
 \begin{tabular}{|c|c|c|c||c|c|}
 \hline
- $\alpha =0.5,\; N.T = 1553$& $\Delta{t}$ & $|A_0 - A_{T}|, H_{vu}=0$ &$\frac{|A_0 - A_{T}|}{A_0}, \;H_{vu} = 0 $ & $|A_0-A_T|, H_{vu} \ne \vect{0}$& $\frac{|A_0 - A_{T}|}{A_0}, \;H_{vu} \neq 0 $ \\ \hline 
-%\cline{2-5}
-\multirow{3}{*}{$SE1_1$} & $0.02$ & $3.0978\times 10^{-5}$ & $2.478\times 10^{-2}$ &$1.1293\times 10^{-3}$ & $0.9032$ \\
-                         &$0.01$ & $2.2191\times 10^{-5}$ & $1.7753\times 10^{-2}$ & $1.1883\times 10^{-3}$ & $0.9506$ \\  \hline
-%\cline{2-5}
-\multirow{3}{*}{$SE2_1$} & $0.02$ & $1.1769\times 10^{-5}$ & $9.415\times 10^{-3}$ & $1.2610\times 10^{-4}$ &$0.1008$ \\
-                         & $0.01$& $1.3989\times 10^{-5}$ &$1.1191\times 10^{-2}$ & $1.5809\times 10^{-4}$ &$0.1264$ \\
-                     \hline
-%\cline{2-5}
-\multirow{3}{*}{MidPoint}  &$0.02$&$1.7307\times 10^{-5}$& $1.3845\times 10^{-2}$& $2.0385\times 10^{-4}$ &  $0.1630$ \\
-                            &$0.01$&$1.7222\times 10^{-5}$&$1.3777\times 10^{-2}$ & $1.9555\times 10^{-4}$ & $0.1564$  \\
-                             \hline
+ $\alpha =0.5$, $N.T = 1553$ & $\Delta{t}$ & $|A_0 - A_{T}|$, $H_{vu}=0$ & $\frac{|A_0 - A_{T}|}{A_0}$, $H_{vu} = 0 $ & $|A_0-A_T|$, $H_{vu} \ne \bm{0}$ & $\frac{|A_0 - A_{T}|}{A_0}$, $H_{vu} \neq 0 $ \\ \hline
+\multirow{2}{*}{$\SEoo$} & $0.02$ & $3.0978\times 10^{-5}$ & $2.478\times 10^{-2}$ & $1.1293\times 10^{-3}$ & $0.9032$ \\
+                         & $0.01$ & $2.2191\times 10^{-5}$ & $1.7753\times 10^{-2}$ & $1.1883\times 10^{-3}$ & $0.9506$ \\ \hline
+\multirow{2}{*}{$\SEto$} & $0.02$ & $1.1769\times 10^{-5}$ & $9.415\times 10^{-3}$ & $1.2610\times 10^{-4}$ & $0.1008$ \\
+                         & $0.01$ & $1.3989\times 10^{-5}$ & $1.1191\times 10^{-2}$ & $1.5809\times 10^{-4}$ & $0.1264$ \\ \hline
+\multirow{2}{*}{MidPoint} & $0.02$ & $1.7307\times 10^{-5}$ & $1.3845\times 10^{-2}$ & $2.0385\times 10^{-4}$ & $0.1630$ \\
+                          & $0.01$ & $1.7222\times 10^{-5}$ & $1.3777\times 10^{-2}$ & $1.9555\times 10^{-4}$ & $0.1564$ \\ \hline
 \end{tabular}
-\caption{Application of $SE1_1, SE1_2$ and implicit mid point  methods  to systems \eqref{eq_66} and \eqref{eq_67} on the interval $[0,2]$ with three initial points  $\mathbf{z}_1 = (0,1)^{T}, \mathbf{z}_2 =(0.05,1)^{T}$ and $\mathbf{z}_3 = (0,1.05)^{T}$, where,  $k =1, m =20, T = 2$. $A_0 = 0.0013$ and $A_T$ denote the areas of the triangle at time $t = 0$ and $t = T = 2$, respectively.}
-\end{center}
-
-\label{tab:table14}
+\caption{Application of $\SEoo$, $\SEto$ and implicit midpoint methods to systems \eqref{eq_66} and \eqref{eq_67} on the interval $[0,2]$ with three initial points $\mathbf{z}_1 = (0,1)^{T}$, $\mathbf{z}_2 =(0.05,1)^{T}$ and $\mathbf{z}_3 = (0,1.05)^{T}$, where $k =1$, $m =20$, $T = 2$. $A_0 = 0.0013$ and $A_T$ denote the areas of the triangle at time $t = 0$ and $t = T = 2$, respectively.}
+\label{tab:area-nonlinear}
 \end{table}
-%{\color{red}\Huge\textbf{$dx \wedge dy$ measures area on the tangent space of $(x, y)$.}}
 
-%{\color{red}{\Large{$dx \wedge dy$  measures area on the tangent space of $(x, y)$.}}}
-%$\omega$ measures areas on the tangent spaces of $(x_i,y_i)$
-%$x\quad y \quad X \quad Y$
-%$\alpha = 10  \quad \alpha = 7  \quad  \alpha = 2 \quad  \alpha = 5 \quad  \alpha = 1 %\quad \alpha = 0.5  \quad \Delta{t} =0.1$
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{table}[ht!]\label{table3}
-\begin{center}
-	\begin{tabular}{|c|c|c|} 
-		\hline
-	Method, $\alpha = 0.5$	& $\Delta t$ & $||A_0^{T} J A_0 - J||$, $H_{uv}\ne \vect{0}$ \\
-		\hline
-		\multirow{2}{5em}{$SE1_1$}
-		& 0.5 & 0.0174   \\ 
-        & 0.2  & 0028    \\
-		& 0.02  & $2.7721\times 10^{-5}$    \\ 
-		\hline 
-		\multirow{2}{5em}{$SE2_1$}
-		& 0.5  & 0.0166  \\ 
-        &  0.2  & 0028    \\
-		& 0.02   & $2.7712\times 10^{-5}$      \\ 
-		\hline\multirow{2}{5em}{Mid Point}
-		& 0.5  & 0.0079 \\ 
-        &  0.2  & $2.7735\times 10^{-4}$   \\
-		& 0.02   & $1.5254\times 10^{-7}$      \\ 
-		\hline
-        \multirow{2}{5em}{Modified $SE1_1$}
-		& 0.5  & $2.5931\times 10^{-8}$  \\ 
-        &  0.2  & $3.6732\times 10^{-9}$    \\
-		& 0.02   & $4.9304\times 10^{-10}$   \\ 
-		\hline
-        \multirow{2}{5em}{Modified $SE2_1$}
-		& 0.5  & $1.0876\times 10^{-8}$  \\ 
-        &  0.2  & $3.6732\times 10^{-9}$    \\
-		& 0.02   & $4.9304\times 10^{-10}$   \\ 
-        \hline
-        \multirow{2}{5em}{Modified Mid Point}
-		& 0.5  & $2.4509\times 10^{-8}$  \\ 
-        &  0.2  & $5.0484\times 10^{-9}$    \\
-		& 0.02   & $5.1423\times 10^{-10}$   \\ 
-        \hline
-	\end{tabular}
-\end{center}
-\caption{Numerical evaluation of symplecticity for  $SE1_1, SE2_1, M.P, M.SE1_1, M.SE2_1$, and $M.M.P$  methods  (applied to system \eqref{eq_67}) with different time step sizes $(\Delta t)$. $k=1, m=20$. $A_0 = \frac{\partial z_{n+1}}{\partial z_n}(v_n,\lambda_n).$}
-\label{tab:table1}
+\begin{table}[ht!]
+\centering
+\begin{tabular}{|c|c|c|}
+   \hline
+Method, $\alpha = 0.5$ & $\Delta t$ & $\|A_0^{T} J A_0 - J\|$, $H_{uv}\ne \bm{0}$ \\
+   \hline
+   \multirow{3}{6em}{$\SEoo$}
+   & 0.5  & 0.0174 \\
+   & 0.2  & 0.0028 \\
+   & 0.02 & $2.7721\times 10^{-5}$ \\
+   \hline
+   \multirow{3}{6em}{$\SEto$}
+   & 0.5  & 0.0166 \\
+   & 0.2  & 0.0028 \\
+   & 0.02 & $2.7712\times 10^{-5}$ \\
+   \hline
+   \multirow{3}{6em}{MidPoint}
+   & 0.5  & 0.0079 \\
+   & 0.2  & $2.7735\times 10^{-4}$ \\
+   & 0.02 & $1.5254\times 10^{-7}$ \\
+   \hline
+   \multirow{3}{6em}{Modified $\SEoo$}
+   & 0.5  & $2.5931\times 10^{-8}$ \\
+   & 0.2  & $3.6732\times 10^{-9}$ \\
+   & 0.02 & $4.9304\times 10^{-10}$ \\
+   \hline
+   \multirow{3}{6em}{Modified $\SEto$}
+   & 0.5  & $1.0876\times 10^{-8}$ \\
+   & 0.2  & $3.6732\times 10^{-9}$ \\
+   & 0.02 & $4.9304\times 10^{-10}$ \\
+   \hline
+   \multirow{3}{6em}{Modified MidPoint}
+   & 0.5  & $2.4509\times 10^{-8}$ \\
+   & 0.2  & $5.0484\times 10^{-9}$ \\
+   & 0.02 & $5.1423\times 10^{-10}$ \\
+   \hline
+\end{tabular}
+\caption{Numerical evaluation of symplecticity for $\SEoo$, $\SEto$, $M.P$, $M.\SEoo$, $M.\SEto$, and $M.M.P$ methods (applied to system \eqref{eq_67}) with different time step sizes $(\Delta t)$. $k=1$, $m=20$. $A_0 = \frac{\partial z_{n+1}}{\partial z_n}(v_n,\lambda_n).$}
+\label{tab:symp-mod}
 \end{table}
 
 \begin{figure}[bht]
-	\centering
-	\includegraphics[width=0.5\textwidth]{./Images/triangle.pdf}
-	\caption{Splitting  the triangle with vertices A, B and C into 1553 smaller non-overlapping triangles}\label{triangle}
+    \centering
+    \includegraphics[width=0.5\textwidth]{./Images/triangle.pdf}
+    \caption{Splitting the triangle with vertices A, B and C into 1553 smaller non-overlapping triangles.}
+    \label{fig:triangle}
 \end{figure}
 \newpage
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Nonlinear optimal control problems(Inverted pendulum problem)}
-Consider the optimal control problem of   the inverted pendulum:
+
+\section{Nonlinear optimal control problems (Inverted pendulum problem)}
+Consider the optimal control problem of the inverted pendulum:
 \begin{align*}
-    \min_{u}\; &  \frac{1}{2}\, \int_{0}^{T} ||\bm{x}-\bm{x}_d||^{2}\; dt + \frac{\alpha}{2} \, \int_{0}^{T} u^{2} dt \\ &
-    m\ddot{\bm{x}} + \frac{\partial{U}}{\partial \bm{x}} = \bm{0}, \\ &
-    \bm{x}(0) = \bm{x}_{0}, \quad \dot{\bm{x}}(0) = \bm{v}_0,
-    \end{align*}
-    where
-    \begin{align*}
-        & U = \frac{1}{2}k(L-l_0)^2 - \bm{a}^{T}\bm{x},\; L = ||\bm{x}-(u,0)^{T}||, \\ &
-        \frac{\partial{U}}{\partial\bm{x}} =  k(\frac{L-l_{0}}{L})(\bm{x}- (u,0)^{T})-\bm{a}
-    \end{align*}
-By introducing an auxiliary variable $\bm{v}$ and set it to $\dot{\bm{x}}$, the second order differential equations is converted into a first order  system of differential equations so the control problem is formulated  as follows: 
-\begin{equation} 
+    \min_{u}\; &  \tfrac{1}{2}\, \int_{0}^{T} \|\bm{x}-\bm{x}_d\|^{2}\; dt + \tfrac{\alpha}{2} \, \int_{0}^{T} u^{2} dt \\
+    & m\ddot{\bm{x}} + \frac{\partial U}{\partial \bm{x}} = \bm{0}, \\
+    & \bm{x}(0) = \bm{x}_{0}, \quad \dot{\bm{x}}(0) = \bm{v}_0,
+\end{align*}
+where
+\begin{align*}
+    & U = \tfrac{1}{2}k(L-l_0)^2 - \bm{a}^{T}\bm{x},\quad L = \|\bm{x}-(u,0)^{T}\|, \\
+    & \frac{\partial U}{\partial\bm{x}} =  k\!\left(\tfrac{L-l_{0}}{L}\right)\!(\bm{x}- (u,0)^{T})-\bm{a}.
+\end{align*}
+By introducing an auxiliary variable $\bm{v}$ and setting it to $\dot{\bm{x}}$, the second-order differential equation is converted into a first-order system of differential equations, so the control problem is formulated as follows:
+\begin{equation}
 \label{eq:cont_tim_p}
 \begin{aligned}
-\min_{\bm{x},\, \bm{v},\, u} & J(\bm{x}, u) 
-\\ &
-\dot{\bm{x}} - \bm{v} = \bm{0}, \\ &
- \dot{\bm{v}} + \frac{1}{m} \frac{\partial{U}}{\partial\bm{x}} =  \bm{0},
-\\ &
- \bm{x}(0) =\bm{x}_0, \; \bm{v}(0) = \bm{v}_0.
+\min_{\bm{x},\, \bm{v},\, u} & J(\bm{x}, u)
+\\
+& \dot{\bm{x}} - \bm{v} = \bm{0}, \\
+& \dot{\bm{v}} + \frac{1}{m} \frac{\partial U}{\partial\bm{x}} =  \bm{0},
+\\
+& \bm{x}(0) =\bm{x}_0, \; \bm{v}(0) = \bm{v}_0.
 \end{aligned}
 \end{equation}
 
 To derive the necessary conditions for optimality, we introduce the Hamiltonian function $H$:
 \[
 H(\bm{v},\bm{x},u,\bm{\lambda},\bm{\mu}) =
-f(\bm{x},u) +  \bm{\lambda}^{T} (\frac{-1}{m})\frac{\partial U}{\partial\bm{x}} + \bm{\mu}^{T} \bm{v} 
+f(\bm{x},u) +  \bm{\lambda}^{T} \!\left(\tfrac{-1}{m}\right)\!\frac{\partial U}{\partial\bm{x}} + \bm{\mu}^{T} \bm{v},
 \]
-where $f(\bm{x},u) = r(\bm{x}) + q(u)$. By applying the Pontryagin's maximum principle to the Hamiltonian function,   the necessary  conditions for optimality are given  as follows:
+where $f(\bm{x},u) = r(\bm{x}) + q(u)$. By applying Pontryagin's maximum principle to the Hamiltonian function, the necessary conditions for optimality are given as follows:
 \begin{align*}
- & \text{Adjoint Equations: }
+ & \text{Adjoint equations: }
 \begin{cases}
 \dot{\bm{\lambda}} = -\frac{\partial H}{\partial \bm{v}}, & \bm{\lambda}(T) = \bm{0} \\
 \dot{\bm{\mu}} = -\frac{\partial H}{\partial \bm{x}}, & \bm{\mu}(T)= \bm{0}
-\end{cases} \\ &
-\text{Control Equation: }
+\end{cases} \\
+& \text{Control equation: }
 \begin{cases}
 \frac{\partial H}{\partial u} = 0
-\end{cases} \\ &
-\text{State Equations: }
+\end{cases} \\
+& \text{State equations: }
 \begin{cases}
-\dot{\bm{v}} = \frac{\partial H}{\partial \bm{\lambda}}, & \bm{\bm{v}(0)} = \bm{v}_{0} \\ 
-\dot{\bm{x}} = \frac{\partial H}{\partial \bm{\mu}}, & \bm{\bm{x}(0)} = \bm{x}_{0} \\ 
-\end{cases} \\ &
+\dot{\bm{v}} = \frac{\partial H}{\partial \bm{\lambda}}, & \bm{v}(0) = \bm{v}_{0} \\
+\dot{\bm{x}} = \frac{\partial H}{\partial \bm{\mu}}, & \bm{x}(0) = \bm{x}_{0}
+\end{cases}
 \end{align*}
-This system of equations forms a two-point boundary value problem (TPBVP), with boundary conditions specified at both the initial and terminal times.  
+This system of equations forms a two-point boundary value problem (TPBVP), with boundary conditions specified at both the initial and terminal times.
 \begin{equation}
 \label{eq:sys_analytic_sol}
 \begin{aligned}
 & \begin{cases}
 \dot{\bm{\lambda}} + \bm{\mu} = \bm{0}, &  \bm{\lambda}(T) = \bm{0},
-\\ 
-\dot{\bm{\mu}} + (\bm{x} - \bm{x}_d)- \left(\frac{kl_0}{mL^3}(\bm{x} -(u,0)^{T})(\bm{x}-(u,0)^{T})^{T} + \frac{k}{m}(\frac{L-l_0}{L})\bm{I}\right)\bm{\lambda} = \bm{0}, & \bm{\mu}(T) = \bm{0},
-\end{cases}  
-\\ &
-\alpha u - \bm{\lambda}^{T}\left( \left[\frac{-kl_0}{mL^{3}}\bm{e}_1^{T}(\bm{x}-(u,0)^{T})\right](\bm{x} - (u,0)^{T}) + \frac{-k}{m} (\frac{L-l_0}{L})\bm{e}_1 \right) = 0,
-\\ &
-\begin{cases}
-\dot{\bm{v}} + \frac{k}{m}(\frac{L-l_0}{L})(\bm{x}-(u,0)^{T})-\frac{1}{m}\bm{a} = \bm{0}, & \bm{v}(0) = \bm{v}_0,
-\\ 
+\\
+\dot{\bm{\mu}} + (\bm{x} - \bm{x}_d)- \left(\tfrac{kl_0}{mL^3}(\bm{x} -(u,0)^{T})(\bm{x}-(u,0)^{T})^{T} + \tfrac{k}{m}\!\left(\tfrac{L-l_0}{L}\right)\bm{I}\right)\bm{\lambda} = \bm{0}, & \bm{\mu}(T) = \bm{0},
+\end{cases}
+\\
+& \alpha u - \bm{\lambda}^{T}\!\left( \left[\tfrac{-kl_0}{mL^{3}}\bm{e}_1^{T}(\bm{x}-(u,0)^{T})\right]\!(\bm{x} - (u,0)^{T}) + \tfrac{-k}{m} \!\left(\tfrac{L-l_0}{L}\right)\bm{e}_1 \right) = 0,
+\\
+& \begin{cases}
+\dot{\bm{v}} + \tfrac{k}{m}\!\left(\tfrac{L-l_0}{L}\right)\!(\bm{x}-(u,0)^{T})-\tfrac{1}{m}\bm{a} = \bm{0}, & \bm{v}(0) = \bm{v}_0,
+\\
 \dot{\bm{x}} -\bm{v} = \bm{0}, & \bm{x}(0) = \bm{x}_0
 \end{cases}
 \end{aligned}
 \end{equation}
-To solve \eqref{eq:sys_analytic_sol}, six numerical schemes are  employed as follows: 
+To solve \eqref{eq:sys_analytic_sol}, six numerical schemes are employed as follows:
 \begin{align*}
-\text{Set } \bm{y}\coloneqq (\bm{v},\bm{x})^{T}, \quad \bm{p} := (\bm{\lambda},\bm{\mu})^{T},
+\text{Set } \bm{y}\coloneqq (\bm{v},\bm{x})^{T}, \quad \bm{p} := (\bm{\lambda},\bm{\mu})^{T}.
 \end{align*}
 
-
 \begin{equation}
-\begin{array}{c@{\hspace}c}
+\begin{array}{c@{\hspace{2em}}c}
 SE1: \begin{cases}
-            \dfrac{\Delta{\bm{y}}}{\Delta t} = \dfrac{\partial H}{\partial \bm{p}}(\bm{y}_{{\color{red}n+1}}, u_n, \bm{p}_n) \\ \\
-            \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{\color{red}{n+1}}, u_n, \bm{p}_n) \\ \\
+            \frac{\Delta\bm{y}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{{\color{red}n+1}}, u_n, \bm{p}_n) \\[4pt]
+            \frac{\Delta\bm{p}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{\color{red}{n+1}}, u_n, \bm{p}_n) \\[4pt]
             H_{u} (\bm{y}_n,u_n,\bm{p}_n)= 0
         \end{cases}  &  M.SE1: \begin{cases}
-            \frac{\Delta{\bm{y}}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{\color{red}n+1}, u_n, \bm{p}_n) \\ \\
-            \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{\color{red}n+1}, u_n, \bm{p}_n) \\ \\
-H_{u} (\bm{y}_{\color{red}n+1}, u_{n}, \bm{p}_{n})= 0 
-        \end{cases} \\  \\
+            \frac{\Delta\bm{y}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{\color{red}n+1}, u_n, \bm{p}_n) \\[4pt]
+            \frac{\Delta\bm{p}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{\color{red}n+1}, u_n, \bm{p}_n) \\[4pt]
+            H_{u} (\bm{y}_{\color{red}n+1}, u_{n}, \bm{p}_{n})= 0
+        \end{cases} \\[28pt]
 SE2: \begin{cases}
-            \frac{\Delta{\bm{y}}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(y_{\color{red}{n}}, u_{n+1}, \bm{p}_{n+1}) \\ \\
-            \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{{\color{red}{n}}}, u_{n+1}, \bm{p}_{n+1}) \\ \\
+            \frac{\Delta\bm{y}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{\color{red}{n}}, u_{n+1}, \bm{p}_{n+1}) \\[4pt]
+            \frac{\Delta\bm{p}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{{\color{red}{n}}}, u_{n+1}, \bm{p}_{n+1}) \\[4pt]
             H_{u}(\bm{y}_{n},u_{n},\bm{p}_{n}) = 0
         \end{cases} &   M.SE2:
         \begin{cases}
-            \frac{\Delta{\bm{y}}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{\color{red}n}, u_{n}, \bm{p}_{n+1}) \\ \\
-             \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{\color{red}n}, u_{n}, \bm{p}_{n+1}) \\ \\
-             H_{u} (\bm{y}_{\color{red}n}, u_{n}, \bm{p}_{n+1})= 0 
-        \end{cases} \\ \\ 
-        M.P: 
+            \frac{\Delta\bm{y}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{\color{red}n}, u_{n}, \bm{p}_{n+1}) \\[4pt]
+             \frac{\Delta\bm{p}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{\color{red}n}, u_{n}, \bm{p}_{n+1}) \\[4pt]
+             H_{u} (\bm{y}_{\color{red}n}, u_{n}, \bm{p}_{n+1})= 0
+        \end{cases} \\[28pt]
+        M.P:
         \begin{cases}
-            \frac{\Delta{\bm{y}}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{n+0.5}, u_{n+0.5}, \bm{p}_{n+0.5}) \\ \\
-             \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{n+0.5}, u_{n+0.5}, \bm{p}_{n+0.5}) \\ \\
-             H_{u} (\bm{y}_n, u_{n}, \bm{p}_{n})= 0 
-        \end{cases} &  M.M.P
+            \frac{\Delta\bm{y}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{n+0.5}, u_{n+0.5}, \bm{p}_{n+0.5}) \\[4pt]
+             \frac{\Delta\bm{p}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{n+0.5}, u_{n+0.5}, \bm{p}_{n+0.5}) \\[4pt]
+             H_{u} (\bm{y}_n, u_{n}, \bm{p}_{n})= 0
+        \end{cases} &  M.M.P:
         \begin{cases}
-            \frac{\Delta{\bm{y}}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5}) \\ \\
-             \frac{\Delta{\bm{p}}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5}) \\ \\
-             H_{u} (\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5})= 0 
-        \end{cases} \\ \\ 
-        \end{array}\label{eq:equation}
+            \frac{\Delta\bm{y}}{\Delta t} = \frac{\partial H}{\partial \bm{p}}(\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5}) \\[4pt]
+             \frac{\Delta\bm{p}}{\Delta t} = -\frac{\partial H}{\partial \bm{y}}(\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5}) \\[4pt]
+             H_{u} (\bm{y}_{n+0.5}, u_{n}, \bm{p}_{n+0.5})= 0
+        \end{cases} \\
+\end{array}\label{eq:equation}
 \end{equation}
-Table \ref{tab:alpha_methods} presents the numerical results obtained by applying the six numerical schemes for different values of $\alpha$.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
+Table~\ref{tab:alpha_methods} presents the numerical results obtained by applying the six numerical schemes for different values of $\alpha$.
+
 \begin{table}[h!]
       \centering
       \begin{tabular}{| l | c | c | c | c | c | c | c | c |}
@@ -870,58 +902,51 @@ Table \ref{tab:alpha_methods} presents the numerical results obtained by applyin
         M. MidPoint & 6 & 6 & 6 & 6 & 19 & 19 & 29 & 61 \\
         \bottomrule
       \end{tabular}
-      \caption{Number of iterations (N.I.) for different methods and values of \(\alpha\), with $\Delta t = 0.1, \Delta = 0.025, k=1, m=1, \bm{x}_{0} = (1,1)^{T}, \bm{x}_{d} = (0,2)^{T}, \bm{v}_{0} =(0,0)^{T}, l_{0} = \sqrt{2}, T = [0,10]$.}
+      \caption{Number of iterations (N.I.) for different methods and values of \(\alpha\), with $\Delta t \in \{0.1, 0.025\}$, $k=1$, $m=1$, $\bm{x}_{0} = (1,1)^{T}$, $\bm{x}_{d} = (0,2)^{T}$, $\bm{v}_{0} =(0,0)^{T}$, $l_{0} = \sqrt{2}$, $T \in [0,10]$.}
       \label{tab:alpha_methods}
     \end{table}
 
-    \begin{table}[h!]
+\begin{table}[h!]
       \centering
-      \caption{Numerical evaluation of symplecticity for SE1, SE2, M.P, M.SE1, M.SE2, and M.M.P methods  with different time step sizes $\Delta t$. $||\mathbf{A}_0^{T}\mathbf{J}\mathbf{A}_0-\mathbf{J}||$, where $\mathbf{A}_{0} = \frac{\partial(\mathbf{y}_{n+1},\mathbf{p}_{n+1})}{\partial(\mathbf{y}_{n},\mathbf{p}_{n})}$.}
+      \caption{Numerical evaluation of symplecticity for SE1, SE2, M.P, M.SE1, M.SE2, and M.M.P methods with different time step sizes $\Delta t$. $\|\bm{A}_0^{T}\bm{J}\bm{A}_0-\bm{J}\|$, where $\bm{A}_{0} = \frac{\partial(\bm{y}_{n+1},\bm{p}_{n+1})}{\partial(\bm{y}_{n},\bm{p}_{n})}$.}
+      \label{tab:symp-pendulum}
       \vspace{4pt}
-      \resizebox{\textwidth}{!}{
+      \resizebox{\textwidth}{!}{%
       \begin{tabular}{| l | c | c | c | c | c | c | c | c | c |}
         \toprule
-        \multirow{2}{*}{Method} 
-          & \multicolumn{3}{c|}{$\alpha = 10.0$} 
-          & \multicolumn{3}{c|}{$\alpha = 5.0$} 
+        \multirow{2}{*}{Method}
+          & \multicolumn{3}{c|}{$\alpha = 10.0$}
+          & \multicolumn{3}{c|}{$\alpha = 5.0$}
           & \multicolumn{3}{c|}{$\alpha = 1.0$} \\
         \cmidrule{2-10}
           & $\Delta t=1$ & $\Delta t=0.1$ & $\Delta t=0.025$
           & $\Delta t=1$ & $\Delta t=0.1$ & $\Delta t=0.025$
           & $\Delta t=1$ & $\Delta t=0.1$ & $\Delta t=0.025$ \\
         \midrule
-        SE1 & 0.0614853 & 0.0030918 & $1.4210\times 10^{-4}$ 
-            & 0.1148578 & 0.0031728 & $1.0397\times 10^{-4}$ 
+        SE1 & 0.0614853 & 0.0030918 & $1.4210\times 10^{-4}$
+            & 0.1148578 & 0.0031728 & $1.0397\times 10^{-4}$
             & 0.3654304 & 0.0045715 & $1.7756\times 10^{-4}$ \\
-        M.\ SE1 & $3.7994\times 10^{-10}$ & $4.7898\times 10^{-10}$ & $6.8444\times 10^{-10}$ 
-                & $3.8148\times 10^{-10}$ & $3.9087\times 10^{-10}$ & $6.7330\times 10^{-10}$ 
+        M.\ SE1 & $3.7994\times 10^{-10}$ & $4.7898\times 10^{-10}$ & $6.8444\times 10^{-10}$
+                & $3.8148\times 10^{-10}$ & $3.9087\times 10^{-10}$ & $6.7330\times 10^{-10}$
                 & $3.9091\times 10^{-10}$ & $4.9181\times 10^{-10}$ & $4.0767\times 10^{-10}$ \\
         \midrule
-        SE2 & 81.5165 & $5.5104\times 10^{-4}$ & $8.2952\times 10^{-5}$ 
-            & 29.9389 & 0.0021965 & $3.2923\times 10^{-5}$ 
+        SE2 & 81.5165 & $5.5104\times 10^{-4}$ & $8.2952\times 10^{-5}$
+            & 29.9389 & 0.0021965 & $3.2923\times 10^{-5}$
             & 25.2454 & 0.1528280 & $5.3776\times 10^{-5}$ \\
-        M.\ SE2 & $4.1198\times 10^{-8}$ & $1.2966\times 10^{-9}$ & $5.8667\times 10^{-10}$ 
-                & $4.3593\times 10^{-8}$ & $6.6569\times 10^{-10}$ & $4.4809\times 10^{-10}$ 
+        M.\ SE2 & $4.1198\times 10^{-8}$ & $1.2966\times 10^{-9}$ & $5.8667\times 10^{-10}$
+                & $4.3593\times 10^{-8}$ & $6.6569\times 10^{-10}$ & $4.4809\times 10^{-10}$
                 & $1.9479\times 10^{-8}$ & $5.4068\times 10^{-10}$ & $7.0251\times 10^{-10}$ \\
         \midrule
-        MidPoint & 0.1192 & 0.0020301 & $1.3219\times 10^{-4}$ 
-                & 0.1403 & 0.0026914 & $1.7456\times 10^{-4}$ 
+        MidPoint & 0.1192 & 0.0020301 & $1.3219\times 10^{-4}$
+                & 0.1403 & 0.0026914 & $1.7456\times 10^{-4}$
                 & 0.4556 & 0.0121969 & $7.6003\times 10^{-4}$ \\
-        M.\ MidPoint & $1.3738\times 10^{-9}$ & $4.6400\times 10^{-10}$ & $7.4220\times 10^{-10}$ 
-                    & $1.0867\times 10^{-9}$ & $5.4220\times 10^{-10}$ & $5.9989\times 10^{-10}$ 
+        M.\ MidPoint & $1.3738\times 10^{-9}$ & $4.6400\times 10^{-10}$ & $7.4220\times 10^{-10}$
+                    & $1.0867\times 10^{-9}$ & $5.4220\times 10^{-10}$ & $5.9989\times 10^{-10}$
                     & $6.6610\times 10^{-10}$ & $6.0072\times 10^{-10}$ & $7.4891\times 10^{-10}$ \\
         \bottomrule
       \end{tabular}
-      }\label{tab:table}
-
-		%\vspace{4pt}
- % {\footnotesize
- % All entries are $\|A_0^{\mathsf T} J A_0 - J\|$ with $H_{uv}\neq \vec{0}$.  
- % }
+      }
 \end{table}
-
-% Tables of Number of Iterations (N.I.) grouped by x_0
-% Mapping used: N=100 -> Δt = 0.2, N=40 -> Δt = 0.5
 
 \pagebreak
 \section{Algorithm Comparison}
@@ -930,14 +955,14 @@ In this section, we compare the baseline algorithms (SE1, SE2, MidPoint) with th
 The comparison is illustrated using three types of plots:
 
 \begin{itemize}
-  \item \textbf{Iteration plots:} Visualize convergence behavior over a grid of initial states \(\mathbf{x_0}\).
+  \item \textbf{Iteration plots:} visualize convergence behavior over a grid of initial states \(\mathbf{x_0}\).
   For each tested \(\mathbf{x_0}\), the color encodes the number of iterations required to converge (up to a fixed maximum).
   If the method does not converge within the maximum number of iterations (30 in our experiments), the corresponding point is colored black.
   Additionally, an arrow is drawn from each \(\mathbf{x_0}\) to the final state \(\mathbf{x_N}\), indicating the achieved terminal state.
 
-  \item \textbf{Control plots:} Show the computed control sequence \(u(t_i)\) (or \(u_i\)) over the discrete time index $t_i$ where \(i \in \{0,\dots,N\}\).
+  \item \textbf{Control plots:} show the computed control sequence \(u(t_i)\) (or \(u_i\)) over the discrete time index $t_i$, where \(i \in \{0,\dots,N\}\).
 
-  \item \textbf{Trajectory plots:} Show the path of the system in state space as it evolves from \(\mathbf{x_0}\) to \(\mathbf{x_N}\).
+  \item \textbf{Trajectory plots:} show the path of the system in state space as it evolves from \(\mathbf{x_0}\) to \(\mathbf{x_N}\).
   Unlike the iteration plot arrows, these plots display the full trajectory, not only the start and end points.
 \end{itemize}
 
@@ -945,7 +970,7 @@ The comparison is illustrated using three types of plots:
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{../Images/Iteration_PyPlots/Full/IterationPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0}
+  \includegraphics[width=\textwidth]{Images/IterationPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0}
   \caption{Iteration plot of Modified SE1 for \(k=0.25\), \(h=10.0\), \(N=200\), and \(m=1.0\).}
   \label{fig:example_iter_plot}
 \end{figure}
@@ -956,14 +981,14 @@ The comparison is illustrated using three types of plots:
 Each dot corresponds to a different initial condition \(\mathbf{x_0}\) in the sampled grid.
 The color indicates the number of iterations needed to converge; points that do not converge within the allowed maximum are colored black.
 Finally, each arrow maps \(\mathbf{x_0}\) to the achieved terminal state \(\mathbf{x_N}\).
-Note that these arrows do \emph{not} represent the full trajectory through the state space—only the start and end points.
-The full state evolution is shown in the trajectory  plot.
+Note that these arrows do \emph{not} represent the full trajectory through the state space---only the start and end points.
+The full state evolution is shown in the trajectory plot.
 
 \pagebreak
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{../Images/Control_PyPlots/ControlPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0_x0=-1.11, 2.12}
+  \includegraphics[width=\textwidth]{Images/ControlPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0_x0=-1.11, 2.12}
   \caption{Control plot of Modified SE1 for \(k=0.25\), \(h=10.0\), \(N=200\), \(m=1.0\), and \(\mathbf{x_0}=\vecx{-1.11}{2.12}\).}
   \label{fig:example_control_plot}
 \end{figure}
@@ -984,7 +1009,7 @@ t_i = t_0 + \frac{T-t_0}{N}\, i,
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.8\textwidth]{../Images/Projection_PyPlots/ProjectionPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0_x0=-1.11, 2.12}
+  \includegraphics[width=0.8\textwidth]{Images/ProjectionPlot_Modified SE1_k=0.25_h=10.0_N=200_m=1.0_x0=-1.11, 2.12}
   \caption{Trajectory plot of Modified SE1 for \(k=0.25\), \(h=10.0\), \(N=200\), \(m=1.0\), and \(\mathbf{x_0}=\vecx{-1.11}{2.12}\).}
   \label{fig:example_projection_plot}
 \end{figure}
@@ -998,7 +1023,6 @@ which corresponds to the endpoint indicated in the iteration plot (Figure~\ref{f
 Moreover, when the desired height component of \(\mathbf{x_d}\) is small, the converged solutions often correspond to trajectories in which the pendulum falls.
 Empirically, such cases can exhibit large differences in the projection plots even when the terminal states \(\mathbf{x_N}\) are close.
 
-
 \FloatBarrier
 \subsection{SE1}
 \algoAnalysis[
@@ -1009,7 +1033,7 @@ Empirically, such cases can exhibit large differences in the projection plots ev
   m      = 1.0,
   xA     = {2.00, 2.93},
   xB     = {-1.56, 2.93}
-]{}
+]
 
 \algoAnalysis[
   method = SE1,
@@ -1018,75 +1042,459 @@ Empirically, such cases can exhibit large differences in the projection plots ev
   N      = 100,
   m      = 1.0,
   xA     = {-2.00, 1.72},
-]{}
-
+]
 
 \algoAnalysis[
-	method = SE1,
-	k      = 0.25,
-	h      = 10.0,
-	N      = 100,
-	m      = 1.0,
-	xA     = {1.56, 1.72},
-]{}
+    method = SE1,
+    k      = 0.25,
+    h      = 10.0,
+    N      = 100,
+    m      = 1.0,
+    xA     = {1.56, 1.72},
+]
 
 \subsection{SE2}
 \algoAnalysis[
-	method = SE2,
-	k      = 1.0,
-	h      = 6.0,
-	N      = 100,
-	m      = 1.0,
-	xA     = {1.11, 2.52},
-]{}
+    method = SE2,
+    k      = 1.0,
+    h      = 6.0,
+    N      = 100,
+    m      = 1.0,
+    xA     = {1.11, 2.52},
+]
 
 \algoAnalysis[
-	method = SE2,
-	k      = 0.5,
-	h      = 10.0,
-	N      = 100,
-	m      = 1.0,
-	xA     = {-2.00, 3.74},
-	xB     = {2.00, 3.74},
-]{}
+    method = SE2,
+    k      = 0.5,
+    h      = 10.0,
+    N      = 100,
+    m      = 1.0,
+    xA     = {-2.00, 3.74},
+    xB     = {2.00, 3.74},
+]
 
 \algoAnalysis[
-	method = SE2,
-	k      = 0.25,
-	h      = 10.0,
-	N      = 100,
-	m      = 1.0,
-	xA     = {-1.56, 2.12},
-]{}
+    method = SE2,
+    k      = 0.25,
+    h      = 10.0,
+    N      = 100,
+    m      = 1.0,
+    xA     = {-1.56, 2.12},
+]
 
 \subsection{MidPoint}
 \algoAnalysis[
-	method = MidPoint,
-	k      = 1.0,
-	h      = 10.0,
-	N      = 200,
-	m      = 1.0,
-	xA     = {1.11, 3.74},
-	xB     = {2.00, 3.74},
-	xC     = {-2.00, 3.74},
-]{}
+    method = MidPoint,
+    k      = 1.0,
+    h      = 10.0,
+    N      = 200,
+    m      = 1.0,
+    xA     = {1.11, 3.74},
+    xB     = {2.00, 3.74},
+    xC     = {-2.00, 3.74},
+]
 
 \algoAnalysis[
-	method = MidPoint,
-	k      = 0.5,
-	h      = 10.0,
-	N      = 100,
-	m      = 1.0,
-	xA     = {-1.11, 3.33},
-]{}
+    method = MidPoint,
+    k      = 0.5,
+    h      = 10.0,
+    N      = 100,
+    m      = 1.0,
+    xA     = {-1.11, 3.33},
+]
 
 \algoAnalysis[
-	method = MidPoint,
-	k      = 0.25,
-	h      = 10.0,
-	N      = 100,
-	m      = 1.0,
-	xA     = {0.22, 2.12},
-]{}
+    method = MidPoint,
+    k      = 0.25,
+    h      = 10.0,
+    N      = 100,
+    m      = 1.0,
+    xA     = {0.22, 2.12},
+]
+
+    \section{Forward-Backward Euler and RK Sweep Schemes}
+\label{sec:fb-as-guess}
+
+Newton's method, when supplied with a sufficiently good initial guess,
+converges to the solution of the discrete optimality conditions in only a
+handful of iterations. In our setting this is a substantial advantage: each
+Newton step operates monolithically on the full discretised
+two-point boundary value problem and is comparatively expensive, but the
+per-iteration progress is large. The bottleneck is therefore not the cost
+of an individual step but the requirement that the iterate already lie
+inside the basin of attraction of Newton's method. From a random or
+otherwise poorly chosen starting point, convergence is unreliable and
+frequently fails outright.
+
+For the inverted-pendulum problem with $\alpha = 10$ we were able to
+construct an educated guess by hand. The intuition is straightforward: the
+regularisation is strong enough that the optimal control keeps the
+pendulum from falling, pushing the ball laterally so that it eventually
+reaches the $y$-axis, after which the pendulum ascends along a near-linear
+path toward the origin. Encoding this picture into an initial guess
+produced reliable Newton convergence for $\alpha = 10$ across most of the
+sampled initial states.
+
+This heuristic, however, is fragile. As $\alpha$ decreases, the
+regularisation weakens and the optimal trajectory deviates substantially
+from the linear-ascent picture; the educated guess no longer lies in
+Newton's basin and the method stalls or diverges. The same failure mode
+appears at fixed $\alpha$ when the initial state $\mathbf{x_0}$ corresponds
+to a hard configuration --- a low height or an awkward angle --- even when
+$\alpha$ is large.
+
+To address this, we use the forward--backward gradient method to generate
+a ``good enough'' initial guess, which Newton's method then refines.
+Forward--backward sweeps are cheap on a per-iteration basis: each sweep
+propagates the state forward, the adjoint backward, and updates the
+control without forming or factorising a Jacobian of the full discretised
+system. The trade-off is the opposite of Newton's: many cheap iterations
+rather than a few expensive ones. Because the gradient method only needs
+to deliver an iterate inside Newton's basin --- not a tightly converged
+solution --- it is well-suited to this preconditioning role.
+
+We computed full forward--backward solutions with tolerance
+$\varepsilon = 10^{-12}$ using two variants:
+\begin{itemize}
+    \item the classical forward--backward sweep with explicit Euler
+    propagation of the state and adjoint, and
+    \item an RK4 forward--backward sweep, which uses fourth-order
+    Runge--Kutta integration for both equations.
+\end{itemize}
+All examples share $\mathbf{x_d} = (0.0,\,10.0)^{T}$, $m = 1.0$, $k = 1.0$,
+$l_0 = 9.0$, and time horizon $[0,\,10]$\,s. We swept
+$\alpha \in \{10,\,5,\,1\}$ over the initial-state grid
+$\mathbf{x_0} \in \{1\}\times\{1,\,2,\,3,\,4\}$, with grid sizes
+$N \in \{100,\,200,\,400,\,600,\,800\}$. The study is currently
+being extended to $\alpha \in \{0.5,\,0.1\}$.
+
+For each configuration we report three views of the converged solution:
+the Hamiltonian $H(t_i)$, the control $u(t_i)$, and the residual cost as a
+function of iteration index. Together they expose how the solution refines
+as $N$ increases: $H$ becomes flatter, reflecting its first-integral
+character along the optimal trajectory; $u$ becomes smoother; and the
+residual decays more cleanly.
+
+\paragraph{Number of iterations and convergence cap.}
+We recorded both the number of iterations and the wall time of each
+method. The number of iterations can be large --- ranging from a few
+hundred for the easiest cases (e.g.\ $\alpha = 10$, $\mathbf{x_0} =
+(1,4)^T$, $N = 100$: $444$ RK4-FB iterations, $749$ classical-FB
+iterations) to several hundred thousand for the hardest --- but each
+iteration is cheap, so the overall wall time remains tractable. To
+bound runtime we capped the gradient iteration at $500{,}000$. A
+recorded number of iterations equal to $500{,}001$ in the tables
+therefore signals that the run hit the cap rather than meeting the
+tolerance.
+
+A non-trivial fraction of the runs in our grid fail to reach
+tolerance, predominantly at small $\alpha$ and large $N$. The non-convergence
+is visible both in the number of iterations --- many runs hit the cap of
+$500{,}000$ iterations --- and in the diagnostic plots: the Hamiltonian and
+control profiles fail to settle to a clean shape, exhibiting noise and
+oscillations absent from the converged cases. The mechanism behind these
+failures is a collapse of the step-length rule used in the gradient
+update, which we describe in detail in
+Section~\ref{sec:fb-collapse}, and the per-run outcome of every
+$(\alpha, N, \bm{x}_0)$ in our grid is tabulated in
+Table~\ref{tab:fb-results}.
+
+\subsection{Discrete forward--backward sweep schemes}
+\label{sec:fb-schemes}
+
+The numerical results of Section~\ref{sec:fb-numerical} are produced
+by two discrete forward--backward sweeps, identical in outer structure
+and differing only in how the state and adjoint ODEs are integrated.
+Both schemes target the following optimal-control problems
+\begin{equation}
+    \min_{\bm{u}}\; J(\bm{u}) = \int_{a}^{b} L(t,\bm{y},\bm{u})\,dt
+    \quad \text{s.t.} \quad \dot{\bm{y}} = \bm{f}(t,\bm{y},\bm{u}),
+    \quad \bm{y}(a) = \bm{y}_0,
+\end{equation}
+which specialises to the inverted-pendulum problem
+\eqref{eq:sys_analytic_sol} on identification of $\bm{y} \coloneqq
+(\bm{v},\bm{x})^{T}$ and $\bm{p} \coloneqq (\bm{\lambda},\bm{\mu})^{T}$.
+With Hamiltonian
+\begin{equation}
+    H(t,\bm{y},\bm{u},\bm{p}) = L(t,\bm{y},\bm{u}) + \bm{p}^{T}\bm{f}(t,\bm{y},\bm{u}),
+\end{equation}
+the continuous optimality system reads
+\begin{equation}
+    \dot{\bm{y}} = \bm{f},
+    \qquad
+    \dot{\bm{p}} = -H_{\bm{y}} = -L_{\bm{y}} - \bm{f}_{\bm{y}}^{T}\bm{p},
+    \quad \bm{p}(b) = \bm{0},
+    \qquad
+    \nabla J(\bm{u})(t) = H_{\bm{u}} = L_{\bm{u}} + \bm{f}_{\bm{u}}^{T}\bm{p}.
+    \label{eq:fb-cont-opt}
+\end{equation}
+The interval $[a,b]$ is divided into $N$ equal subintervals of length
+$h = (b-a)/N$, with nodes $t_n = a + n h$, $n = 0,\dots,N$. We write
+$\bm{y}_n \approx \bm{y}(t_n)$, $\bm{u}_n \approx \bm{u}(t_n)$,
+$\bm{p}_n \approx \bm{p}(t_n)$, and use the superscript $(k)$ to denote
+the gradient-descent iteration index.
+
+\subsubsection{Forward--backward sweep with explicit Euler}
+\label{sec:fb-euler}
+
+For the Euler variant the state is advanced forward by an explicit Euler
+step,
+\begin{equation}
+    \bm{y}_0^{(k)} = \bm{y}_0, \qquad
+    \bm{y}_{n+1}^{(k)} = \bm{y}_n^{(k)} + h\,\bm{f}\!\bigl(t_n,\, \bm{y}_n^{(k)},\, \bm{u}_n^{(k)}\bigr),
+    \quad n = 0,\dots,N-1.
+    \label{eq:fb-eul-state}
+\end{equation}
+Because the Euler update at step $n$ depends on $\bm{u}_n$ only, the value
+$\bm{u}_N$ does not enter the state sweep; in practice the control is
+therefore stored at $t_0,\dots,t_{N-1}$.
+
+For the adjoint, $\dot{\bm{p}} = -H_{\bm{y}}$ is discretised backward in
+time. Writing the backward Euler step as
+$\bm{p}_{n-1} = \bm{p}_n - h\,\dot{\bm{p}}(t_n) = \bm{p}_n + h\,H_{\bm{y}}(t_n,\bm{y}_n,\bm{u}_n,\bm{p}_n)$
+--- the plus sign coming from $\dot{\bm{p}} = -H_{\bm{y}}$ --- the discrete
+adjoint sweep is
+\begin{equation}
+    \bm{p}_N^{(k)} = \bm{0}, \qquad
+    \bm{p}_{n-1}^{(k)} = \bm{p}_n^{(k)}
+        + h\bigl[L_{\bm{y}}(t_n,\bm{y}_n^{(k)},\bm{u}_n^{(k)})
+        + \bm{f}_{\bm{y}}(t_n,\bm{y}_n^{(k)},\bm{u}_n^{(k)})^{T}\bm{p}_n^{(k)}\bigr],
+    \quad n = N,\dots,1.
+    \label{eq:fb-eul-adjoint}
+\end{equation}
+
+The discrete gradient at node $t_n$ is
+\begin{equation}
+    \bm{g}_n^{(k)} \coloneqq H_{\bm{u}}\bigl(t_n,\bm{y}_n^{(k)},\bm{u}_n^{(k)},\bm{p}_n^{(k)}\bigr)
+    = L_{\bm{u}}(t_n,\bm{y}_n^{(k)},\bm{u}_n^{(k)})
+        + \bm{f}_{\bm{u}}(t_n,\bm{y}_n^{(k)},\bm{u}_n^{(k)})^{T}\bm{p}_n^{(k)},
+    \label{eq:fb-grad}
+\end{equation}
+and the control is updated by gradient descent,
+\begin{equation}
+    \bm{u_n}^{(k+1)} = \bm{u_n}^{(k)} - \alpha_k\,\bm{g_n}^{(k)}
+    \label{eq:fb-ctrl-update}
+\end{equation}
+with step length $\alpha_k$ chosen as in Section~\ref{sec:fb-stabbb}. The
+iteration is started from an initial guess
+$\{\bm{u}_n^{(0)}\}_{n=0}^{N-1}$ and stopped when either
+\begin{equation}
+    \bigl\|\bm{u}^{(k+1)} - \bm{u}^{(k)}\bigr\| < \varepsilon
+    \quad \text{or} \quad
+    \bigl\|\bm{g}^{(k)}\bigr\| < \varepsilon,
+    \label{eq:fb-stop}
+\end{equation}
+where $\bm{u}^{(k)}$ and $\bm{g}^{(k)}$ are the stacked control and
+gradient vectors at iteration $k$ (over all nodes), and $\|\cdot\|$ is
+the Euclidean norm.
+The role of the \emph{or} is discussed in Section~\ref{sec:fb-collapse}.
+
+\subsubsection{Forward--backward sweep with RK4}
+\label{sec:fb-rk4}
+
+The RK4 variant replaces both Euler integrations by classical fourth-order
+Runge--Kutta. Midpoint quantities are required both for the forward sweep
+at $t_{n+\tfrac12} = t_n + h/2$ and for the backward sweep at
+$t_{n-\tfrac12} = t_n - h/2$; we approximate the control and state at
+midpoints by linear interpolation between the surrounding nodes,
+\begin{equation}
+    \bm{u}_{n+\tfrac12} \approx \tfrac{\bm{u}_n + \bm{u}_{n+1}}{2},
+    \qquad
+    \bm{u}_{n-\tfrac12} \approx \tfrac{\bm{u}_{n-1} + \bm{u}_n}{2},
+    \qquad
+    \bm{y}_{n-\tfrac12} \approx \tfrac{\bm{y}_{n-1} + \bm{y}_n}{2}.
+    \label{eq:fb-rk4-mid}
+\end{equation}
+Unlike the Euler variant, the RK4 forward update at step $n$ involves
+$\bm{u}_{n+1}$ through $\bm{k}_4$ (see below), so the control is stored at
+\emph{every} node $t_0,\dots,t_N$. The backward sweep additionally reuses
+the state midpoint $\bm{y}_{n-\tfrac12}$ from the converged forward
+trajectory, rather than recomputing intermediate stages.
+
+\paragraph{Forward sweep.} For $n = 0,\dots,N-1$:
+\begin{align}
+    \bm{k}_1 &= \bm{f}\bigl(t_n,\,\bm{y}_n^{(k)},\,\bm{u}_n^{(k)}\bigr), \\
+    \bm{k}_2 &= \bm{f}\bigl(t_n + \tfrac{h}{2},\,\bm{y}_n^{(k)} + \tfrac{h}{2}\bm{k}_1,\,\bm{u}_{n+\tfrac12}^{(k)}\bigr), \\
+    \bm{k}_3 &= \bm{f}\bigl(t_n + \tfrac{h}{2},\,\bm{y}_n^{(k)} + \tfrac{h}{2}\bm{k}_2,\,\bm{u}_{n+\tfrac12}^{(k)}\bigr), \\
+    \bm{k}_4 &= \bm{f}\bigl(t_n + h,\,\bm{y}_n^{(k)} + h\bm{k}_3,\,\bm{u}_{n+1}^{(k)}\bigr), \\
+    \bm{y}_{n+1}^{(k)} &= \bm{y}_n^{(k)} + \tfrac{h}{6}\bigl(\bm{k}_1 + 2\bm{k}_2 + 2\bm{k}_3 + \bm{k}_4\bigr),
+    \label{eq:fb-rk4-fwd}
+\end{align}
+with $\bm{y}_0^{(k)} = \bm{y}_0$.
+
+\paragraph{Backward sweep.} Defining
+\begin{equation}
+    g(t,\bm{y},\bm{u},\bm{p}) \coloneqq -L_{\bm{y}}(t,\bm{y},\bm{u}) - \bm{f}_{\bm{y}}(t,\bm{y},\bm{u})^{T}\bm{p}
+\end{equation}
+so that $\dot{\bm{p}} = g$, the RK4 stages for $n = N, N-1,\dots,1$ read
+\begin{align}
+    \bm{\ell}_1 &= g\bigl(t_n,\,\bm{y}_n^{(k)},\,\bm{u}_n^{(k)},\,\bm{p}_n^{(k)}\bigr), \\
+    \bm{\ell}_2 &= g\bigl(t_n - \tfrac{h}{2},\,\bm{y}_{n-\tfrac12}^{(k)},\,\bm{u}_{n-\tfrac12}^{(k)},\,\bm{p}_n^{(k)} - \tfrac{h}{2}\bm{\ell}_1\bigr), \\
+    \bm{\ell}_3 &= g\bigl(t_n - \tfrac{h}{2},\,\bm{y}_{n-\tfrac12}^{(k)},\,\bm{u}_{n-\tfrac12}^{(k)},\,\bm{p}_n^{(k)} - \tfrac{h}{2}\bm{\ell}_2\bigr), \\
+    \bm{\ell}_4 &= g\bigl(t_{n-1},\,\bm{y}_{n-1}^{(k)},\,\bm{u}_{n-1}^{(k)},\,\bm{p}_n^{(k)} - h\bm{\ell}_3\bigr), \\
+    \bm{p}_{n-1}^{(k)} &= \bm{p}_n^{(k)} - \tfrac{h}{6}\bigl(\bm{\ell}_1 + 2\bm{\ell}_2 + 2\bm{\ell}_3 + \bm{\ell}_4\bigr),
+    \label{eq:fb-rk4-bwd}
+\end{align}
+with $\bm{p}_N^{(k)} = \bm{0}$.
+
+The gradient is evaluated at every node $n = 0,\dots,N$ via
+\eqref{eq:fb-grad}; the control update \eqref{eq:fb-ctrl-update} is
+applied at every node $n = 0,\dots,N$; and the stopping rule
+\eqref{eq:fb-stop} is identical to the Euler variant.
+
+\subsection{Step length: stabilised Barzilai--Borwein}
+\label{sec:fb-stabbb}
+
+The step length $\alpha_k$ in \eqref{eq:fb-ctrl-update} is critical to
+convergence: too small and the iteration crawls, too large and the cost
+diverges. Throughout this work $\alpha_k$ is set by the stabilised
+Barzilai--Borwein (BB) line search of Bijalwan and Mu\~noz (Computer
+Methods in Applied Mechanics and Engineering~420, 2024, Algorithm~2),
+which combines the short BB step with a safeguard against overlong
+increments.
+
+Stacking the control and gradient over all nodes into the vectors
+$\bm{u}^{k} = (\bm{u}_n^{(k)})_n$ and $\bm{d}^{k} = (\bm{g}_n^{(k)})_n$,
+let $\Delta\bm{u} = \bm{u}^{k} - \bm{u}^{k-1}$ and
+$\Delta\bm{d} = \bm{d}^{k} - \bm{d}^{k-1}$. The short BB step is
+\begin{equation}
+    \theta_s^{k} = -\,\frac{\Delta\bm{u}^{T}\Delta\bm{d}}{\|\Delta\bm{d}\|^{2}}.
+    \label{eq:bb-short}
+\end{equation}
+For non-convex objectives $\theta_s^{k}$ may be negative; the geometric-mean
+fallback
+\begin{equation}
+    \theta_m^{k} = \frac{\|\Delta\bm{u}\|}{\|\Delta\bm{d}\|}
+    \label{eq:bb-mean}
+\end{equation}
+is then used instead. To prevent overlong increments, an upper bound
+$\theta_{\max} > 0$ on the displacement $\|\bm{u}^{k+1}-\bm{u}^{k}\|$ is
+imposed, which yields the threshold
+\begin{equation}
+    \theta_{\mathrm{th}}^{k} = \frac{\theta_{\max}}{\|\bm{d}^{k}\|}.
+    \label{eq:bb-thresh}
+\end{equation}
+The final BB step length used in \eqref{eq:fb-ctrl-update} is
+\begin{equation}
+    \alpha_k = \theta^{k} =
+    \begin{cases}
+        \min\bigl(\theta_s^{k},\,\theta_{\mathrm{th}}^{k}\bigr), & \theta_s^{k} > 0, \\
+        \min\bigl(\theta_m^{k},\,\theta_{\mathrm{th}}^{k}\bigr), & \theta_s^{k} < 0,
+    \end{cases}
+    \label{eq:bb-final}
+\end{equation}
+with $\theta_{\max}$ a fixed positive parameter of the algorithm. The
+Stabilised BB rule \eqref{eq:bb-final} requires the previous increments
+$\Delta\bm{u}, \Delta\bm{d}$, which are only defined for $k \geq 1$; we
+therefore supply $\alpha_0$ as an externally specified input parameter
+and apply \eqref{eq:bb-final} from $k = 1$ onward.
+
+\subsection{Premature termination from BB collapse}
+\label{sec:fb-collapse}
+
+The stabilised BB rule of Section~\ref{sec:fb-stabbb} bounds $\alpha_k$
+from above but \emph{not} from below. Near a stationary point the
+increments $\Delta\bm{u}$ and $\Delta\bm{d}$ shrink together at comparable
+rates, so the ratios in \eqref{eq:bb-short}--\eqref{eq:bb-mean} approach
+$0/0$ and eventually return $\mathrm{NaN}$ in floating-point arithmetic.
+Once $\alpha_k = \mathrm{NaN}$, the next control update
+\eqref{eq:fb-ctrl-update} destroys the iterate.
+
+The collapse is most severe at small $\alpha$ --- the regularisation
+weight in the cost, not to be confused with the BB step $\alpha_k$ ---
+where the gradient
+$H_{\bm{u}} = \alpha\,\bm{u} + \dots$ responds weakly to changes in
+$\bm{u}$, and at large $N$, where per-component magnitudes shrink with
+the time step. In those regimes the BB step length collapses toward zero
+faster than $\|H_{\bm{u}}\|$ falls below the tolerance $\varepsilon$.
+
+To avoid silent corruption of the iterate we relaxed the convergence
+test from the conjunction
+\begin{equation*}
+    \bigl\|\bm{u}^{(k+1)} - \bm{u}^{(k)}\bigr\| < \varepsilon
+    \quad \text{and} \quad
+    \bigl\|H_{\bm{u}}^{(k)}\bigr\| < \varepsilon
+\end{equation*}
+to the disjunction in \eqref{eq:fb-stop}: the iteration stops as soon as
+\emph{either} the control update or the gradient becomes small. The
+price is that some runs terminate while $\|H_{\bm{u}}\|$ is still well
+above $\varepsilon$; these are the rows shaded in
+Table~\ref{tab:fb-results}. The final BB step lengths
+$\theta^{k}_{\mathrm{last}}$ in those rows are several orders of
+magnitude smaller than in the converged rows at the same
+$(\alpha, N, \bm{x}_0)$, which is precisely the BB-collapse signature.
+
+\section{Forward--Backward Numerical Results}
+\label{sec:fb-numerical}
+
+We present the converged forward--backward solutions across the
+$(\Delta t,\,\alpha,\,\mathbf{x_0})$ grid described in
+Section~\ref{sec:fb-as-guess}. For each configuration we report two views
+of the converged solution: the Hamiltonian
+$H_i \coloneqq H(\mathbf{y}_i,u_i,\mathbf{p}_i)$ along the discretised
+trajectory and the optimal control $u_i$. Each plot compares the two
+forward--backward variants on the same axes: classical Euler
+forward--backward (blue) and RK4 forward--backward (orange).
+
+We organise the results by $\alpha$. For each $(\alpha, \mathbf{x_0})$
+shown we display the Hamiltonian and the control as $\Delta t$ is
+decreased from $0.1$ down to $0.0125$. We restrict the figures to
+configurations in which \emph{every} $\Delta t$ in the sweep converged
+according to the criterion of Section~\ref{sec:fb-collapse}; the full
+convergence outcome of every $(\alpha, N, \mathbf{x_0})$ in our grid is
+in Table~\ref{tab:fb-results}. With this restriction, only $\alpha = 10$
+shows the complete $\mathbf{x_0} \in \{(1,1),(1,2),(1,3),(1,4)\}^{T}$
+sweep; at $\alpha = 5$ only $\mathbf{x_0} = (1,2)^{T}$ converged across
+every $\Delta t$; and at $\alpha = 1$ no initial state did. Two trends
+are universal across the converged cases: as $\Delta t$ decreases, the
+Hamiltonian flattens toward the constant value expected of a first
+integral of the optimality system, and the control profile sharpens
+around the boundary layers and stabilises in the bulk. The discrepancies
+between Euler and RK4 forward--backward shrink with $\Delta t$ as well,
+since both variants are recovering the same continuous-time optimum.
+
+\FloatBarrier
+\subsection{Convergence and non-convergence}
+\label{sec:fb-convergence}
+
+In a non-trivial fraction of configurations the gradient method failed to
+reach tolerance. The diagnostic plots make these runs unmistakable: $H_i$
+is far from constant and the control profile fails to settle, instead
+exhibiting persistent oscillations and discontinuous jumps. The mechanism
+behind the failure is the BB step-length collapse analysed in
+Section~\ref{sec:fb-collapse}: the iteration is stopped by the
+$\|\Delta\bm{u}\| < \varepsilon$ branch of \eqref{eq:fb-stop} while
+$\|H_{\bm{u}}\|$ is still well above $\varepsilon$, because the
+stabilised BB rule has driven $\theta^{k}$ to floating-point underflow.
+Such runs are not used as Newton seeds.
+
+Table~\ref{tab:fb-results} reports, for every
+$(\alpha, N, \bm{x}_0)$ in our grid, the number of iterations, wall time,
+final $\|H_{\bm{u}}\|$, and final BB step length
+$\theta^{k}_{\mathrm{last}}$ for both Euler and RK4 forward--backward.
+Runs flagged as failed --- those where $\|H_{\bm{u}}\| > 10^{-5}$ at
+termination --- are shaded; their $\theta^{k}_{\mathrm{last}}$ entries
+are several orders of magnitude smaller than the converged rows, which
+is the BB-collapse signature described in
+Section~\ref{sec:fb-collapse}. A dash ``\textbf{---}'' in the number-of-iterations
+column means the run hit the $500{,}000$-iteration cap before any
+stopping criterion fired. The figures below restrict to
+configurations in which every $\Delta t$ converged.
+
+\input{tables/fb_results_table}
+
+\FloatBarrier
+\HsweepFig{10.0}{1.0}{1.0}
+\UsweepFig{10.0}{1.0}{1.0}
+\HsweepFig{10.0}{1.0}{2.0}
+\UsweepFig{10.0}{1.0}{2.0}
+\HsweepFig{10.0}{1.0}{3.0}
+\UsweepFig{10.0}{1.0}{3.0}
+\HsweepFig{10.0}{1.0}{4.0}
+\UsweepFig{10.0}{1.0}{4.0}
+
+\FloatBarrier
+\HsweepFig{5.0}{1.0}{2.0}
+\UsweepFig{5.0}{1.0}{2.0}
 
 \end{document}
