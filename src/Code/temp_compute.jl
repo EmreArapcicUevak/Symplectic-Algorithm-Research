@@ -1,8 +1,9 @@
-using Pkg; Pkg.instantiate(); Pkg.resolve()
+include("../Modules/Settings.jl")
+
 using LinearAlgebra; BLAS.set_num_threads(1)
 using InteractiveUtils;
 
-include("../Modules/CLI_Param.jl"); include("../Modules/forward_backward_sweep.jl"); include("../Modules/Settings.jl"); include("../Modules/Remote_Status_Notifier.jl"); include("../Modules/ExperimentHarness.jl"); include("../Modules/Systems.jl")
+include("../Modules/CLI_Param.jl"); include("../Modules/forward_backward_sweep.jl"); include("../Modules/Remote_Status_Notifier.jl"); include("../Modules/ExperimentHarness.jl"); include("../Modules/Systems.jl")
 using MAT, Serialization, Base.Threads, BenchmarkTools, LinearAlgebra, CSV, DataFrames
 using Plots, Printf
 
@@ -22,10 +23,6 @@ default(
     lw               = 8,
 )
 
-result_folder = "Results/"
-figure_results_folder = joinpath(result_folder, "figure_results/")
-mkpath(figure_results_folder)
-
 function body(paramaters :: NamedTuple)
     local N = paramaters[:N]
     local x₀ = paramaters[:x₀]
@@ -34,7 +31,7 @@ function body(paramaters :: NamedTuple)
     local k = paramaters[:k]
     local α = paramaters[:α]
 
-    local l₀ = x_d[2] - m / k
+    local l₀ = x_d[2] + m / k
     local v₀ = Float64[0, 0]
     local y₀ = vcat(v₀, x₀)
 
@@ -67,6 +64,7 @@ function body(paramaters :: NamedTuple)
         :fb_g_norm => fb_g_norm,
         :fb_step_lenghts => fb_step_lenghts,
         :fb_residual_norm => norm(fb_residual),
+        :l₀ => l₀,
     )
 end
 
@@ -77,8 +75,8 @@ function result_completed(paramaters, results, rows, progress)
     local m = paramaters[:m]
     local k = paramaters[:k]
     local α = paramaters[:α]
+    local l₀ = paramaters[:l₀]
 
-    local l₀ = x_d[2] - m / k
     local file_name_base = "N=$N,x₀=$(x₀),x_d=$(x_d),m=$(m),k=$(k),α=$α,l₀=$(l₀)"   
 
     local fb_res, rk4_res = results[:fb_results], results[:rk4_results]
@@ -117,13 +115,13 @@ function result_completed(paramaters, results, rows, progress)
 
 
     local control_plot = plot(LinRange(0., 10., length(u_fb)), u_fb, label="Forward Backward Euler") ; plot!(control_plot, LinRange(0., 10., length(u_rk_fb)), u_rk_fb, label="Forward Backward RK4") ; ylabel!("uₜ") ; xlabel!("t")
-    savefig(control_plot, joinpath(figure_results_folder, "control_plot_$(file_name_base).pdf"))
+    savefig(control_plot, joinpath(Settings.FIGURE_RESULTS_FOLDER, "control_plot_$(file_name_base).pdf"))
 
     local p =  plot(LinRange(0., 10., length(fb_cost)), fb_cost, label = "Forward Backward Euler") ; plot!(p, LinRange(0., 10., length(rk4_cost)), rk4_cost, label="Forward Backward RK4"); ylabel!("Residual Cost") ; xlabel!("Iteration")
-    savefig(p, joinpath(figure_results_folder, "residual_cost_$(file_name_base).pdf"))
+    savefig(p, joinpath(Settings.FIGURE_RESULTS_FOLDER, "residual_cost_$(file_name_base).pdf"))
 
     local hamiltonian_plot = plot(LinRange(0., 10., length(H_fb)), H_fb, label="Forward Backward Euler", xlabel="t", ylabel = "Hₜ") ; plot!(hamiltonian_plot, LinRange(0., 10., length(H_rk4_fb)), H_rk4_fb, label= "Forward Backward RK4") 
-    savefig(hamiltonian_plot, joinpath(figure_results_folder, "hamiltonian_plot_$(file_name_base).pdf"))
+    savefig(hamiltonian_plot, joinpath(Settings.FIGURE_RESULTS_FOLDER, "hamiltonian_plot_$(file_name_base).pdf"))
 
     local body = """
             Results for
@@ -167,7 +165,7 @@ res = ExperimentHarness.run_grid(
     param_grid = param_grid,
     key_cols = collect(keys(param_grid)),
     on_iteration = result_completed,
-    scalar_cols = [:rk4_time, :rk4_iterations, :rk4_g_norm, :rk4_step_lenghts, :fb_time, :fb_iterations, :fb_g_norm, :fb_step_lenghts, :rk4_residual_norm, :fb_residual_norm],
+    scalar_cols = [:rk4_time, :rk4_iterations, :rk4_g_norm, :rk4_step_lenghts, :fb_time, :fb_iterations, :fb_g_norm, :fb_step_lenghts, :rk4_residual_norm, :fb_residual_norm, :l₀],
 )
 if !isnothing(res)
     Remote_Status_Notifier.send_ntfy_message("Experiment completed!"; title = "Completion Notice", priority = "high")
