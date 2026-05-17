@@ -3,21 +3,52 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <mutex>
+#include <queue>
+#include <vector>
 
 #define CUDA_CHECK(code)                                            \
-  do {                                                             \
+  do {                                                              \
     cudaError_t _e = (code);                                        \
     if (_e != cudaSuccess) {                                        \
       fprintf(stderr, "[CUDA]  %s  (error %d)  %s:%d \n",           \
               cudaGetErrorString(_e), (int)_e, __FILE__, __LINE__); \
-      exit(EXIT_FAILURE);                                          \
-    }                                                              \
+      exit(EXIT_FAILURE);                                           \
+    }                                                               \
   } while (0)
 
 __device__ __forceinline__ double L(double x0, double x1, double u) {
   double d = x0 - u;
   return std::hypot(d, x1);
 }
+
+// <-----  Stream management -----> //
+
+static std::mutex gpu_pool_mutex;
+static std::vector<cudaStream_t> gpu_all_streams;
+static std::queue<cudaStream_t> gpu_free_streams;
+
+static cudaStream_t acquire_stream() {
+  std::lock_guard<std::mutex> lock(gpu_pool_mutex);
+
+  if (!gpu_free_streams.empty()) {
+    cudaStream_t stream = gpu_free_streams.front();
+    gpu_free_streams.pop();
+    return stream;
+  }
+
+  cudaStream_t stream;
+  CUDA_CHECK(cudaStreamCreate(&stream));
+  gpu_all_streams.push_back(stream);
+  return stream;
+}
+
+static void release_stream(cudaStream_t stream) {
+  std::lock_guard<std::mutex> lock(gpu_pool_mutex);
+  gpu_free_streams.push(stream);
+}
+
+// <-----  Helper Functions -----> //
 
 __device__ __forceinline__ void x(const double* __restrict__ Y, long i, long N,
                                   double x0_0, double x0_1, double& o0,
@@ -692,6 +723,8 @@ void SE_launch(Method method, const double* Y_h, double* R_h, long N,
   constexpr int BLOCK = 256;
   long length = (9 * N + 1) * M;
 
+  stream = acquire_stream();
+
   if (method == Method::Modified_SE1 || method == Method::Modified_SE2 ||
       method == Method::Modified_MidPoint)
     length = 9 * N * M;
@@ -703,7 +736,7 @@ void SE_launch(Method method, const double* Y_h, double* R_h, long N,
   CUDA_CHECK(cudaMalloc((void**)&R, sizeof(double) * length));
 
   CUDA_CHECK(cudaMemcpyAsync(Y, Y_h, sizeof(double) * length,
-                           cudaMemcpyHostToDevice, stream));
+                             cudaMemcpyHostToDevice, stream));
 
   if (method == Method::SE1) {
     {
@@ -767,12 +800,14 @@ void SE_launch(Method method, const double* Y_h, double* R_h, long N,
   CUDA_CHECK(cudaGetLastError());
 
   CUDA_CHECK(cudaMemcpyAsync(R_h, R, sizeof(double) * length,
-                           cudaMemcpyDeviceToHost, stream));
+                             cudaMemcpyDeviceToHost, stream));
 
   CUDA_CHECK(cudaStreamSynchronize(stream));
 
   CUDA_CHECK(cudaFree(Y));
   CUDA_CHECK(cudaFree(R));
+
+  release_stream(stream);
 }
 
 // <-----  Approximate Jacobian -----> //
@@ -815,6 +850,8 @@ void ApproximateJacobian_launch(Method method, const double* Y_h, double* J_h,
   constexpr int BLOCK = 256;
   long x_size = 9 * N;
 
+  stream = acquire_stream();
+
   if (method == Method::SE1 || method == Method::SE2 ||
       method == Method::MidPoint)
     x_size++;
@@ -830,7 +867,7 @@ void ApproximateJacobian_launch(Method method, const double* Y_h, double* J_h,
   CUDA_CHECK(cudaMalloc((void**)&J_d, sizeof(double) * J_size));
 
   CUDA_CHECK(cudaMemcpyAsync(Y0_d, Y_h, sizeof(double) * x_size,
-                           cudaMemcpyHostToDevice, stream));
+                             cudaMemcpyHostToDevice, stream));
 
   {
     dim3 grid((batch_total + BLOCK - 1) / BLOCK);
@@ -902,7 +939,7 @@ void ApproximateJacobian_launch(Method method, const double* Y_h, double* J_h,
   CUDA_CHECK(cudaStreamSynchronize(stream));
 
   CUDA_CHECK(cudaMemcpyAsync(J_h, J_d, sizeof(double) * J_size,
-                           cudaMemcpyDeviceToHost, stream));
+                             cudaMemcpyDeviceToHost, stream));
 
   CUDA_CHECK(cudaStreamSynchronize(stream));
 
@@ -910,6 +947,8 @@ void ApproximateJacobian_launch(Method method, const double* Y_h, double* J_h,
   CUDA_CHECK(cudaFree(Y_batch));
   CUDA_CHECK(cudaFree(R_batch));
   CUDA_CHECK(cudaFree(J_d));
+
+  release_stream(stream);
 }
 
 // <-----  Approximate Jacobian Central -----> //
@@ -956,6 +995,8 @@ void ApproximateJacobianCentral_launch(Method method, const double* Y_h,
   constexpr int BLOCK = 256;
   long x_size = 9 * N;
 
+  stream = acquire_stream();
+
   if (method == Method::SE1 || method == Method::SE2 ||
       method == Method::MidPoint)
     x_size++;
@@ -971,7 +1012,7 @@ void ApproximateJacobianCentral_launch(Method method, const double* Y_h,
   CUDA_CHECK(cudaMalloc((void**)&J_d, sizeof(double) * J_size));
 
   CUDA_CHECK(cudaMemcpyAsync(Y0_d, Y_h, sizeof(double) * x_size,
-                           cudaMemcpyHostToDevice, stream));
+                             cudaMemcpyHostToDevice, stream));
 
   {
     dim3 grid((batch_total + BLOCK - 1) / BLOCK);
@@ -1049,7 +1090,7 @@ void ApproximateJacobianCentral_launch(Method method, const double* Y_h,
   CUDA_CHECK(cudaStreamSynchronize(stream));
 
   CUDA_CHECK(cudaMemcpyAsync(J_h, J_d, sizeof(double) * J_size,
-                           cudaMemcpyDeviceToHost, stream));
+                             cudaMemcpyDeviceToHost, stream));
 
   CUDA_CHECK(cudaStreamSynchronize(stream));
 
@@ -1057,6 +1098,8 @@ void ApproximateJacobianCentral_launch(Method method, const double* Y_h,
   CUDA_CHECK(cudaFree(Y_batch));
   CUDA_CHECK(cudaFree(R_batch));
   CUDA_CHECK(cudaFree(J_d));
+
+  release_stream(stream);
 }
 
 // <-----  Library Interface -----> //
