@@ -1,55 +1,88 @@
 module NewtonMethodModule_GPU
 
+# Change to the path of the library file
+const lib = joinpath(@__DIR__, "systems.so")
+
+@enum SystemsMethod begin
+    SE1 = 0
+    SE2 = 1
+    Modified_SE1 = 2
+    Modified_SE2 = 3
+    MidPoint = 4
+    Modified_MidPoint = 5
+end
+
 export AproximateJacobian
-function AproximateJacobian(F::Function, x₀::Vector{Float64}; t=1e-6::Float64)
-    x_size = length(x₀)
-    M = x_size + 1
+function AproximateJacobian(params::Dict, x₀::Vector{Float64}; t=1e-6::Float64)
 
-    Y = zeros(Float64, M * x_size)
-    for i in 0:M-1
-        Y[i*x_size+1:(i+1)*x_size] = x₀
+    x_size = 9 * params[:N] + 1
+    _method = string(nameof(params[:method]))
+    local method
+
+    if (_method == "SE1")
+        method = SE1
+    elseif (_method == "SE2")
+        method = SE2
+    elseif (_method == "Modified_SE1")
+        method = Modified_SE1
+    elseif (_method == "Modified_SE2")
+        method = Modified_SE2
+    elseif (_method == "MidPoint")
+        method = MidPoint
+    elseif (_method == "Modified_MidPoint")
+        method = Modified_MidPoint
+    else
+        error("Unknown method given : $_method")
     end
 
-    for i in 1:x_size
-        Y[i*x_size+i] += t
+    if (method == Modified_SE1 || method == Modified_SE2 || method == Modified_MidPoint)
+        x_size -= 1
     end
-
-    R = F(Y)
-
-    R_base = R[1:x_size]
 
     J = zeros(Float64, x_size, x_size)
-    for i in 1:x_size
-        J[:, i] = (R[i*x_size+1:(i+1)*x_size] - R_base) / t
-    end
+
+    ccall((:ApproximateJacobian, lib), Cvoid, (Cint, Ptr{Float64}, Ptr{Float64}, Clong, Cdouble, Cdouble, Cdouble, Ptr{Float64}, Cdouble, Cdouble, Ptr{Float64},
+            Cdouble, Ptr{Float64}, Cdouble),
+        Cint(method), x₀, J, params[:N], params[:α], params[:m], params[:k], params[:a], params[:t₀],
+        params[:T], params[:x₀], params[:l₀], params[:x_d], t)
 
     return J
+
 end
 
 export AproximateJacobianCentral
-function AproximateJacobianCentral(F::Function, x₀::Vector{T}; t=1e-6::Float64) where T<:Real
-    x_size = length(x₀)
-    M = 2 * x_size
+function AproximateJacobianCentral(params::Dict, x₀::Vector{T}; t=1e-6::Float64) where T<:Real
 
-    Y = zeros(Float64, M * x_size)
-    for i in 0:M-1
-        Y[i*x_size+1:(i+1)*x_size] = x₀
+    x_size = 9 * params[:N] + 1
+    _method = string(nameof(params[:method]))
+    local method
+
+    if (_method == "SE1")
+        method = SE1
+    elseif (_method == "SE2")
+        method = SE2
+    elseif (_method == "Modified_SE1")
+        method = Modified_SE1
+    elseif (_method == "Modified_SE2")
+        method = Modified_SE2
+    elseif (_method == "MidPoint")
+        method = MidPoint
+    elseif (_method == "Modified_MidPoint")
+        method = Modified_MidPoint
+    else
+        error("Unknown method given : $_method")
     end
 
-    for i in 1:x_size
-        Y[(2*i-2)*x_size+i] += t
-        Y[(2*i-1)*x_size+i] -= t
+    if (method == Modified_SE1 || method == Modified_SE2 || method == Modified_MidPoint)
+        x_size -= 1
     end
-
-    R = F(Y)
 
     J = zeros(Float64, x_size, x_size)
 
-    for i in 1:x_size
-        R_plus = R[(2*i-2)*x_size+1:(2*i-1)*x_size]
-        R_minus = R[(2*i-1)*x_size+1:2*i*x_size]
-        J[:, i] = (R_plus - R_minus) / (2 * t)
-    end
+    ccall((:ApproximateJacobianCentral, lib), Cvoid, (Cint, Ptr{Float64}, Ptr{Float64}, Clong, Cdouble, Cdouble, Cdouble, Ptr{Float64}, Cdouble, Cdouble, Ptr{Float64},
+            Cdouble, Ptr{Float64}, Cdouble),
+        Cint(method), x₀, J, params[:N], params[:α], params[:m], params[:k], params[:a], params[:t₀],
+        params[:T], params[:x₀], params[:l₀], params[:x_d], t)
 
     return J
 end

@@ -1,8 +1,3 @@
-// Y = 9n + 1
-// a 2d vector
-// x0 2d vector
-// x_d 2d vector
-
 #include <cuda_runtime.h>
 
 #include <cmath>
@@ -10,13 +5,13 @@
 #include <cstdlib>
 
 #define CUDA_CHECK(code)                                            \
-  do {                                                              \
+  do {                                                             \
     cudaError_t _e = (code);                                        \
     if (_e != cudaSuccess) {                                        \
       fprintf(stderr, "[CUDA]  %s  (error %d)  %s:%d \n",           \
               cudaGetErrorString(_e), (int)_e, __FILE__, __LINE__); \
-      exit(EXIT_FAILURE);                                           \
-    }                                                               \
+      exit(EXIT_FAILURE);                                          \
+    }                                                              \
   } while (0)
 
 __device__ __forceinline__ double L(double x0, double x1, double u) {
@@ -682,19 +677,18 @@ __global__ void Modified_MidPoint_loop_kernel(
 // <-----  Kernel Launcher -----> //
 
 enum class Method {
-  SE1,
-  SE2,
-  Modified_SE1,
-  Modified_SE2,
-  MidPoint,
-  Modified_MidPoint
+  SE1 = 0,
+  SE2 = 1,
+  Modified_SE1 = 2,
+  Modified_SE2 = 3,
+  MidPoint = 4,
+  Modified_MidPoint = 5
 };
 
 void SE_launch(Method method, const double* Y_h, double* R_h, long N,
                double alpha, double m, double k, double* a, double t0, double T,
                double* x0, double l0, double* x_d, long M,
                cudaStream_t stream = 0) {
-  cudaError_t error;
   constexpr int BLOCK = 256;
   long length = (9 * N + 1) * M;
 
@@ -709,7 +703,7 @@ void SE_launch(Method method, const double* Y_h, double* R_h, long N,
   CUDA_CHECK(cudaMalloc((void**)&R, sizeof(double) * length));
 
   CUDA_CHECK(cudaMemcpyAsync(Y, Y_h, sizeof(double) * length,
-                             cudaMemcpyHostToDevice, stream));
+                           cudaMemcpyHostToDevice, stream));
 
   if (method == Method::SE1) {
     {
@@ -772,24 +766,303 @@ void SE_launch(Method method, const double* Y_h, double* R_h, long N,
 
   CUDA_CHECK(cudaGetLastError());
 
+  CUDA_CHECK(cudaMemcpyAsync(R_h, R, sizeof(double) * length,
+                           cudaMemcpyDeviceToHost, stream));
+
   CUDA_CHECK(cudaStreamSynchronize(stream));
 
-  CUDA_CHECK(cudaMemcpyAsync(R_h, R, sizeof(double) * length,
-                             cudaMemcpyDeviceToHost, stream));
+  CUDA_CHECK(cudaFree(Y));
+  CUDA_CHECK(cudaFree(R));
+}
 
-  if (Y) {
-    error = cudaFree(Y);
-    Y = nullptr;
+// <-----  Approximate Jacobian -----> //
+
+__global__ void build_jacobian_batch_kernel(const double* __restrict__ x0,
+                                            double* __restrict__ Y_batch,
+                                            long x_size, long M, double t) {
+  const long idx = (long)(blockIdx.x * blockDim.x + threadIdx.x);
+  if (idx >= M * x_size) return;
+
+  const long batch = idx / x_size;
+  const long col = idx % x_size;
+
+  double val = x0[col];
+
+  if (batch > 0 && col == (batch - 1)) val += t;
+  Y_batch[idx] = val;
+}
+
+__global__ void compute_jacobian_kernel(const double* __restrict__ R_batch,
+                                        double* __restrict__ J, long x_size,
+                                        double t) {
+  const long idx = (long)(blockIdx.x * blockDim.x + threadIdx.x);
+  if (idx >= x_size * x_size) return;
+
+  const long col = idx / x_size;
+  const long row = idx % x_size;
+
+  const double R_base = R_batch[row];
+  const double R_pert = R_batch[(col + 1) * x_size + row];
+
+  J[col * x_size + row] = (R_pert - R_base) / t;
+}
+
+void ApproximateJacobian_launch(Method method, const double* Y_h, double* J_h,
+                                long N, double alpha, double m, double k,
+                                double* a, double t0, double T, double* x0,
+                                double l0, double* x_d, double t,
+                                cudaStream_t stream = 0) {
+  constexpr int BLOCK = 256;
+  long x_size = 9 * N;
+
+  if (method == Method::SE1 || method == Method::SE2 ||
+      method == Method::MidPoint)
+    x_size++;
+
+  const long M = x_size + 1;
+  const long batch_total = M * x_size;
+  const long J_size = x_size * x_size;
+
+  double *Y0_d, *Y_batch, *R_batch, *J_d;
+  CUDA_CHECK(cudaMalloc((void**)&Y0_d, sizeof(double) * x_size));
+  CUDA_CHECK(cudaMalloc((void**)&Y_batch, sizeof(double) * batch_total));
+  CUDA_CHECK(cudaMalloc((void**)&R_batch, sizeof(double) * batch_total));
+  CUDA_CHECK(cudaMalloc((void**)&J_d, sizeof(double) * J_size));
+
+  CUDA_CHECK(cudaMemcpyAsync(Y0_d, Y_h, sizeof(double) * x_size,
+                           cudaMemcpyHostToDevice, stream));
+
+  {
+    dim3 grid((batch_total + BLOCK - 1) / BLOCK);
+    build_jacobian_batch_kernel<<<grid, dim3(BLOCK), 0, stream>>>(Y0_d, Y_batch,
+                                                                  x_size, M, t);
   }
-  if (R) {
-    error = cudaFree(R);
-    R = nullptr;
+
+  if (method == Method::SE1) {
+    {
+      dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+      SE1_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+          x_d[0], x_d[1], M);
+    }
+    {
+      dim3 grid((M + BLOCK - 1) / BLOCK);
+      SE1_boundary_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, x0[0], x0[1], l0, M);
+    }
+  } else if (method == Method::SE2) {
+    {
+      dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+      SE2_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+          x_d[0], x_d[1], M);
+    }
+    {
+      dim3 grid((M + BLOCK - 1) / BLOCK);
+      SE2_boundary_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, x0[0], x0[1], l0, M);
+    }
+  } else if (method == Method::Modified_SE1) {
+    dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+    Modified_SE1_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+        Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+        x_d[0], x_d[1], M);
+  } else if (method == Method::Modified_SE2) {
+    dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+    Modified_SE2_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+        Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+        x_d[0], x_d[1], M);
+  } else if (method == Method::MidPoint) {
+    {
+      dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+      MidPoint_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+          x_d[0], x_d[1], M);
+    }
+    {
+      dim3 grid((M + BLOCK - 1) / BLOCK);
+      MidPoint_boundary_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, x0[0], x0[1], l0, M);
+    }
+  } else if (method == Method::Modified_MidPoint) {
+    dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+    Modified_MidPoint_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+        Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+        x_d[0], x_d[1], M);
   }
+
+  {
+    dim3 grid((J_size + BLOCK - 1) / BLOCK);
+    compute_jacobian_kernel<<<grid, dim3(BLOCK), 0, stream>>>(R_batch, J_d,
+                                                              x_size, t);
+  }
+
+  CUDA_CHECK(cudaGetLastError());
+
+  CUDA_CHECK(cudaStreamSynchronize(stream));
+
+  CUDA_CHECK(cudaMemcpyAsync(J_h, J_d, sizeof(double) * J_size,
+                           cudaMemcpyDeviceToHost, stream));
+
+  CUDA_CHECK(cudaStreamSynchronize(stream));
+
+  CUDA_CHECK(cudaFree(Y0_d));
+  CUDA_CHECK(cudaFree(Y_batch));
+  CUDA_CHECK(cudaFree(R_batch));
+  CUDA_CHECK(cudaFree(J_d));
+}
+
+// <-----  Approximate Jacobian Central -----> //
+
+__global__ void build_jacobian_central_batch_kernel(
+    const double* __restrict__ x0, double* __restrict__ Y_batch, long x_size,
+    long M, double t) {
+  const long idx = (long)(blockIdx.x * blockDim.x + threadIdx.x);
+  if (idx >= M * x_size) return;
+
+  const long batch = idx / x_size;
+  const long col = idx % x_size;
+
+  const long col_idx = batch / 2;
+  const long sign = batch % 2;  // 0 = plus, 1 = minus
+
+  double val = x0[col];
+  if (col == col_idx) val += (sign == 0) ? t : -t;
+
+  Y_batch[idx] = val;
+}
+
+__global__ void compute_jacobian_central_kernel(
+    const double* __restrict__ R_batch, double* __restrict__ J, long x_size,
+    double t) {
+  const long idx = (long)(blockIdx.x * blockDim.x + threadIdx.x);
+  if (idx >= x_size * x_size) return;
+
+  const long col = idx / x_size;
+  const long row = idx % x_size;
+
+  const double R_plus = R_batch[(2 * col) * x_size + row];
+  const double R_minus = R_batch[(2 * col + 1) * x_size + row];
+
+  J[col * x_size + row] = (R_plus - R_minus) / (2.0 * t);
+}
+
+void ApproximateJacobianCentral_launch(Method method, const double* Y_h,
+                                       double* J_h, long N, double alpha,
+                                       double m, double k, double* a, double t0,
+                                       double T, double* x0, double l0,
+                                       double* x_d, double t,
+                                       cudaStream_t stream = 0) {
+  constexpr int BLOCK = 256;
+  long x_size = 9 * N;
+
+  if (method == Method::SE1 || method == Method::SE2 ||
+      method == Method::MidPoint)
+    x_size++;
+
+  const long M = 2 * x_size;
+  const long batch_total = M * x_size;
+  const long J_size = x_size * x_size;
+
+  double *Y0_d, *Y_batch, *R_batch, *J_d;
+  CUDA_CHECK(cudaMalloc((void**)&Y0_d, sizeof(double) * x_size));
+  CUDA_CHECK(cudaMalloc((void**)&Y_batch, sizeof(double) * batch_total));
+  CUDA_CHECK(cudaMalloc((void**)&R_batch, sizeof(double) * batch_total));
+  CUDA_CHECK(cudaMalloc((void**)&J_d, sizeof(double) * J_size));
+
+  CUDA_CHECK(cudaMemcpyAsync(Y0_d, Y_h, sizeof(double) * x_size,
+                           cudaMemcpyHostToDevice, stream));
+
+  {
+    dim3 grid((batch_total + BLOCK - 1) / BLOCK);
+    build_jacobian_central_batch_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+        Y0_d, Y_batch, x_size, M, t);
+  }
+
+  if (method == Method::SE1) {
+    {
+      dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+      SE1_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+          x_d[0], x_d[1], M);
+    }
+    {
+      dim3 grid((M + BLOCK - 1) / BLOCK);
+      SE1_boundary_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, x0[0], x0[1], l0, M);
+    }
+  } else if (method == Method::SE2) {
+    {
+      dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+      SE2_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+          x_d[0], x_d[1], M);
+    }
+    {
+      dim3 grid((M + BLOCK - 1) / BLOCK);
+      SE2_boundary_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, x0[0], x0[1], l0, M);
+    }
+  } else if (method == Method::Modified_SE1) {
+    {
+      dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+      Modified_SE1_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+          x_d[0], x_d[1], M);
+    }
+  } else if (method == Method::Modified_SE2) {
+    {
+      dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+      Modified_SE2_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+          x_d[0], x_d[1], M);
+    }
+  } else if (method == Method::MidPoint) {
+    {
+      dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+      MidPoint_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+          x_d[0], x_d[1], M);
+    }
+    {
+      dim3 grid((M + BLOCK - 1) / BLOCK);
+      MidPoint_boundary_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, x0[0], x0[1], l0, M);
+    }
+  } else if (method == Method::Modified_MidPoint) {
+    {
+      dim3 grid(((N + BLOCK - 1) / BLOCK) * M);
+      Modified_MidPoint_loop_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+          Y_batch, R_batch, N, alpha, m, k, a[0], a[1], t0, T, x0[0], x0[1], l0,
+          x_d[0], x_d[1], M);
+    }
+  }
+
+  {
+    dim3 grid((J_size + BLOCK - 1) / BLOCK);
+    compute_jacobian_central_kernel<<<grid, dim3(BLOCK), 0, stream>>>(
+        R_batch, J_d, x_size, t);
+  }
+
+  CUDA_CHECK(cudaGetLastError());
+
+  CUDA_CHECK(cudaStreamSynchronize(stream));
+
+  CUDA_CHECK(cudaMemcpyAsync(J_h, J_d, sizeof(double) * J_size,
+                           cudaMemcpyDeviceToHost, stream));
+
+  CUDA_CHECK(cudaStreamSynchronize(stream));
+
+  CUDA_CHECK(cudaFree(Y0_d));
+  CUDA_CHECK(cudaFree(Y_batch));
+  CUDA_CHECK(cudaFree(R_batch));
+  CUDA_CHECK(cudaFree(J_d));
 }
 
 // <-----  Library Interface -----> //
 
 extern "C" {
+// Direct Methods
 void SE1(const double* Y_h, double* R_h, long N, double alpha, double m,
          double k, double* a, double t0, double T, double* x0, double l0,
          double* x_d, long M) {
@@ -823,5 +1096,20 @@ void Modified_MidPoint(const double* Y_h, double* R_h, long N, double alpha,
                        double* x0, double l0, double* x_d, long M) {
   SE_launch(Method::Modified_MidPoint, Y_h, R_h, N, alpha, m, k, a, t0, T, x0,
             l0, x_d, M);
+}
+// Approximate Jacobian
+void ApproximateJacobian(const Method method, const double* Y_h, double* J_h,
+                         long N, double alpha, double m, double k, double* a,
+                         double t0, double T, double* x0, double l0,
+                         double* x_d, double t) {
+  ApproximateJacobian_launch(method, Y_h, J_h, N, alpha, m, k, a, t0, T, x0, l0,
+                             x_d, t);
+}
+void ApproximateJacobianCentral(const Method method, const double* Y_h,
+                                double* J_h, long N, double alpha, double m,
+                                double k, double* a, double t0, double T,
+                                double* x0, double l0, double* x_d, double t) {
+  ApproximateJacobianCentral_launch(method, Y_h, J_h, N, alpha, m, k, a, t0, T,
+                                    x0, l0, x_d, t);
 }
 }

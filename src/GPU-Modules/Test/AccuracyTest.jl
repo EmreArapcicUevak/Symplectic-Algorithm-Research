@@ -7,7 +7,7 @@ include("../NewtonMethodModule.jl")
 
 
 # Settings
-N = 100
+N = 200
 α = 1.0
 m = 1.0
 k = 10.0
@@ -18,6 +18,20 @@ x₀ = Float64[1.0, 1.0]
 x_d = Float64[2.0, 0.0]
 l₀ = norm(x₀ - x_d)
 ####
+
+params = Dict(
+    :method => Systems_GPU.SE1,
+    :N => N,
+    :α => α,
+    :m => m,
+    :k => k,
+    :a => a,
+    :t₀ => t₀,
+    :T => T,
+    :x₀ => x₀,
+    :l₀ => l₀,
+    :x_d => x_d,
+)
 
 function CheckMethodAccuracy(MethodCPU::Function, MethodGPU::Function, Y_size=9 * N + 1)
     name = nameof(MethodCPU)
@@ -61,8 +75,8 @@ function CheckJacobianAccuracy(JacobianCPU::Function, MethodCPU::Function, Jacob
             F_cpu = x -> MethodCPU(x; N=N, α=α, m=m, k=k, a=a, t₀=t₀, T=T, x₀=x₀, l₀=l₀, x_d=x_d)
             J_cpu = JacobianCPU(F_cpu, Y)
 
-            F_gpu = x -> MethodGPU(x; N=N, α=α, m=m, k=k, a=a, t₀=t₀, T=T, x₀=x₀, l₀=l₀, x_d=x_d)
-            J_gpu = JacobianGPU(F_gpu, Y)
+            params[:method] = MethodGPU
+            J_gpu = JacobianGPU(params, Y)
 
             max_diff, idx = findmax(abs.(J_cpu - J_gpu))
             norm_diff = norm(J_cpu - J_gpu)
@@ -84,8 +98,8 @@ function BenchmarkJacobian(JacobianCPU::Function, MethodCPU::Function, JacobianG
     F_cpu = x -> MethodCPU(x; N=N, α=α, m=m, k=k, a=a, t₀=t₀, T=T, x₀=x₀, l₀=l₀, x_d=x_d)
     @btime J_cpu = $JacobianCPU($F_cpu, $Y)
     println("HIP GPU time :")
-    F_gpu = x -> MethodGPU(x; N=N, α=α, m=m, k=k, a=a, t₀=t₀, T=T, x₀=x₀, l₀=l₀, x_d=x_d)
-    @btime J_gpu = $JacobianGPU($F_gpu, $Y)
+    params[:method] = MethodGPU
+    @btime J_gpu = $JacobianGPU($params, $Y)
 end
 
 if false
@@ -97,7 +111,6 @@ if false
     CheckMethodAccuracy(Systems.Modified_MidPoint, Systems_GPU.Modified_MidPoint)
 end
 
-print("\n\n\n\n")
 
 if false
     BenchmarkMethod(Systems.SE1, Systems_GPU.SE1, 9 * N + 1)
@@ -108,11 +121,8 @@ if false
     BenchmarkMethod(Systems.Modified_MidPoint, Systems_GPU.Modified_MidPoint, 9 * N)
 end
 
-print("\n\n\n\n")
 
 
-
-
-CheckJacobianAccuracy(NewtonMethodModule.AproximateJacobian, Systems.SE1, NewtonMethodModule_GPU.AproximateJacobian, Systems_GPU.SE1)
-#BenchmarkJacobian(NewtonMethodModule.AproximateJacobian, Systems.SE1, NewtonMethodModule_GPU.AproximateJacobian, Systems_GPU.SE1)
+#CheckJacobianAccuracy(NewtonMethodModule.AproximateJacobianCentral, Systems.SE2, NewtonMethodModule_GPU.AproximateJacobianCentral, Systems_GPU.SE2)
+BenchmarkJacobian(NewtonMethodModule.AproximateJacobianCentral, Systems.SE2, NewtonMethodModule_GPU.AproximateJacobianCentral, Systems_GPU.SE2)
 
