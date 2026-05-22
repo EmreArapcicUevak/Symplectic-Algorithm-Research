@@ -4,7 +4,7 @@ include("Settings.jl")
 using Printf, Dates, DataFrames, Serialization, CSV, Base.Threads, Term.Progress, InteractiveUtils
 
 function load_checkpoint(output_file_name::AbstractString) :: Vector{Dict{Symbol,Any}}
-    tmp_path = joinpath("Results/", "$(output_file_name).tmp")
+    tmp_path = joinpath(Settings.COMPUTATION_RESULTS_FOLDER, "$(output_file_name).tmp")
     if isfile(tmp_path)
         return deserialize(tmp_path)
     else
@@ -13,7 +13,7 @@ function load_checkpoint(output_file_name::AbstractString) :: Vector{Dict{Symbol
 end
 
 function save_checkpoint(output_file_name, rows)
-    final = joinpath("Results/", "$(output_file_name).tmp")
+    final = joinpath(Settings.COMPUTATION_RESULTS_FOLDER, "$(output_file_name).tmp")
     staging = final * ".partial"
     open(staging, "w") do io
         serialize(io, rows)
@@ -24,8 +24,8 @@ function save_checkpoint(output_file_name, rows)
 end
 
 function delete_checkpoint(output_file_name :: AbstractString)
-    if isfile(joinpath("Results/", "$(output_file_name).tmp"))
-        rm(joinpath("Results/", "$(output_file_name).tmp"))
+    if isfile(joinpath(Settings.COMPUTATION_RESULTS_FOLDER, "$(output_file_name).tmp"))
+        rm(joinpath(Settings.COMPUTATION_RESULTS_FOLDER, "$(output_file_name).tmp"))
     end
 end
 
@@ -71,7 +71,6 @@ function run_grid(body::Function, output_file_name::AbstractString;
     param_grid    :: AbstractDict,
     key_cols      :: AbstractVector{Symbol},
     scalar_cols   :: AbstractVector{Symbol} = Symbol[],
-    result_folder :: AbstractString          = "Results/",
     on_iteration  :: Function                = (_,_,_,_) -> nothing,
     description   :: AbstractString          = "Total ",
 )
@@ -85,7 +84,7 @@ function run_grid(body::Function, output_file_name::AbstractString;
     local rlock = ReentrantLock()
 
     local pbar = ProgressBar(; columns = :detailed);
-    local job = addjob!(pbar, N = n_comb, description = description)
+    local job = addjob!(pbar, N = n_comb, description = description, width = displaysize(stdout)[2] - 5)
     versioninfo(); println("\n", "─"^80, "\n"); flush(stdout)
     start!(pbar); render(pbar)
 
@@ -105,7 +104,7 @@ function run_grid(body::Function, output_file_name::AbstractString;
             continue
         end
 
-        local results = body(params)
+        local results = Dict{Symbol,Any}(body(params))
         # merge param values into the row
         for k in keys_
             results[k] = params[k]
@@ -150,7 +149,7 @@ function run_grid(body::Function, output_file_name::AbstractString;
 
     delete_checkpoint(output_file_name)
     new_df   = DataFrame(rows)
-    jls_path = joinpath(result_folder, "$(output_file_name).jls")
+    jls_path = joinpath(Settings.COMPUTATION_RESULTS_FOLDER, "$(output_file_name).jls")
 
     merged_df = if isfile(jls_path)
         old_df = open(deserialize, jls_path)
@@ -160,7 +159,7 @@ function run_grid(body::Function, output_file_name::AbstractString;
     end
 
     if !isempty(scalar_cols)
-        CSV.write(joinpath(result_folder, "$(output_file_name).csv"),
+        CSV.write(joinpath(Settings.COMPUTATION_RESULTS_FOLDER, "$(output_file_name).csv"),
                   select(merged_df, scalar_cols..., key_cols...))
     end
 
