@@ -1,132 +1,157 @@
-using Pkg; Pkg.instantiate()
+include("../Modules/Settings.jl")
 
-include("../Modules/NewtonMethodModule.jl"); include("../Modules/Systems.jl"); include("../Modules/CLI_Param.jl")
-using MAT, Term.Progress, Serialization, Base.Threads, BenchmarkTools, Serialization, LinearAlgebra, CSV, DataFrames
-using ArgParse
+using LinearAlgebra; BLAS.set_num_threads(1)
+using InteractiveUtils;
 
-const name_to_func = Dict(
-  "SE1" => Systems.SE1,
-  "SE2" => Systems.SE2,
-  "Modified SE1" => Systems.Modified_SE1,
-  "Modified SE2" => Systems.Modified_SE2,
-  "MidPoint" => Systems.MidPoint,
-  "Modified MidPoint" => Systems.Modified_MidPoint,
+include("../Modules/CLI_Param.jl"); include("../Modules/forward_backward_sweep.jl"); include("../Modules/Remote_Status_Notifier.jl"); include("../Modules/ExperimentHarness.jl"); include("../Modules/Systems.jl")
+include("../Modules/NewtonMethodModule.jl")
+using MAT, Serialization, Base.Threads, BenchmarkTools, LinearAlgebra, CSV, DataFrames
+using Plots, Printf
+
+
+param_grid, output_file_name = CLI_Param.get_parameters(sort!(collect(keys(Settings.name_to_func))))
+
+default(
+    #fontfamily       = "Computer Modern",   # matches LaTeX body text; drop if you don't have it
+    titlefontsize    = 20,
+    guidefontsize    = 20,   # axis labels (xlabel/ylabel)
+    tickfontsize     = 18,
+    legendfontsize   = 18,
+    framestyle       = :box,
+    grid             = true,
+    gridalpha        = 0.1,
+    size             = (900, 550),
+    dpi              = 300,
+    margin           = 5Plots.mm,
+    lw               = 8,
 )
-const func_names = sort(collect(keys(name_to_func)))
 
-param_grid, output_file_name = CLI_Param.get_parameters(func_names)
-using InteractiveUtils; versioninfo()
+function body(paramaters :: NamedTuple)
+    local N = paramaters[:N]
+    local x₀ = paramaters[:x₀]
+    local x_d = paramaters[:x_d]
+    local m = paramaters[:m]
+    local k = paramaters[:k]
+    local α = paramaters[:α]
+    local t₀, T = paramaters[:time_pairs]
 
-############################## Other code ########################################
+    local educated_guess_method_name = paramaters[:educated_guess]
+    local method_name = paramaters[:method]
 
-const RecordType = NamedTuple{
-    (:N, :α, :m, :l₀, :k, :method, :x_d, :x₀),
-    Tuple{Int, Float64, Float64, Float64, Float64, String, Vector{Float64}, Vector{Float64}}
-}
+    local l₀ = x_d[2] + m / k
+    local v₀ = Float64[0, 0]
+    local y₀ = vcat(v₀, x₀)
 
-function get_initial_guess(N :: Integer, x₀ :: Vector{Float64}, x_d :: Vector{Float64}, m :: Float64, k :: Float64, l₀ :: Float64) :: Vector{Float64}
-  @assert length(x₀) == 2
-  # Compute educated starting spring pos
-  local temp_f = u -> -k * (norm(x₀ - [u, 0.0]) - l₀) * (x₀[2]) / norm(x₀ - [u, 0.0]) - m
-  local educated_u
-  try
-    if x₀[1] >= x_d[1]
-      educated_u = NewtonMethodModule.QuasiNewtonMethod(temp_f, x₀[1], x₀[1] + 0.5 ; maxIterations = 100, δ = 1e-10, ϵ = 1e-10).c
-    else
-      educated_u = NewtonMethodModule.QuasiNewtonMethod(temp_f, x₀[1], x₀[1] - 0.5 ; maxIterations = 100, δ = 1e-10, ϵ = 1e-10).c
+    local u_guess = randn(Float64, N + 1)
+
+    local educated_guess_method = Settings.educated_guess[educated_guess_method_name]
+    local educated_y, educated_cost, g_norm, final_step_lenghts
+    local educated_guess_time = -1.0
+    educated_guess_time = @elapsed begin
+        educated_y, educated_cost, g_norm, final_step_lenghts =
+            educated_guess_method(u_guess, t₀, T; α = α, y₀ = y₀, x_d = x_d,
+                                  N = N, m = m, k_spring = k, l₀ = l₀,
+                                  ϵ = 1e-8, max_iter = 500000)
     end
-  catch e 
-    #@warn "Educated guess computation failed, using 0.0 as guess" x0=x₀
-    educated_u = x₀[1]
-  end
-  local x₀_guess = rand(Float64, 9 * N + 1) * 2
-  local stable_height = l₀ - m / k
-  local stable_final_pos = Float64[0.0, stable_height]
 
-
-  x₀_guess[1:N] .= repeat(x₀, N ÷ 2) # Change x₀ till xₙ/2
-  x₀_guess[N+1:2N] .= repeat(stable_final_pos, N ÷ 2)  # Change xₙ/2 till xₙ
-  x₀_guess[2N+1:2:4N] .= 0.0  # Change x component of v to 0
-  x₀_guess[8N+1:end] .= 0.0  # Change u to 0
-  x₀_guess[8N+1:(17N + 3) ÷ 2] .= LinRange(educated_u, 0.0, (N+3) ÷ 2)  # Change half of the u's to educated guess
-
-  return x₀_guess
-end
-
-func_number_of_iterations = Dict{RecordType, Integer }()
-func_results = Dict{RecordType, Vector{Float64}}()
-func_err_history = Dict{RecordType, Vector{Float64}}()
-
-initial_guess_lock = ReentrantLock()
-result_lock = ReentrantLock()
-progress_bar_lock = ReentrantLock()
-param_read = ReentrantLock()
-
-
-
-keys_ = collect(keys(param_grid))
-values_ = [param_grid[key] for key in keys_]
-
-lens = map(length, values_) 
-n_combinations = reduce(*, lens)
-space = CartesianIndices(Tuple(lens))
-
-pbar = ProgressBar(); comp_job = addjob!(pbar,N = n_combinations, description = "Total Progress")
-start!(pbar); render(pbar)
-initial_guesses = Dict{Tuple{Integer, Vector{Float64}, Vector{Float64}, Float64, Float64, Float64}, Vector{Float64}}()
-Threads.@threads for i ∈ 1:n_combinations
-  local I = space[i]
-
-  local tup = ntuple(j -> values_[j][I[j]], length(values_))
-  local params = NamedTuple{Tuple(keys_)}(tup)
-  local l₀ = norm(params.x₀ - params.x_d)
-  params = (; params..., l₀ = l₀)
-  
-  local initial_guess
-  lock(initial_guess_lock) do
-    local init_guess_key = (params.N, params.x₀, params.x_d, params.m, params.k, params.l₀)
-    initial_guess = get(initial_guesses, (init_guess_key), nothing)
-    #func_err_history[(N₀, α₀, method_name)] = Float64[]
-    if initial_guess === nothing
-      initial_guess = get_initial_guess(init_guess_key...)
-      initial_guesses[init_guess_key] = initial_guess
+    if g_norm > 1e-2
+        return Dict(:results => nothing, :number_of_iterations => -1,
+                    :g_norm => g_norm, :l₀ => l₀,
+                    :educated_guess_time => educated_guess_time,
+                    :newton_time => -1.0)
     end
-  end
 
-  local method = x -> name_to_func[params.method](x; N = params.N, α = params.α ,m = params.m ,k =  params.k, a = Float64[0,-1], t₀ = 0.0, T = 20.0, l₀ = params.l₀, x₀ = params.x₀, x_d = params.x_d)
-  local initial_guess_m = occursin("Modified", params.method) ? initial_guess[begin:end-1] : initial_guess
+    educated_y = contains(lowercase(method_name), "modified") ? educated_y[1:end-1] : educated_y
 
-  local results
-  
-  try
-    results = NewtonMethodModule.MultiDimentionalNewtonMethod(method, x -> NewtonMethodModule.AproximateJacobian(method, x), initial_guess_m; maxIterations = 30, δ = 0.5e-10, ϵ = 0.5e-10)
-  catch e
-      #@warn "Newton method failed" N=params.N α=params.α method=params.method e
-    results = nothing
-  end
+    local method_function = Settings.name_to_func[method_name]
+    local method = x -> method_function(x; N=N, α=α, m=m, k=k, a=Float64[0, -1],
+                                        t₀ = t₀, T = T, l₀ = l₀, x₀ = x₀, x_d = x_d)
 
-  # Write results safely
-  lock(result_lock) do
-    local key = NamedTuple{(:N, :α, :m, :l₀, :k, :method, :x_d, :x₀)}(params)
-      if results === nothing
-          func_number_of_iterations[key] =  -1
-          func_results[key] = []
-      else
-          func_number_of_iterations[key] =  results.iterations
-          func_results[key] = results.c
-      end
-  end
+    local results = nothing
+    local newton_time = -1.0
+    try
+        newton_time = @elapsed begin
+            results = NewtonMethodModule.MultiDimentionalNewtonMethod(
+                method, x -> NewtonMethodModule.AproximateJacobian(method, x),
+                educated_y;
+                maxIterations = Settings.NEWTON_MAX_ITER,
+                δ = Settings.NEWTON_TOL, ϵ = Settings.NEWTON_TOL)
+        end
+    catch e
+        @warn "Newton method failed" N α method_name e
+        results = nothing
+        newton_time = -1.0
+    end
 
-  # Progress bar update (serialize UI-ish calls)
-  lock(progress_bar_lock) do
-      update!(comp_job); render(pbar)
-  end
-
-end
-stop!(pbar)
-
-function round_vector(v::Vector{Float64}, digits::Integer = 2) :: String
-    return "[$(join([round(x, digits=digits) for x in v], ", "))]"
+    return Dict(
+        :results => results === nothing ? nothing : results.c,
+        :number_of_iterations => results === nothing ? -1 : results.iterations,
+        :g_norm => g_norm,
+        :l₀ => l₀,
+        :educated_guess_time => educated_guess_time,
+        :newton_time => newton_time,
+    )
 end
 
-println("Saving results to Results/$output_file_name"); serialize("Results/$output_file_name", (func_number_of_iterations, func_results))
+function result_completed(paramaters, results, rows, progress)
+  local N = paramaters[:N]
+  local x₀ = paramaters[:x₀]
+  local x_d = paramaters[:x_d]
+  local m = paramaters[:m]
+  local k = paramaters[:k]
+  local α = paramaters[:α]
+  local t₀, T = paramaters[:time_pairs]
+  local method_name = paramaters[:method]
+  local educated_guess_name = paramaters[:educated_guess]
+
+  local l₀                    = results[:l₀]
+  local g_norm                = results[:g_norm]
+  local number_of_iterations  = results[:number_of_iterations]
+  local educated_guess_time   = results[:educated_guess_time]
+  local newton_time           = results[:newton_time]
+
+  fmt_time(t)  = t < 0 ? "failed" : @sprintf("%.2f s", t)
+  fmt_iters(n) = n < 0 ? "failed" : string(n)
+
+  local body = """
+          Results for
+          N     = $(N)
+          x₀    = $(x₀)
+          x_d   = $(x_d)
+          m     = $(m)
+          k     = $(k)
+          α     = $(α)
+          l₀    = $(@sprintf("%.4f", l₀))
+          t₀, T = $(t₀), $(T)
+
+          =============================
+
+          Educated guess — $(educated_guess_name)
+          time:        $(fmt_time(educated_guess_time))
+          ||Hᵤ||:      $(@sprintf("%.2e", g_norm))
+
+          Newton — $(method_name)
+          time:        $(fmt_time(newton_time))
+          iterations:  $(fmt_iters(number_of_iterations))
+
+          Progress : $(@sprintf("%.2f", progress * 100))%
+      """
+
+  Remote_Status_Notifier.send_ntfy_message(body; title = "Progress Report")
+end
+
+
+res = ExperimentHarness.run_grid(
+    body,
+    output_file_name;
+    param_grid = param_grid,
+    key_cols = collect(keys(param_grid)),
+    on_iteration = result_completed,
+    scalar_cols = [:l₀, :g_norm, :educated_guess_time, :newton_time, :number_of_iterations],
+)
+
+if !isnothing(res)
+    Remote_Status_Notifier.send_ntfy_message("Experiment completed!"; title = "Completion Notice", priority = "high")
+else
+    Remote_Status_Notifier.send_ntfy_message("Experiement Interrupted"; title="Completion Notice", priority="high")
+end
