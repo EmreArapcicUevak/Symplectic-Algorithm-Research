@@ -83,8 +83,8 @@ function run_grid(body::Function, output_file_name::AbstractString;
     local rows  = load_checkpoint(output_file_name)
     local rlock = ReentrantLock()
 
-    local pbar = ProgressBar(; columns = :detailed);
-    local job = addjob!(pbar, N = n_comb, description = description, width = displaysize(stdout)[2] - 5)
+    local pbar = ProgressBar(; columns = :detailed, width = displaysize(stdout)[2] - 5);
+    local job = addjob!(pbar, N = n_comb, description = description)
     versioninfo(); println("\n", "─"^80, "\n"); flush(stdout)
     start!(pbar); render(pbar)
 
