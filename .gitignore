@@ -504,13 +504,5 @@ Results/
 *.so
 #src/GPU-Modules/Test
 
-Results/Figures/
-Results/Simulations
-ThesisPaper/Images
-ThesisPaper/tables
-
-!Results/
-!Results/Computation_Results/
-!Results/Computation_Results/**
-
+Results/
 .env
