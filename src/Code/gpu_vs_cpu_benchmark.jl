@@ -154,8 +154,8 @@ function body(params::NamedTuple)
     F_diff_norm = norm(R_cpu - R_gpu)
     F_diff_max  = maximum(abs.(R_cpu - R_gpu))
 
-    F_cpu_trial = @benchmark $F_cpu($Y) seconds=$F_BUDGET_SECONDS
-    F_gpu_trial = @benchmark $F_gpu($Y) seconds=$F_BUDGET_SECONDS
+    F_cpu_trial = @benchmark $F_cpu($Y) seconds=F_BUDGET_SECONDS
+    F_gpu_trial = @benchmark $F_gpu($Y) seconds=F_BUDGET_SECONDS
 
     # --- approximate Jacobian ---------------------------------------------
     J_cpu_build = CPU_JACOBIANS[jac_name](F_cpu_raw; parameters = function_parameters)
@@ -166,8 +166,8 @@ function body(params::NamedTuple)
     J_diff_norm = norm(J_cpu - J_gpu)
     J_diff_max  = maximum(abs.(J_cpu - J_gpu))
 
-    J_cpu_trial = @benchmark $J_cpu_build($Y) seconds=$J_BUDGET_SECONDS
-    J_gpu_trial = @benchmark $J_gpu_build($Y) seconds=$J_BUDGET_SECONDS
+    J_cpu_trial = @benchmark $J_cpu_build($Y) seconds=J_BUDGET_SECONDS
+    J_gpu_trial = @benchmark $J_gpu_build($Y) seconds=J_BUDGET_SECONDS
 
     F_cpu_stats = trial_stats(F_cpu_trial)
     F_gpu_stats = trial_stats(F_gpu_trial)
