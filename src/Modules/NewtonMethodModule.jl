@@ -52,33 +52,37 @@ module NewtonMethodModule
             return nothing
         end
 
-        function AproximateJacobian(F :: Function, x₀ :: Vector{Float64}; t = 1e-6 :: Float64) 
-            local Fx₀ = F(x₀)
-            local J = zeros(Float64, length(Fx₀), length(x₀))
+        function AproximateJacobian(F :: Function; t = 1e-6 :: Float64, parameters :: Dict) 
+            return function (x₀ :: Vector{Float64})
+                local Fx₀ = F(x₀; parameters...)
+                local J = zeros(Float64, length(Fx₀), length(x₀))
 
-            for i ∈ 1:length(x₀)
-                local x = copy(x₀)
-                x[i] += t
+                for i ∈ 1:length(x₀)
+                    local x = copy(x₀)
+                    x[i] += t
 
-                J[:,i] = (F(x) - Fx₀) / t
+                    J[:,i] = (F(x; parameters...) - Fx₀) / t
+                end
+
+                return J
             end
-
-            return J
         end
 
-        function AproximateJacobianCentral(F :: Function, x₀ :: Vector{T}; t = 1e-6 :: Float64) where T <: Real
+        function AproximateJacobianCentral(F :: Function; t = 1e-6 :: Float64, parameters :: Dict) where T <: Real
             local N = length(x₀)
-            local J = zeros(T, N, N)
 
-            local Fx₀ = F(x₀)
-            Threads.@threads for i ∈ 1:length(x₀)
-                local x_plus = copy(x₀)
-                local x_minus = copy(x₀)
-                x_plus[i] += t
-                x_minus[i] -= t
-                @inbounds J[:,i] = (F(x_plus) .- F(x_minus)) ./ (2 * t)
+            return function (x₀ :: Vector{T})
+                local J = zeros(T, N, N)
+                local Fx₀ = F(x₀; parameters...)
+                Threads.@threads for i ∈ 1:length(x₀)
+                    local x_plus = copy(x₀)
+                    local x_minus = copy(x₀)
+                    x_plus[i] += t
+                    x_minus[i] -= t
+                    @inbounds J[:,i] = (F(x_plus; parameters...) .- F(x_minus; parameters...)) ./ (2 * t)
+                end
+
+                return J
             end
-
-            return J
         end
 end
