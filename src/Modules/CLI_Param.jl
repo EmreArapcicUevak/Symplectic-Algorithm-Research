@@ -20,7 +20,6 @@ module CLI_Param
     print("\033c")
   end
 
-  const EDUCATED_GUESS_CHOICES = ["Random", "RK4ForwardBackward", "ForwardBackward"]
 
 function prompt_choice_list(parsed_args, key, choices, label)
     selected = parsed_args[key]
@@ -170,15 +169,25 @@ function get_parameters(func_names::Vector{String})
             nargs = '+'
 
         "--educatedGuess", "-g"
-            help = "Initial-guess strategies to try ($(join(EDUCATED_GUESS_CHOICES, ", ")))"
+            help = "Initial-guess strategies to try ($(join(Settings.EDUCATED_GUESS_CHOICES, ", ")))"
             arg_type = String
-            range_tester = x -> x in EDUCATED_GUESS_CHOICES
-            
+            range_tester = x -> x in Settings.EDUCATED_GUESS_CHOICES
+            nargs = '+' 
 
         "--output", "-o"
             help = "Output file name (without extension)"
             arg_type = String
             default = "Grid_Search"
+
+        "--timePairs", "-t"
+            help = "List of (t0, T) pairs as 't0,T' e.g. -t 0.0,10.0 2.0,15.0"
+            arg_type = String
+            nargs = '+'
+            default = ["0.0,10.0"]
+            range_tester = x -> begin
+                parts = split(x, ",")
+                length(parts) == 2 && parse(Float64, parts[1]) < parse(Float64, parts[2])
+            end
     end
 
     clear_terminal()
@@ -225,8 +234,29 @@ function get_parameters(func_names::Vector{String})
 
     # --- categorical lists -------------------------------------------------
     selected_methods = prompt_choice_list(parsed_args, "methods",        func_names,              "methods to run")
-    educated_guesses = prompt_choice_one(parsed_args, "educatedGuess",  EDUCATED_GUESS_CHOICES,  "initial-guess strategies")
+    educated_guesses = prompt_choice_list(parsed_args, "educatedGuess",  Settings.EDUCATED_GUESS_CHOICES,  "initial-guess strategies")
 
+
+    time_pairs = Tuple{Float64, Float64}[]
+    raw_pairs = parsed_args["timePairs"]
+    if !isempty(raw_pairs)
+        for p in raw_pairs
+            parts = split(p, ",")
+            t0, T = parse(Float64, parts[1]), parse(Float64, parts[2])
+            push!(time_pairs, (t0, T))
+        end
+    else
+        while true
+            t0 = Simple_Promt.prompt("Enter t0:", Float64)
+            T  = Simple_Promt.prompt("Enter T (must be greater than t0=$t0):", Float64)
+            while T <= t0
+                println("T must be greater than t0 ($t0). Please enter again.")
+                T = Simple_Promt.prompt("Enter T:", Float64)
+            end
+            push!(time_pairs, (t0, T))
+            Simple_Promt.prompt("Add another (t0, T) pair?", Bool) || break
+        end
+    end
     param_grid = Dict(
         :x_d            => [Float64[0, y] for y in height_values],
         :x₀             => x0_points,
@@ -236,6 +266,7 @@ function get_parameters(func_names::Vector{String})
         :α              => alpha_values,
         :method         => selected_methods,
         :educated_guess => educated_guesses,
+        :time_pairs     => time_pairs,
     )
 
     clear_terminal()
