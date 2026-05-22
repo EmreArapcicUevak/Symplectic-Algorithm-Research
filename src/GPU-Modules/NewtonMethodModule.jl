@@ -13,7 +13,7 @@ const lib = joinpath(@__DIR__, "systems.so")
 end
 
 export AproximateJacobian
-function AproximateJacobian(F::Function, params::Dict; t=1e-6::Float64)
+function AproximateJacobian(F::Function; params::Dict, t=1e-6::Float64)
 
     x_size = 9 * params[:N] + 1
     _method = string(nameof(F))
@@ -52,7 +52,7 @@ function AproximateJacobian(F::Function, params::Dict; t=1e-6::Float64)
 end
 
 export AproximateJacobianCentral
-function AproximateJacobianCentral(F::Function, params::Dict; t=1e-6::Float64)
+function AproximateJacobianCentral(F::Function; params::Dict, t=1e-6::Float64)
 
     x_size = 9 * params[:N] + 1
     _method = string(nameof(F))
