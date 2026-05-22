@@ -69,9 +69,8 @@ module NewtonMethodModule
         end
 
         function AproximateJacobianCentral(F :: Function; t = 1e-6 :: Float64, parameters :: Dict) where T <: Real
-            local N = length(x₀)
-
             return function (x₀ :: Vector{T})
+                local N = length(x₀)
                 local J = zeros(T, N, N)
                 local Fx₀ = F(x₀; parameters...)
                 Threads.@threads for i ∈ 1:length(x₀)
