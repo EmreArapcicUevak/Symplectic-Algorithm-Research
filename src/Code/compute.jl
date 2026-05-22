@@ -39,6 +39,7 @@ function body(paramaters :: NamedTuple)
     local method_name = paramaters[:method]
 
     local l₀ = x_d[2] + m / k
+    local function_paramaters = Dict(:N => N, :α => α, :m => m, :k => k, :a => Float64[0, -1], :t₀ => t₀, :T => T, :l₀ => l₀, :x₀ => x₀, :x_d => x_d)
     local v₀ = Float64[0, 0]
     local y₀ = vcat(v₀, x₀)
 
@@ -64,15 +65,14 @@ function body(paramaters :: NamedTuple)
     educated_y = contains(lowercase(method_name), "modified") ? educated_y[1:end-1] : educated_y
 
     local method_function = Settings.name_to_func[method_name]
-    local method = x -> method_function(x; N=N, α=α, m=m, k=k, a=Float64[0, -1],
-                                        t₀ = t₀, T = T, l₀ = l₀, x₀ = x₀, x_d = x_d)
+    local method = x -> method_function(x; function_paramaters...)
 
     local results = nothing
     local newton_time = -1.0
     try
         newton_time = @elapsed begin
             results = NewtonMethodModule.MultiDimentionalNewtonMethod(
-                method, x -> NewtonMethodModule.AproximateJacobian(method, x),
+                method, NewtonMethodModule.AproximateJacobian(method_function; parameters = function_paramaters),
                 educated_y;
                 maxIterations = Settings.NEWTON_MAX_ITER,
                 δ = Settings.NEWTON_TOL, ϵ = Settings.NEWTON_TOL)
