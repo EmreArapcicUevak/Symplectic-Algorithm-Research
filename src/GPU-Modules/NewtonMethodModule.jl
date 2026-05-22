@@ -13,10 +13,10 @@ const lib = joinpath(@__DIR__, "systems.so")
 end
 
 export AproximateJacobian
-function AproximateJacobian(params::Dict, x₀::Vector{Float64}; t=1e-6::Float64)
+function AproximateJacobian(F::Function, params::Dict; t=1e-6::Float64)
 
     x_size = 9 * params[:N] + 1
-    _method = string(nameof(params[:method]))
+    _method = string(nameof(F))
     local method
 
     if (_method == "SE1")
@@ -39,22 +39,23 @@ function AproximateJacobian(params::Dict, x₀::Vector{Float64}; t=1e-6::Float64
         x_size -= 1
     end
 
-    J = zeros(Float64, x_size, x_size)
+    return function (x₀::Vector{Float64})
+        J = zeros(Float64, x_size, x_size)
 
-    ccall((:ApproximateJacobian, lib), Cvoid, (Cint, Ptr{Float64}, Ptr{Float64}, Clong, Cdouble, Cdouble, Cdouble, Ptr{Float64}, Cdouble, Cdouble, Ptr{Float64},
-            Cdouble, Ptr{Float64}, Cdouble),
-        Cint(method), x₀, J, params[:N], params[:α], params[:m], params[:k], params[:a], params[:t₀],
-        params[:T], params[:x₀], params[:l₀], params[:x_d], t)
+        ccall((:ApproximateJacobian, lib), Cvoid, (Cint, Ptr{Float64}, Ptr{Float64}, Clong, Cdouble, Cdouble, Cdouble, Ptr{Float64}, Cdouble, Cdouble, Ptr{Float64},
+                Cdouble, Ptr{Float64}, Cdouble),
+            Cint(method), x₀, J, params[:N], params[:α], params[:m], params[:k], params[:a], params[:t₀],
+            params[:T], params[:x₀], params[:l₀], params[:x_d], t)
 
-    return J
-
+        return J
+    end
 end
 
 export AproximateJacobianCentral
-function AproximateJacobianCentral(params::Dict, x₀::Vector{T}; t=1e-6::Float64) where T<:Real
+function AproximateJacobianCentral(F::Function, params::Dict; t=1e-6::Float64)
 
     x_size = 9 * params[:N] + 1
-    _method = string(nameof(params[:method]))
+    _method = string(nameof(F))
     local method
 
     if (_method == "SE1")
@@ -77,13 +78,15 @@ function AproximateJacobianCentral(params::Dict, x₀::Vector{T}; t=1e-6::Float6
         x_size -= 1
     end
 
-    J = zeros(Float64, x_size, x_size)
+    return function (x₀::Vector{T}) where T<:Real
+        J = zeros(Float64, x_size, x_size)
 
-    ccall((:ApproximateJacobianCentral, lib), Cvoid, (Cint, Ptr{Float64}, Ptr{Float64}, Clong, Cdouble, Cdouble, Cdouble, Ptr{Float64}, Cdouble, Cdouble, Ptr{Float64},
-            Cdouble, Ptr{Float64}, Cdouble),
-        Cint(method), x₀, J, params[:N], params[:α], params[:m], params[:k], params[:a], params[:t₀],
-        params[:T], params[:x₀], params[:l₀], params[:x_d], t)
+        ccall((:ApproximateJacobianCentral, lib), Cvoid, (Cint, Ptr{Float64}, Ptr{Float64}, Clong, Cdouble, Cdouble, Cdouble, Ptr{Float64}, Cdouble, Cdouble, Ptr{Float64},
+                Cdouble, Ptr{Float64}, Cdouble),
+            Cint(method), x₀, J, params[:N], params[:α], params[:m], params[:k], params[:a], params[:t₀],
+            params[:T], params[:x₀], params[:l₀], params[:x_d], t)
 
-    return J
+        return J
+    end
 end
 end
